@@ -1,0 +1,198 @@
+/* ==========================================================================
+   SoilSense — clean layer  (loaded last)
+   · simpler, calmer student UI (fewer boxes, one primary action per page)
+   · Overview: clickable status panel
+   · phones: compact top bar, bottom tab bar, no dead space, short scrolling
+   ========================================================================== */
+
+/* ---------- shared bits ---------- */
+.sb-more { margin-top: 4px; padding-top: 10px; border-top: 1px solid var(--border-soft); }
+.sb-item-sm { padding: 8px 12px; font-size: 13px; }
+.tabbar { display: none; }
+.sx-row.sx-flash { animation: sxflash 2.2s ease 1; }
+@keyframes sxflash { 0%,60% { box-shadow: 0 0 0 2px var(--green); } 100% { box-shadow: 0 0 0 2px transparent; } }
+
+/* calmer page headers everywhere */
+.page { max-width: 1040px; margin: 0 auto; }
+.topbar { padding: 12px 32px; min-height: 56px; }
+.card { box-shadow: none; }
+
+/* ---------- Overview ---------- */
+.ov-hero { display: flex; align-items: center; justify-content: space-between; gap: 28px; padding: 28px; }
+.ov-hero-main { min-width: 0; flex: 1; }
+.ov-eyebrow { margin: 0; font-size: 13.5px; color: var(--text-muted); }
+.ov-title { margin: 2px 0 6px; font-family: 'Fraunces', serif; font-size: 30px; line-height: 1.15; color: var(--heading); }
+.ov-sub { margin: 0 0 16px; font-size: 13.5px; color: var(--text-muted); }
+.ov-sub .mono { font-family: var(--font-mono); color: var(--text); }
+.ov-chips { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 18px; }
+.ov-chip {
+  display: inline-flex; align-items: center; gap: 7px; cursor: pointer;
+  padding: 8px 14px; border-radius: 999px; font: 500 13px var(--font-sans);
+  border: 1px solid var(--border-soft); background: transparent; color: var(--text-muted);
+  transition: background .15s, border-color .15s, transform .1s;
+}
+.ov-chip b { font-weight: 700; }
+.ov-chip.warn { color: var(--amber); border-color: rgba(232,169,76,.35); background: var(--amber-dim); }
+.ov-chip.ok   { color: var(--accent-strong); border-color: var(--border); background: var(--accent-dim); }
+.ov-chip:hover:not(:disabled) { filter: brightness(1.12); }
+.ov-chip:active:not(:disabled) { transform: scale(.97); }
+.ov-chip:disabled { opacity: .55; cursor: default; }
+.ov-chip-go { display: inline-flex; transition: transform .2s; }
+.ov-chip.open .ov-chip-go { transform: rotate(180deg); }
+.ov-cta { display: inline-flex; align-items: center; gap: 8px; }
+.ov-cta-row { display: flex; gap: 10px; flex-wrap: wrap; }
+.ov-score { text-align: center; flex-shrink: 0; }
+.ov-grade { margin-top: 8px; font-weight: 700; font-size: 14px; color: var(--accent-strong); }
+.ov-grade-copy { font-size: 12px; color: var(--text-muted); max-width: 170px; margin: 2px auto 0; line-height: 1.4; }
+.ov-hero-empty { min-height: 0; }
+
+/* status panel */
+.ov-status { margin-top: 14px; padding: 8px 8px 6px; }
+.ov-status[hidden], .ov-list[hidden] { display: none; }
+.ov-status-head { display: flex; align-items: center; justify-content: space-between; padding: 6px 8px 8px; }
+.ov-tabs { display: flex; gap: 4px; background: var(--soft); border-radius: 10px; padding: 3px; }
+.ov-tab { border: 0; background: transparent; color: var(--text-muted); font: 600 13px var(--font-sans); padding: 8px 14px; border-radius: 8px; cursor: pointer; }
+.ov-tab span { margin-left: 4px; font-family: var(--font-mono); font-size: 11px; opacity: .8; }
+.ov-tab.active { background: var(--panel); color: var(--heading); box-shadow: 0 1px 4px rgba(0,0,0,.18); }
+.ov-close { width: 36px; height: 36px; border-radius: 9px; border: 0; background: transparent; color: var(--text-muted); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.ov-close:hover { background: var(--soft); color: var(--text); }
+.ov-list { list-style: none; margin: 0; padding: 0; }
+.ov-list li + li { border-top: 1px solid var(--border-soft); }
+.ov-item { display: flex; align-items: flex-start; gap: 14px; padding: 14px 10px; text-decoration: none; color: inherit; border-radius: 10px; transition: background .15s; }
+.ov-item:hover { background: var(--soft); }
+.ov-item-icon { width: 38px; height: 38px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-dim); color: var(--accent-strong); }
+.ov-item-icon.watch { background: var(--amber-dim); color: var(--amber); }
+.ov-item-icon.low, .ov-item-icon.high { background: var(--red-dim); color: var(--red); }
+.ov-item-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 3px; }
+.ov-item-top { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.ov-item-top b { font-size: 14.5px; color: var(--heading); }
+.ov-item-issue { font-size: 13px; color: var(--text); }
+.ov-item-fix { font-size: 12.5px; color: var(--text-muted); line-height: 1.45; }
+.ov-item-fix b { color: var(--text); font-weight: 600; }
+.ov-item-go { color: var(--text-faint); display: inline-flex; align-self: center; flex-shrink: 0; }
+.ov-all { display: flex; align-items: center; justify-content: center; gap: 4px; padding: 12px; font-size: 13px; font-weight: 600; color: var(--accent-strong); text-decoration: none; border-top: 1px solid var(--border-soft); }
+
+/* sections */
+.ov-section-head { display: flex; align-items: baseline; justify-content: space-between; margin: 28px 0 12px; }
+.ov-section-head h2 { margin: 0; font-size: 16px; font-weight: 700; color: var(--heading); }
+.ov-section-head a { font-size: 13px; color: var(--accent-strong); text-decoration: none; font-weight: 600; }
+.ov-glance-card { text-decoration: none; color: inherit; display: block; transition: border-color .15s, transform .1s; }
+.ov-glance-card:hover { border-color: var(--border); }
+.ov-glance-card .glance-top { margin-bottom: 10px; }
+a.npk-row { text-decoration: none; color: inherit; border-radius: 8px; }
+a.npk-row:hover .npk-name { color: var(--accent-strong); }
+.ov-device { display: flex; align-items: center; gap: 12px; margin-top: 18px; padding: 14px 16px; border-radius: var(--radius-lg); background: var(--panel); border: 1px solid var(--border-soft); text-decoration: none; color: inherit; }
+.ov-device.off { border-color: rgba(232,169,76,.35); }
+.ov-device-icon { width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; background: var(--accent-dim); color: var(--accent-strong); }
+.ov-device.off .ov-device-icon { background: var(--amber-dim); color: var(--amber); }
+.ov-device-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.ov-device-text b { font-size: 14px; color: var(--heading); }
+.ov-device-text small { font-size: 12.5px; color: var(--text-muted); }
+
+/* ==========================================================================
+   TABLET / PHONE
+   ========================================================================== */
+@media (max-width: 900px) {
+  /* burger is replaced by the bottom bar's "More" button */
+  .sb-burger { display: none !important; }
+
+  /* compact top bar: title left, status right, no dead height */
+  .topbar { padding: 10px 16px !important; min-height: 48px !important; gap: 8px; }
+  .topbar-left { font-size: 16px; }
+  .topbar-right { gap: 6px; }
+  .topbar .chip { padding: 5px 10px; font-size: 11px; }
+  .topbar .chip-date { display: none; }
+
+  /* page padding: small top gap, room for the tab bar at the bottom */
+  .page { padding: 16px 16px calc(84px + env(safe-area-inset-bottom)) !important; }
+  body > .page { padding-top: 16px !important; }
+  h1.page-title { font-size: 22px; margin-bottom: 4px; }
+  p.page-subtitle { margin-bottom: 16px; font-size: 13.5px; }
+  .card { padding: 16px; }
+  .card + .card { margin-top: 12px; }
+  .section-label { margin: 22px 0 10px; }
+
+  /* Overview */
+  .ov-hero { flex-direction: column-reverse; align-items: stretch; gap: 16px; padding: 18px; }
+  .ov-score { display: flex; align-items: center; gap: 16px; text-align: left; }
+  .ov-score .grade-ring { width: 96px; height: 96px; }
+  .ov-score .grade-ring svg { width: 96px; height: 96px; }
+  .ov-score .grade-ring-score { font-size: 24px; }
+  .ov-score .ov-grade-wrap, .ov-grade { margin-top: 0; }
+  .ov-grade-copy { margin: 2px 0 0; max-width: none; }
+  .ov-title { font-size: 24px; }
+  .ov-sub { margin-bottom: 12px; }
+  .ov-chips { margin-bottom: 14px; gap: 8px; }
+  .ov-chip { flex: 1 1 auto; justify-content: center; min-height: 44px; }
+  .ov-cta { width: 100%; justify-content: center; }
+  .ov-status { padding: 6px 4px 4px; }
+  .ov-item { padding: 12px 8px; gap: 12px; }
+  .ov-section-head { margin: 22px 0 10px; }
+  .glance-grid, .ov-glance { grid-template-columns: repeat(2, minmax(0, 1fr)) !important; gap: 10px; }
+  .glance-card { padding: 14px; }
+  .glance-value { font-size: 22px; }
+  .npk-card { padding: 16px; margin-top: 12px; }
+  .npk-row { grid-template-columns: 64px 1fr 64px; gap: 10px; margin-bottom: 12px; }
+  .ov-device { margin-top: 12px; }
+
+  /* kill leftover min-heights that created empty gaps */
+  .hero-card, .empty-state { min-height: 0 !important; }
+  .empty-state { padding: 28px 18px; }
+
+  /* bottom tab bar */
+  .tabbar {
+    display: flex; position: fixed; left: 0; right: 0; bottom: 0; z-index: 80;
+    padding: 6px 6px calc(6px + env(safe-area-inset-bottom));
+    background: var(--nav-bg, var(--panel)); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid var(--border-soft);
+  }
+  .tabbar a, .tabbar button {
+    flex: 1; min-width: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 3px;
+    min-height: 52px; padding: 4px 2px; border: 0; background: transparent; cursor: pointer;
+    color: var(--text-muted); text-decoration: none; font: 500 10.5px var(--font-sans);
+    -webkit-tap-highlight-color: transparent;
+  }
+  .tabbar .active { color: var(--accent-strong); }
+  .tabbar-main i { display: flex; align-items: center; justify-content: center; width: 44px; height: 44px; margin-top: -20px; border-radius: 50%; background: var(--green); color: #0e1410; font-style: normal; box-shadow: 0 6px 18px rgba(76,175,111,.45); }
+  .tabbar-main span { margin-top: -1px; }
+  .tabbar-main.active { color: var(--accent-strong); }
+  /* nothing floats over the tab bar */
+  .sx-toolbar { top: 48px; }
+  .fab { display: none !important; }
+}
+
+@media (max-width: 420px) {
+  .ov-hero { padding: 16px; }
+  .glance-value { font-size: 20px; }
+  .glance-copy { display: none; }
+}
+@media (min-width: 901px) { .tabbar { display: none !important; } }
+
+/* ---------- fixes found while testing ---------- */
+.grade-ring svg { overflow: visible; }
+/* mobile.css grows the tap area of every `.page li a`; keep our flex rows intact */
+.page .ov-item { display: flex; margin: 0; padding: 14px 10px; }
+.page .ov-all  { display: flex; margin: 0; }
+.npk-value { white-space: nowrap; }
+
+@media (max-width: 900px) {
+  body .topbar { padding: 10px 16px !important; min-height: 48px !important; }
+  .page .ov-item { padding: 12px 8px; }
+
+  /* score sits top-right of the hero instead of stacking above the greeting */
+  .ov-hero { position: relative; flex-direction: column; align-items: stretch; gap: 0; padding: 18px; }
+  .ov-score { position: absolute; top: 16px; right: 16px; display: block; text-align: center; width: 84px; }
+  .ov-score .grade-ring { width: 84px; height: 84px; }
+  .ov-score .grade-ring svg { width: 84px; height: 84px; }
+  .ov-score .grade-ring-score { font-size: 22px; }
+  .ov-score .grade-ring-label { font-size: 10px; }
+  .ov-score .ov-grade { margin-top: 4px; font-size: 12.5px; }
+  .ov-grade-copy { display: none; }
+  .ov-eyebrow, .ov-title, .ov-sub { padding-right: 96px; }
+  .ov-sub { margin-bottom: 16px; font-size: 12.5px; }
+  .ov-hero-empty .ov-eyebrow, .ov-hero-empty .ov-title, .ov-hero-empty .ov-sub { padding-right: 0; }
+  .npk-row { grid-template-columns: 78px 1fr 78px; gap: 8px; }
+  .npk-name, .npk-value { font-size: 12.5px; }
+}
+@media (max-width: 900px) { .ov-hero:not(.ov-hero-empty) .ov-sub { margin-bottom: 30px; } }
+.sx-row { scroll-margin-top: 120px; }

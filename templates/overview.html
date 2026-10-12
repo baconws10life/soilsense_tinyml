@@ -1,0 +1,183 @@
+{% extends "base.html" %}
+{% from '_icons.html' import icon, sensor_icon %}
+{% block title %}Overview{% endblock %}
+{% set active = 'overview' %}
+{% block topbar_left %}Overview{% endblock %}
+
+{% block content %}
+
+{% if record %}
+{# ───────── HERO: greeting + score + clickable status ───────── #}
+<section class="card ov-hero">
+  <div class="ov-hero-main">
+    <p class="ov-eyebrow">{{ greeting }}</p>
+    <h1 class="ov-title">{{ user|capitalize }}</h1>
+    <p class="ov-sub">Last reading <span class="mono">{{ last_scan or today }}</span></p>
+
+    <div class="ov-chips" role="tablist" aria-label="Reading status">
+      <button type="button" class="ov-chip warn" data-open="issues" role="tab" aria-controls="statusPanel" {% if not attention_count %}disabled{% endif %}>
+        {{ icon('alert',15) }} <b>{{ attention_count }}</b> need attention <span class="ov-chip-go">{{ icon('chevron-down',14) }}</span>
+      </button>
+      <button type="button" class="ov-chip ok" data-open="optimal" role="tab" aria-controls="statusPanel" {% if not optimal_count %}disabled{% endif %}>
+        {{ icon('check',15) }} <b>{{ optimal_count }}</b> optimal <span class="ov-chip-go">{{ icon('chevron-down',14) }}</span>
+      </button>
+    </div>
+
+    <a href="{{ url_for('dashboard') }}" class="btn btn-primary ov-cta">{{ icon('flask',16) }} Analyze soil</a>
+  </div>
+
+  <div class="ov-score">
+    <div class="grade-ring">
+      <div data-ring data-percent="{{ record.fertility }}" data-size="132" data-stroke="10"></div>
+      <div class="grade-ring-center">
+        <div class="grade-ring-score">{{ record.fertility|round(0,'floor')|int }}</div>
+        <div class="grade-ring-label">/100</div>
+      </div>
+    </div>
+    <div class="ov-grade-wrap">
+      <div class="ov-grade">Grade {{ grade }}</div>
+      <div class="ov-grade-copy">{{ grade_copy }}</div>
+    </div>
+  </div>
+</section>
+
+{# ───────── WHAT'S WRONG / WHAT'S GOOD (opens from the chips above) ───────── #}
+<section class="card ov-status" id="statusPanel" hidden>
+  <div class="ov-status-head">
+    <div class="ov-tabs">
+      <button type="button" class="ov-tab" data-tab="issues">Needs attention <span>{{ attention_count }}</span></button>
+      <button type="button" class="ov-tab" data-tab="optimal">Optimal <span>{{ optimal_count }}</span></button>
+    </div>
+    <button type="button" class="ov-close" id="statusClose" aria-label="Close">{{ icon('x',18) }}</button>
+  </div>
+
+  <ul class="ov-list" data-pane="issues" hidden>
+    {% for r in issues %}
+    <li>
+      <a class="ov-item" href="{{ url_for('sensors') }}?filter=issues#reading-{{ r.key }}">
+        <span class="ov-item-icon {{ r.status }}">{{ sensor_icon(r.key, 20) }}</span>
+        <span class="ov-item-body">
+          <span class="ov-item-top">
+            <b>{{ r.label }}</b>
+            <span class="badge badge-{{ r.status }}">{{ 'Monitor' if r.status == 'watch' else r.status|capitalize }}</span>
+          </span>
+          <span class="ov-item-issue">{{ r.value }} {{ r.unit }} &middot; {{ r.gap }}</span>
+          <span class="ov-item-fix"><b>Fix:</b> {{ r.action }}</span>
+        </span>
+        <span class="ov-item-go">{{ icon('chevron-right',18) }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <ul class="ov-list" data-pane="optimal" hidden>
+    {% for r in optimal %}
+    <li>
+      <a class="ov-item" href="{{ url_for('sensors') }}?filter=optimal#reading-{{ r.key }}">
+        <span class="ov-item-icon optimal">{{ sensor_icon(r.key, 20) }}</span>
+        <span class="ov-item-body">
+          <span class="ov-item-top"><b>{{ r.label }}</b><span class="badge badge-optimal">Optimal</span></span>
+          <span class="ov-item-issue">{{ r.value }} {{ r.unit }} &middot; inside {{ r.optimal_min }}&ndash;{{ r.optimal_max }} {{ r.unit }}</span>
+          <span class="ov-item-fix">{{ r['copy'] }}</span>
+        </span>
+        <span class="ov-item-go">{{ icon('chevron-right',18) }}</span>
+      </a>
+    </li>
+    {% endfor %}
+  </ul>
+
+  <a href="{{ url_for('sensors') }}" class="ov-all">See every reading on Sensors {{ icon('chevron-right',15) }}</a>
+</section>
+
+{# ───────── KEY READINGS ───────── #}
+<div class="ov-section-head"><h2>Key readings</h2><a href="{{ url_for('sensors') }}">View all</a></div>
+<div class="glance-grid ov-glance">
+  {% for r in glance %}
+  <a class="glance-card ov-glance-card" href="{{ url_for('sensors') }}#reading-{{ r.key }}">
+    <div class="glance-top">
+      <span class="glance-icon">{{ sensor_icon(r.key, 20) }}</span>
+      <span class="badge badge-{{ r.status }}">{{ 'Monitor' if r.status == 'watch' else r.status|capitalize }}</span>
+    </div>
+    <div class="glance-value">{{ r.value }}<span class="unit">{{ r.unit }}</span></div>
+    <div class="glance-label">{{ r.label }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+{# ───────── NPK ───────── #}
+<div class="npk-card">
+  <div class="npk-head">
+    <h3>NPK nutrients</h3>
+    <span class="hint">Shaded band = optimal (mg/kg)</span>
+  </div>
+  {% for r in npk_readings %}
+  <a class="npk-row" href="{{ url_for('sensors') }}#reading-{{ r.key }}">
+    <div class="npk-name">{{ r.label }}</div>
+    <div class="npk-track">
+      <div class="npk-optimal" style="left: {{ (r.optimal_min/r.scale_max*100)|round(1) }}%; width: {{ ((r.optimal_max-r.optimal_min)/r.scale_max*100)|round(1) }}%;"></div>
+      <div class="npk-fill {{ r.status }}" style="width: {{ r.percent }}%;"></div>
+    </div>
+    <div class="npk-value">{{ r.value }} {{ r.unit }}</div>
+  </a>
+  {% endfor %}
+</div>
+
+{# ───────── DEVICE (one slim line) ───────── #}
+<a href="{{ url_for('pair') }}" class="ov-device {{ 'on' if device_status.connected else 'off' }}">
+  <span class="ov-device-icon">{{ icon('cpu', 18) }}</span>
+  <span class="ov-device-text">
+    {% if device_status.connected %}
+      <b>Scanner connected</b>
+      <small>{% if device_status.last_scan %}Last scan {{ device_status.last_scan }} UTC{% else %}Press Scan now on the device{% endif %}</small>
+    {% else %}
+      <b>No scanner linked</b>
+      <small>Link one to receive readings automatically</small>
+    {% endif %}
+  </span>
+  <span class="ov-item-go">{{ icon('chevron-right',18) }}</span>
+</a>
+
+{% else %}
+<section class="card ov-hero ov-hero-empty">
+  <div class="ov-hero-main">
+    <p class="ov-eyebrow">{{ greeting }}</p>
+    <h1 class="ov-title">{{ user|capitalize }}</h1>
+    <p class="ov-sub">Add your first soil reading to see your health score, sensor breakdown and crop picks.</p>
+    <div class="ov-cta-row">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-primary">{{ icon('flask',16) }} Analyze soil</a>
+      <a href="{{ url_for('pair') }}" class="btn btn-ghost">{{ icon('cpu',16) }} Link scanner</a>
+    </div>
+  </div>
+</section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+(function () {
+  var panel = document.getElementById('statusPanel');
+  if (!panel) return;
+  var tabs  = panel.querySelectorAll('.ov-tab');
+  var panes = panel.querySelectorAll('[data-pane]');
+  var chips = document.querySelectorAll('.ov-chip');
+  function show(which) {
+    panel.hidden = false;
+    tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.tab === which); });
+    panes.forEach(function (p) { p.hidden = p.dataset.pane !== which; });
+    chips.forEach(function (c) { c.classList.toggle('open', c.dataset.open === which); });
+  }
+  function hide() { panel.hidden = true; chips.forEach(function (c) { c.classList.remove('open'); }); }
+  chips.forEach(function (c) {
+    c.addEventListener('click', function () {
+      var same = !panel.hidden && c.classList.contains('open');
+      if (same) { hide(); return; }
+      show(c.dataset.open);
+      panel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    });
+  });
+  tabs.forEach(function (t) { t.addEventListener('click', function () { show(t.dataset.tab); }); });
+  document.getElementById('statusClose').addEventListener('click', hide);
+  if (location.hash === '#issues') show('issues');
+})();
+</script>
+{% endblock %}

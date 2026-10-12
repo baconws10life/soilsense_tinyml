@@ -1,0 +1,366 @@
+/* ==========================================================================
+   SoilSense — mobile layer
+   Loaded LAST on every page (base.html + each standalone template), so it
+   only needs to override. Desktop (>900px) is untouched.
+
+   What this does on phones:
+   · no sideways scroll, ever (and the real causes of it are fixed below)
+   · inputs are 16px so iOS Safari doesn't zoom the page when you tap one
+   · every tappable thing is >= 44px, the size Apple/Google recommend
+   · Soil Analysis stacks to one column and shows the result first
+   · history + wide tables become cards / scroll inside their own box
+   · safe-area insets so nothing hides behind the notch or home bar
+   ========================================================================== */
+
+/* ---------- always-on safety nets (all sizes) ---------- */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { overflow-x: hidden; overflow-x: clip; }
+img, svg, canvas, video { max-width: 100%; }
+a, button, input, select, textarea, label, summary, [role="button"] { touch-action: manipulation; }
+@media (hover: none) { * { -webkit-tap-highlight-color: rgba(76, 175, 111, .18); } }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; scroll-behavior: auto !important; }
+}
+
+.sb-burger { transition: transform .22s ease, opacity .22s ease; }
+.sb-burger.away { transform: translateY(-90px); opacity: 0; pointer-events: none; }
+
+/* ==========================================================================
+   TABLET / PHONE  (<= 900px)
+   ========================================================================== */
+@media (max-width: 900px) {
+
+  /* ---- forms: 16px stops iOS zoom, 46px is a comfortable thumb target ---- */
+  input:not([type="checkbox"]):not([type="radio"]):not([type="file"]):not([type="range"]):not([type="hidden"]),
+  select, textarea {
+    font-size: 16px !important;
+    min-height: 46px;
+  }
+  textarea { min-height: 96px; }
+  .file-label { min-height: 46px; font-size: 14px; }
+
+  /* ---- buttons / tappables ---- */
+  button, .btn, .btn-primary, .btn-analyze, .btn-login, .btn-register, .del-btn, .sort-pill, .logout-link,
+  .suggest-chip, .icon-btn { min-height: 44px; }
+  .btn-analyze, .btn-login, .btn-register { font-size: 15px; }
+  .sort-pill { padding: 10px 15px; font-size: 13.5px; }
+  .del-btn { padding: 8px 14px; }
+  .icon-btn { min-width: 44px; }
+  .accordion-head { min-height: 56px; }
+  .toggle-pill { min-height: 44px; }
+  /* enlarge hit area of small switches without changing how they look */
+  .toggle-switch::before, .toggle::after { content: ""; position: absolute; inset: -12px -8px; }
+
+  /* ---- main drawer: compact so every link is reachable on a short screen ---- */
+  .app-sidebar .sb-section { padding: 12px 12px 2px; }
+  .app-sidebar .sb-label { margin-bottom: 4px; }
+  .app-sidebar .sb-item { padding: 11px 12px; min-height: 44px; margin-bottom: 2px; }
+  .app-sidebar .sb-logo-text small { white-space: nowrap; letter-spacing: .06em; }
+  .app-sidebar .sb-footer { padding: 12px 14px 4px; }
+  .app-sidebar .sb-user { margin-bottom: 10px; }
+  .app-sidebar .sb-actions .sb-btn { margin-bottom: 6px; }
+
+  /* ---- page chrome (pages using base.html) ---- */
+  .page { padding-left: 16px; padding-right: 16px; padding-bottom: calc(48px + env(safe-area-inset-bottom)); }
+  .topbar { gap: 8px; }
+  .topbar-left { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .topbar-right { flex-shrink: 0; }
+  .hero-card { padding: 24px 20px; min-height: 0; }
+  .hero-actions, .hero-card .btn { width: 100%; }
+
+  /* ---- overview / sensors / crops ---- */
+  .glance-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+  .stat-grid { grid-template-columns: minmax(0, 1fr); }
+  .sensor-stats { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 8px; }
+  .sensor-value .num { font-size: 21px; }
+  .sensor-bar-marker { height: 22px; width: 4px; }   /* easier to see on a small screen */
+  .crop-card { padding: 16px; gap: 14px; }
+  .crop-desc { max-width: none; }
+  .crop-checks { gap: 8px 14px; }
+  .match-ring { width: 60px; height: 60px; }
+
+  /* ---- AI assistant ---- */
+  .chat-head { flex-wrap: wrap; gap: 10px; padding: 14px 16px; }
+  .chip-row {
+    flex-wrap: nowrap; overflow-x: auto; padding: 12px 16px 4px;
+    scrollbar-width: none; -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+  }
+  .chip-row::-webkit-scrollbar { display: none; }
+  .suggest-chip { flex: 0 0 auto; padding: 10px 16px; font-size: 13.5px; scroll-snap-align: start; }
+  .chat-log { padding: 16px; min-height: 200px; max-height: calc(100vh - 430px); max-height: calc(100dvh - 430px); }
+  .msg { max-width: 94%; gap: 8px; }
+  .msg-bubble { font-size: 14.5px; overflow-wrap: anywhere; }
+  .chat-input-row { padding: 12px 14px calc(12px + env(safe-area-inset-bottom)); gap: 8px; }
+  .chat-input { min-width: 0; }
+  .chat-input-row .btn { padding-left: 18px; padding-right: 18px; }
+
+  /* ---- learning accordions ---- */
+  .accordion-inner { padding: 0 16px 20px; font-size: 14.5px; }
+
+  /* ---- Soil Analysis (dashboard.html) ---------------------------------- */
+  .main-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
+  .mid-col { display: contents !important; }                  /* let chart + fertility reorder with the other panels */
+  .main-grid > .p-form,
+  .main-grid .p-result,
+  .main-grid .p-fert,
+  .main-grid .p-chart { min-width: 0; }
+  .p-form   { order: 1; }
+  .p-result { order: 2; }
+  .p-fert   { order: 3; }
+  .p-chart  { order: 4; }
+  /* after you press Analyze, show the answer first — not 900px of form */
+  .main-grid.has-result .p-result { order: 1; }
+  .main-grid.has-result .p-fert   { order: 2; }
+  .main-grid.has-result .p-form   { order: 3; }
+  .main-grid.has-result .p-chart  { order: 4; }
+  .panel-header { padding: 12px 16px; }
+  .panel-header > span:empty { display: none; }
+  .panel-body { padding: 16px; }
+  .page-title { font-size: 22px; }
+  .chart-wrap { height: 230px; }
+  .form-group { margin-bottom: 14px; }
+  .form-label { font-size: 10.5px; }
+  .input-error { font-size: 11px; }
+  .result-desc { font-size: 14px; }
+  .crop-img-wrap { aspect-ratio: 16 / 10; }
+
+  /* ---- generic tables: scroll inside their own box ---- */
+  .table-scroll, .history-wrap { overflow-x: auto; -webkit-overflow-scrolling: touch; }
+}
+
+/* ==========================================================================
+   PHONE  (<= 700px): analysis history becomes a stack of cards
+   ========================================================================== */
+@media (max-width: 700px) {
+  .history-header { padding: 14px 16px; }
+  .history-wrap { overflow: visible; }
+  .history-wrap .history-table,
+  .history-table, .history-table tbody, .history-table tr, .history-table td { display: block; width: 100%; }
+  .history-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .history-table tr {
+    display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px 10px;
+    padding: 16px; border-bottom: 1px solid var(--border);
+  }
+  .history-table tr:last-child { border-bottom: none; }
+  .history-table td,
+  .history-table td:last-child { padding: 0; border: 0; white-space: normal; font-size: 14px; min-width: 0; overflow-wrap: anywhere; }
+  .history-table tr:hover td { background: none; }
+  .history-table td::before {
+    content: attr(data-label); display: block; margin-bottom: 3px;
+    font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--muted);
+  }
+  /* card layout: crop + health on top, then date/user, then the 7 readings */
+  .history-table td[data-label="Crop"]   { order: 1; grid-column: span 2; font-family: 'Fraunces', serif; font-size: 18px; }
+  .history-table td[data-label="Health"] { order: 2; text-align: right; font-weight: 700; }
+  .history-table td[data-label="Health"]::before { text-align: right; }
+  .history-table td[data-label="Date"]   { order: 3; grid-column: 1 / -1; }
+  .history-table td[data-label="User"]   { order: 4; grid-column: 1 / -1; }
+  .history-table td[data-label="N"]        { order: 5; }
+  .history-table td[data-label="P"]        { order: 6; }
+  .history-table td[data-label="K"]        { order: 7; }
+  .history-table td[data-label="pH"]       { order: 8; }
+  .history-table td[data-label="Temp"]     { order: 9; }
+  .history-table td[data-label="Humidity"] { order: 10; }
+  .history-table td[data-label="Rainfall"] { order: 11; }
+  .history-table td[data-label="Source"]   { order: 12; grid-column: span 2; }
+  .history-table td.act-cell { order: 13; grid-column: 1 / -1; }
+  .history-table td.act-cell .del-btn { width: 100%; }
+  .history-table td[data-label="Crop"]::before,
+  .history-table td[data-label="Date"]::before { display: none; }
+  .history-table .empty-row { display: block; padding: 0; }
+  .history-table .empty-row td { display: block; padding: 28px 16px; text-align: center; }
+  .history-table .empty-row td::before { display: none; }
+}
+
+/* ==========================================================================
+   ADMIN PANEL  (admin_dashboard.html has its own sidebar)
+   ========================================================================== */
+.adm-burger, .adm-close, .adm-overlay { display: none; }
+
+@media (max-width: 900px) {
+  .admin-page { display: block; }
+  .adm-burger {
+    display: flex; position: fixed; z-index: 110;
+    top: max(10px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left));
+    width: 44px; height: 44px; align-items: center; justify-content: center;
+    border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+    cursor: pointer; box-shadow: 0 2px 10px rgba(0, 0, 0, .25);
+  }
+  .adm-burger.hide { display: none; }
+  .adm-close {
+    display: flex; margin-left: auto; flex-shrink: 0; width: 44px; height: 44px; align-items: center; justify-content: center;
+    border-radius: 10px; border: 1px solid var(--border); background: transparent; color: var(--muted); cursor: pointer;
+  }
+  .adm-overlay { position: fixed; inset: 0; z-index: 90; background: rgba(0, 0, 0, .55); backdrop-filter: blur(2px); }
+  .adm-overlay.show { display: block; }
+  body.adm-lock { overflow: hidden; }
+
+  .admin-page .sidebar {
+    width: min(270px, 86vw); height: 100vh; height: 100dvh; min-height: 0; max-width: none;
+    overflow-y: auto; overscroll-behavior: contain; -webkit-overflow-scrolling: touch;
+    transform: translateX(-100%); visibility: hidden;
+    transition: transform .25s ease, visibility 0s linear .25s;
+    box-shadow: 30px 0 60px rgba(0, 0, 0, .35);
+    padding-bottom: max(24px, env(safe-area-inset-bottom));
+  }
+  .admin-page .sidebar.open { transform: none; visibility: visible; transition: transform .25s ease, visibility 0s; }
+  .admin-page .sidebar-logo { padding: max(18px, env(safe-area-inset-top)) 16px 16px 20px; }
+  .admin-page .nav-item, .admin-page .sidebar .nav-link-out { padding: 13px 12px; font-size: 15px; min-height: 46px; }
+  .admin-page .logout-btn { min-height: 46px; font-size: 14px; }
+
+  .admin-page .main { margin-left: 0; min-width: 0; width: 100%; }
+  .admin-page .topbar {
+    height: auto; min-height: 64px; gap: 10px;
+    padding: 8px 16px 8px calc(68px + env(safe-area-inset-left));
+    padding-top: max(8px, env(safe-area-inset-top));
+  }
+  .admin-page .topbar-title { font-size: 16px; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .admin-page .topbar-actions .btn-danger { display: none; }      /* Sign out lives in the drawer */
+  .admin-page .topbar-actions .btn { padding: 9px 14px; min-height: 40px; font-size: 12.5px; white-space: nowrap; }
+  .admin-page .content { padding: 18px 16px calc(40px + env(safe-area-inset-bottom)); }
+
+  .admin-page .stats-row { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-bottom: 20px; }
+  .admin-page .stat-card { padding: 16px; }
+  .admin-page .stat-value { font-size: 26px; }
+  .admin-page .stat-label { font-size: 9.5px; }
+  .admin-page .stat-icon { display: none; }
+  .admin-page .two-col { grid-template-columns: minmax(0, 1fr); gap: 16px; }
+  .admin-page .form-grid { grid-template-columns: minmax(0, 1fr); }
+  .admin-page .panel { min-width: 0; }
+  .admin-page .panel-header { padding: 14px 16px; flex-wrap: wrap; }
+  .admin-page .panel-body { padding: 16px; }
+  .admin-page .panel-header .form-input { width: 100% !important; flex: 1 1 100%; }
+  .admin-page .alert-banner { align-items: flex-start; padding: 12px 6px 12px 14px; gap: 10px; }
+  .admin-page .alert-banner > span:first-child { margin-top: 2px; }
+  .admin-page .alert-close { width: 44px; height: 44px; margin: -10px 0 -10px auto; align-items: center; justify-content: center; flex-shrink: 0; }
+  .admin-page .toggle-row { padding: 12px 14px; min-height: 48px; }
+  .admin-page .toggle { width: 44px; height: 26px; }
+  .admin-page .toggle-thumb { width: 20px; height: 20px; top: 3px; left: 3px; }
+  .admin-page .toggle input:checked ~ .toggle-thumb { left: 21px; }
+  .admin-page .icon-btn { width: 44px; height: 44px; }
+
+  /* wide tables scroll inside their own box instead of widening the page */
+  .admin-page .data-table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
+  .admin-page .data-table th, .admin-page .data-table td { white-space: nowrap; }
+  .admin-page .panel-body[style*="overflow-x"] { -webkit-overflow-scrolling: touch; }
+  .admin-page .chart-area { overflow-x: auto; gap: 6px; padding-bottom: 4px; -webkit-overflow-scrolling: touch; }
+  .admin-page .bar-wrap { min-width: 40px; }
+  .admin-page .log-item { gap: 10px; }
+}
+
+/* label inside the mobile delete button is hidden on desktop */
+.del-txt { display: none; }
+
+/* Admin tables rendered as cards on phones */
+@media (max-width: 700px) {
+  .admin-page .data-table.cards-sm,
+  .admin-page .data-table.cards-sm tbody,
+  .admin-page .data-table.cards-sm tr,
+  .admin-page .data-table.cards-sm td { display: block; width: 100%; overflow: visible; }
+  .admin-page .data-table.cards-sm thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .admin-page .data-table.cards-sm tr {
+    display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px 10px;
+    padding: 16px; border-bottom: 1px solid var(--border);
+  }
+  .admin-page .data-table.cards-sm tr:last-child { border-bottom: none; }
+  .admin-page .data-table.cards-sm tr:hover td { background: none; }
+  .admin-page .data-table.cards-sm td {
+    padding: 0 !important; border: 0; white-space: normal; min-width: 0; overflow-wrap: anywhere; font-size: 14px;
+  }
+  .admin-page .data-table.cards-sm td::before {
+    content: attr(data-label); display: block; margin-bottom: 3px;
+    font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted);
+  }
+  .admin-page .data-table.cards-sm td.td-user::before,
+  .admin-page .data-table.cards-sm td.td-crop::before,
+  .admin-page .data-table.cards-sm td.td-date::before { display: none; }
+
+  /* records card: user · crop+health · date · 4 readings · 3 readings + id · delete */
+  .admin-page .cards-sm td.td-user   { order: 1; grid-column: 1 / -1; }
+  .admin-page .cards-sm td.td-crop   { order: 2; grid-column: span 3; font-family: 'Fraunces', serif; font-size: 18px; color: var(--green); }
+  .admin-page .cards-sm td.td-health { order: 3; text-align: right; font-weight: 700; }
+  .admin-page .cards-sm td.td-health::before { text-align: right; }
+  .admin-page .cards-sm td.td-date   { order: 4; grid-column: 1 / -1; white-space: normal; }
+  .admin-page .cards-sm td[data-label="N"] { order: 5; }
+  .admin-page .cards-sm td[data-label="P"] { order: 6; }
+  .admin-page .cards-sm td[data-label="K"] { order: 7; }
+  .admin-page .cards-sm td[data-label="pH"] { order: 8; }
+  .admin-page .cards-sm td[data-label="Temp"] { order: 9; }
+  .admin-page .cards-sm td[data-label="Humidity"] { order: 10; }
+  .admin-page .cards-sm td[data-label="Rainfall"] { order: 11; }
+  .admin-page .cards-sm td.td-id { order: 12; }
+  .admin-page .cards-sm td.td-del { order: 13; grid-column: 1 / -1; }
+  .admin-page .cards-sm td.td-del .icon-btn { width: 100%; height: 46px; gap: 8px; font-size: 13px; color: var(--red); border-color: rgba(224, 92, 92, .35); }
+  .admin-page .cards-sm td.td-del .del-txt { display: inline; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+  .admin-page .cards-sm td.td-del form { margin: 0; }
+
+  /* users card: name · role + submissions · delete */
+  .admin-page .users-cards tr { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .admin-page .users-cards td.td-user { order: 1; grid-column: 1 / -1; }
+  .admin-page .users-cards td[data-label="Role"] { order: 2; }
+  .admin-page .users-cards td[data-label="Submissions"] { order: 3; }
+  .admin-page .users-cards td.td-del { order: 4; }
+
+  .admin-page .cards-sm .empty-row, .admin-page .cards-sm .empty-row td { display: block; }
+  .admin-page .cards-sm .empty-row td::before { display: none; }
+}
+
+/* ==========================================================================
+   LOGIN / REGISTER — body is a centred flex box with overflow:hidden, which
+   clips the form on short screens and when the keyboard opens.
+   ========================================================================== */
+@media (max-width: 900px) {
+  body:has(.login-wrap), body:has(.register-wrap), body:has(.reg-wrap) {
+    overflow-y: auto; min-height: 100vh; min-height: 100dvh;
+    align-items: safe center; justify-content: center;
+    padding-top: env(safe-area-inset-top); padding-bottom: env(safe-area-inset-bottom);
+  }
+  .login-wrap, .register-wrap, .reg-wrap { padding: 72px 16px 28px; }
+  .theme-toggle { width: 44px; height: 44px; top: max(12px, env(safe-area-inset-top)); right: max(12px, env(safe-area-inset-right)); }
+}
+
+/* ==========================================================================
+   SMALL PHONES (<= 400px)
+   ========================================================================== */
+@media (max-width: 400px) {
+  .glance-grid { grid-template-columns: minmax(0, 1fr); }
+  .admin-page .stat-value { font-size: 23px; }
+  .admin-page .topbar-actions .btn { padding: 9px 11px; }
+  .hero-card .hero-title { font-size: 1.55rem; }
+  .history-table td[data-label="Crop"] { font-size: 17px; }
+}
+
+/* ==========================================================================
+   SHORT LANDSCAPE PHONES — keep the drawer scrollable, don't let hero eat the screen
+   ========================================================================== */
+@media (max-height: 480px) and (orientation: landscape) {
+  .hero-card { min-height: 0; padding: 18px 20px; }
+  .chat-log { max-height: 55vh; }
+  body > .page { padding-top: 64px !important; }
+}
+
+/* inline text links in forms/footers: grow the tap area without changing the look */
+@media (max-width: 900px) {
+  .login-wrap a:not(.btn), .register-wrap a:not(.btn), .page p a, .page li a {
+    display: inline-block; padding: 14px 4px; margin: -14px -4px;
+  }
+}
+
+/* ---- Sensors page v2 on phones ---- */
+@media (max-width: 720px) {
+  .sx-overview { grid-template-columns: 1fr; gap: 16px; }
+  .sx-grade { justify-content: flex-start; }
+  .sx-toolbar { top: 48px; }
+  .sx-filters { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; padding-bottom: 4px; }
+  .sx-filter { white-space: nowrap; flex-shrink: 0; }
+  .sx-legend { display: none; }
+  .sx-row { padding: 14px 14px; }
+  .sx-row-top { gap: 10px; }
+  .sx-icon { width: 36px; height: 36px; }
+  .sx-value .num { font-size: 24px; }
+  .sx-bar-scale span:nth-child(2) { font-size: 10px; }
+  .sx-dl { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .sx-crop { align-items: flex-start; }
+}

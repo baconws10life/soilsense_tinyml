@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% from '_icons.html' import icon, crop_icon %}
+{% block title %}Crop Picks{% endblock %}
+{% set active = 'crops' %}
+{% block topbar_left %}Crop Picks{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Crop Recommendations</h1>
+<p class="page-subtitle">
+  {% if record %}
+    Based on your latest reading &middot; pH {{ record.ph }} &middot; {{ record.temp }}&deg;C &middot; {{ record.humidity }}% moisture
+  {% else %}
+    Log a soil reading to see personalized crop matches.
+  {% endif %}
+</p>
+
+{% if record %}
+<div class="summary-bar">
+  <div class="summary-stats">
+    <span class="summary-stat"><span class="dot-excellent"></span> {{ excellent }} Excellent match</span>
+    <span class="summary-stat"><span class="dot-good"></span> {{ good }} Good match</span>
+  </div>
+  <div>
+    <span style="font-size:12.5px; color:var(--text-muted); margin-right:8px;">Your soil is best suited for:</span>
+    <span class="summary-picks">{% for m in matches[:3] %}<span class="pick-chip">{{ crop_icon(m.category, 15) }} {{ m.label }}</span>{% endfor %}</span>
+  </div>
+</div>
+
+<form id="cropFilters">
+  <div class="filter-row">
+    {% for cat in categories %}
+    <button type="button" class="filter-pill {{ 'active' if cat == active_category else '' }}" data-category="{{ cat }}">{{ cat }}</button>
+    {% endfor %}
+  </div>
+  <div class="toolbar-row">
+    <button type="button" class="sort-pill {{ 'active' if sort_by == 'match' else '' }}" data-sort="match">Best Match</button>
+    <button type="button" class="sort-pill {{ 'active' if sort_by == 'name' else '' }}" data-sort="name">Name A-Z</button>
+    <button type="button" class="sort-pill {{ 'active' if sort_by == 'harvest' else '' }}" data-sort="harvest">Fastest Harvest</button>
+    <div class="toggle-pill" id="suitableToggle" data-on="{{ '1' if suitable_only else '0' }}">
+      <div class="toggle-switch {{ 'on' if suitable_only else '' }}"></div> Suitable only
+    </div>
+    <span class="count-tag">{{ matches|length }} crops</span>
+  </div>
+</form>
+
+{% if matches %}
+  {% for m in matches %}
+  <div class="crop-card">
+    <div class="crop-emoji">{{ crop_icon(m.category, 26) }}</div>
+    <div class="crop-body">
+      <div class="crop-title-row">
+        <span class="crop-name">{{ m.label }}</span>
+        <span class="tier-badge tier-{{ m.tier }}">{{ m.tier }}</span>
+        <span class="harvest-tag">{{ m.harvest }}</span>
+      </div>
+      <p class="crop-desc">{{ m.desc }}</p>
+      <div class="crop-checks">
+        {% for name, passed in m.checks.items() %}
+        <span class="crop-check {{ 'pass' if passed else '' }}"><span class="mark">{% if passed %}{{ icon('check',12) }}{% else %}·{% endif %}</span> {{ name }}</span>
+        {% endfor %}
+      </div>
+    </div>
+    <div class="match-ring">
+      <div data-ring data-percent="{{ m.match }}" data-size="68" data-stroke="6"></div>
+      <div class="match-ring-label">{{ m.match }}</div>
+    </div>
+  </div>
+  {% endfor %}
+{% else %}
+  <div class="empty-state">
+    <span class="emoji">{{ icon('search',28) }}</span>
+    <h3>No crops match these filters</h3>
+    <p>Try a different category, or switch off "Suitable only".</p>
+  </div>
+{% endif %}
+
+{% else %}
+<div class="empty-state">
+  <span class="emoji">{{ icon('sprout',28) }}</span>
+  <h3>No readings yet</h3>
+  <p>Log a soil reading to unlock personalized crop recommendations.</p>
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="margin-top:16px;">+ Add a reading</a>
+</div>
+{% endif %}
+{% endblock %}

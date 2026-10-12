@@ -1,0 +1,803 @@
+{% from '_icons.html' import icon %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1410">
+<title>Admin Panel · SoilSense</title>
+<link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+:root {
+  --bg:         #0e1410;
+  --surface:    #141c16;
+  --surface2:   #1a241d;
+  --border:     #253028;
+  --green:      #4caf6f;
+  --green-dim:  #2d7a4a;
+  --green-glow: rgba(76,175,111,0.15);
+  --amber:      #e8b84b;
+  --red:        #e05c5c;
+  --blue:       #5c9ee0;
+  --text:       #d4e8da;
+  --muted:      #6b8a72;
+  --heading:    #f0f7f2;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden}
+.sidebar{width:240px;min-height:100vh;background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;position:fixed;top:0;left:0;z-index:100;padding:0 0 24px}
+.sidebar-logo{padding:28px 24px 24px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px}
+.sidebar-logo .leaf{font-size:22px;filter:drop-shadow(0 0 6px var(--green))}
+.sidebar-logo span{font-family:'Fraunces',serif;font-size:17px;font-weight:600;color:var(--heading);line-height:1.1}
+.sidebar-logo small{display:block;font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.12em;color:var(--green);text-transform:uppercase;margin-top:2px}
+.nav-section{padding:20px 14px 6px}
+.nav-label{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:.15em;text-transform:uppercase;color:var(--muted);padding:0 10px;margin-bottom:6px}
+.nav-item{display:flex;align-items:center;gap:10px;padding:9px 10px;border-radius:8px;cursor:pointer;font-size:13.5px;font-weight:500;color:var(--muted);transition:background .15s,color .15s;text-decoration:none;margin-bottom:2px;border:1px solid transparent}
+.nav-item:hover{background:var(--border);color:var(--text)}
+.nav-item.active{background:var(--green-glow);color:var(--green);border-color:rgba(76,175,111,.2)}
+.nav-item .icon{display:flex;align-items:center;justify-content:center;width:20px}
+.nav-badge{margin-left:auto;background:var(--green);color:#0e1410;font-family:'DM Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px}
+.sidebar-footer{margin-top:auto;padding:16px 24px 0;border-top:1px solid var(--border)}
+.admin-badge{display:flex;align-items:center;gap:10px}
+.admin-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--green-dim),var(--green));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
+.admin-info{flex:1;min-width:0}
+.admin-name{font-size:13px;font-weight:600;color:var(--heading);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.admin-role{font-family:'DM Mono',monospace;font-size:10px;color:var(--green)}
+.logout-btn{display:flex;align-items:center;justify-content:center;gap:8px;margin-top:10px;width:100%;padding:8px;border-radius:7px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:12px;cursor:pointer;transition:all .15s;font-family:'DM Sans',sans-serif}
+.logout-btn:hover{border-color:var(--red);color:var(--red)}
+.main{margin-left:240px;flex:1;display:flex;flex-direction:column;min-height:100vh;animation:fadeIn .35s ease}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+.topbar{height:60px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 32px;background:var(--surface);position:sticky;top:0;z-index:50}
+.topbar-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--heading)}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.btn{gap:7px;padding:7px 16px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-flex;align-items:center}
+.btn-primary{background:var(--green);color:#0e1410}
+.btn-primary:hover{background:#5bc87e}
+.btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
+.btn-ghost:hover{border-color:var(--green);color:var(--green)}
+.btn-danger{background:transparent;border:1px solid rgba(224,92,92,.4);color:var(--red)}
+.btn-danger:hover{background:rgba(224,92,92,.1)}
+.btn-sm{padding:5px 11px;font-size:12px}
+.content{padding:28px 32px;flex:1}
+.stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-bottom:28px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:20px 22px;position:relative;overflow:hidden;transition:border-color .2s;animation:slideUp .4s ease both}
+.stat-card:nth-child(1){animation-delay:.05s}
+.stat-card:nth-child(2){animation-delay:.10s}
+.stat-card:nth-child(3){animation-delay:.15s}
+.stat-card:nth-child(4){animation-delay:.20s}
+@keyframes slideUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+.stat-card:hover{border-color:var(--green-dim)}
+.stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;border-radius:12px 12px 0 0}
+.stat-card.green::before{background:var(--green)}
+.stat-card.amber::before{background:var(--amber)}
+.stat-card.blue::before{background:var(--blue)}
+.stat-card.red::before{background:var(--red)}
+.stat-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:10px}
+.stat-value{font-family:'Fraunces',serif;font-size:32px;font-weight:700;color:var(--heading);line-height:1;margin-bottom:6px}
+.stat-sub{font-size:12px;color:var(--muted)}
+.stat-icon{position:absolute;right:18px;top:18px;font-size:24px;opacity:.15}
+.two-col{display:grid;grid-template-columns:1fr 360px;gap:20px;margin-bottom:20px}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:12px;overflow:hidden;margin-bottom:20px}
+.panel:last-child{margin-bottom:0}
+.panel-header{padding:16px 22px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;gap:12px}
+.panel-title{font-family:'Fraunces',serif;font-size:15px;font-weight:600;color:var(--heading);display:flex;align-items:center;gap:9px}
+.panel-title .ico{color:var(--green)}
+.ico{flex-shrink:0;display:block}
+.panel-body{padding:20px 22px}
+.data-table{width:100%;border-collapse:collapse}
+.data-table th{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
+.data-table td{padding:11px 12px;font-size:13px;border-bottom:1px solid rgba(37,48,40,.5);vertical-align:middle}
+.data-table tr:last-child td{border-bottom:none}
+.data-table tr:hover td{background:rgba(255,255,255,.02)}
+.th-l,.td-l{padding-left:22px!important}
+.role-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500}
+.role-pill.admin{background:rgba(76,175,111,.15);color:var(--green);border:1px solid rgba(76,175,111,.25)}
+.role-pill.student{background:rgba(92,158,224,.12);color:var(--blue);border:1px solid rgba(92,158,224,.2)}
+.user-cell{display:flex;align-items:center;gap:9px}
+.avatar-sm{width:28px;height:28px;border-radius:50%;background:linear-gradient(135deg,var(--green-dim),var(--green));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:12px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
+.icon-btn{width:28px;height:28px;border-radius:6px;border:1px solid var(--border);background:transparent;color:var(--muted);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.icon-btn.del:hover{border-color:var(--red);color:var(--red);background:rgba(224,92,92,.08)}
+.form-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+.form-group{display:flex;flex-direction:column;gap:6px}
+.form-group.full{grid-column:1/-1}
+.form-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.form-input,.form-select,.form-textarea{background:var(--surface2);border:1px solid var(--border);border-radius:7px;padding:9px 12px;font-size:13px;color:var(--text);font-family:'DM Sans',sans-serif;outline:none;transition:border-color .15s;width:100%}
+.form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--green)}
+.form-select option{background:var(--surface2)}
+.form-textarea{resize:vertical;min-height:70px}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;border-radius:8px;border:1px solid var(--border);background:var(--surface2);margin-bottom:8px;transition:border-color .15s}
+.toggle-row:hover{border-color:var(--green-dim)}
+.toggle-label{font-size:13px;font-weight:500;color:var(--heading)}
+.toggle{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0}
+.toggle input{opacity:0;width:0;height:0;position:absolute}
+.toggle-track{position:absolute;inset:0;background:var(--border);border-radius:20px;transition:background .2s}
+.toggle input:checked+.toggle-track{background:var(--green)}
+.toggle-thumb{position:absolute;width:14px;height:14px;background:#fff;border-radius:50%;top:3px;left:3px;transition:left .2s;pointer-events:none}
+.toggle input:checked~.toggle-thumb{left:19px}
+.chart-area{width:100%;height:180px;display:flex;align-items:flex-end;gap:8px;padding:0 4px}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:6px;min-width:0}
+.bar{width:100%;border-radius:5px 5px 0 0;background:linear-gradient(180deg,var(--green) 0%,var(--green-dim) 100%);min-height:4px;cursor:pointer;position:relative;transition:opacity .2s}
+.bar:hover{opacity:.75}
+.bar-tip{display:none;position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:10px;white-space:nowrap;color:var(--text);z-index:10}
+.bar:hover .bar-tip{display:block}
+.bar-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-align:center;word-break:break-all;overflow:hidden;max-width:100%}
+.log-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid rgba(37,48,40,.5)}
+.log-item:last-child{border-bottom:none}
+.log-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
+.log-dot.green{background:var(--green)}
+.log-dot.amber{background:var(--amber)}
+.log-dot.blue{background:var(--blue)}
+.log-text{font-size:12.5px;line-height:1.4;flex:1}
+.log-time{font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);white-space:nowrap}
+.alert-banner{display:flex;align-items:center;gap:12px;padding:12px 18px;border-radius:10px;background:rgba(232,184,75,.08);border:1px solid rgba(232,184,75,.25);margin-bottom:20px;font-size:13px}
+.alert-close{display:flex;margin-left:auto;cursor:pointer;opacity:.5;font-size:16px;background:none;border:none;color:var(--text)}
+.alert-close:hover{opacity:1}
+.tab-pane{display:none}
+.tab-pane.active{display:block}
+.note{font-size:11px;color:var(--muted);margin-top:10px;line-height:1.5}
+code{color:var(--green);font-family:'DM Mono',monospace}
+::-webkit-scrollbar{width:6px}
+::-webkit-scrollbar-track{background:var(--bg)}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:6px}
+
+
+/* ── additions ── */
+.nav-item { cursor:pointer; }
+.sidebar .nav-link-out { display:flex; align-items:center; gap:10px; padding:9px 10px; margin-bottom:2px; border-radius:8px; border:1px solid transparent; color:var(--muted); font-size:13.5px; font-weight:500; text-decoration:none; }
+.sidebar .nav-link-out:hover { color:var(--green); background:var(--green-glow); }
+.td-date { color:var(--muted); font-family:'DM Mono',monospace; font-size:11px; white-space:nowrap; }
+
+
+/* ── admin: accounts list, role filter, dialog ── */
+.seg{display:flex;gap:6px;padding:0 22px 14px;border-bottom:1px solid var(--border);flex-wrap:wrap}
+.seg-btn{border:1px solid var(--border);background:transparent;color:var(--muted);font:500 13px 'DM Sans',sans-serif;padding:7px 14px;border-radius:20px;cursor:pointer}
+.seg-btn span{font-family:'DM Mono',monospace;font-size:11px;margin-left:4px;opacity:.85}
+.seg-btn.active{background:var(--green-glow);border-color:rgba(76,175,111,.4);color:var(--green)}
+.ulist{list-style:none}
+.urow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 22px;border-bottom:1px solid rgba(37,48,40,.5);flex-wrap:wrap}
+.urow:last-child{border-bottom:none}
+.urow[hidden]{display:none}
+.urow-main{display:flex;align-items:center;gap:12px;min-width:0}
+.urow-main .avatar-sm{width:36px;height:36px;font-size:14px}
+.urow-name{font-weight:600;font-size:14px;color:var(--heading);overflow-wrap:anywhere}
+.urow-meta{display:flex;align-items:center;gap:10px;margin-top:3px}
+.urow-count{font-size:12px;color:var(--muted)}
+.urow-actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.urow-actions form{margin:0}
+.act-btn{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--border);background:transparent;color:var(--text);font:500 12.5px 'DM Sans',sans-serif;padding:7px 11px;border-radius:8px;cursor:pointer;transition:all .15s}
+.act-btn:hover{border-color:var(--green);color:var(--green);background:var(--green-glow)}
+.act-btn.danger{color:var(--red);border-color:rgba(224,92,92,.35)}
+.act-btn.danger:hover{background:rgba(224,92,92,.08);border-color:var(--red);color:var(--red)}
+.you-tag,.prot-tag{display:inline-flex;align-items:center;gap:5px;font-family:'DM Mono',monospace;font-size:10.5px;color:var(--muted);border:1px solid var(--border);border-radius:20px;padding:2px 9px}
+.you-tag{margin-left:6px}
+.sx-empty-adm{padding:22px;text-align:center;color:var(--muted);font-size:13px}
+.alert-banner.flash-ok{border-color:rgba(76,175,111,.35);background:rgba(76,175,111,.08)}
+.alert-banner.flash-err{border-color:rgba(224,92,92,.4);background:rgba(224,92,92,.08)}
+.dlg{border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);padding:22px;width:min(380px,92vw);margin:auto}
+.dlg::backdrop{background:rgba(0,0,0,.6)}
+.dlg h3{color:var(--heading);font-family:'Fraunces',serif;font-size:18px}
+.dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
+@media (max-width:900px){
+  .seg{padding:0 16px 12px;overflow-x:auto;flex-wrap:nowrap}
+  .seg-btn{flex-shrink:0;min-height:40px}
+  .urow{padding:14px 16px;align-items:stretch;flex-direction:column;gap:12px}
+  .urow-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+  .urow-actions .act-btn{width:100%;justify-content:center;min-height:44px}
+  .urow-actions form{display:contents}
+  .urow-actions .prot-tag{grid-column:1/-1;justify-content:center;padding:10px}
+}
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body class="admin-page">
+
+<button class="adm-burger" type="button" id="admBurger" aria-label="Open menu" aria-controls="admSidebar" aria-expanded="false">{{ icon('menu', 20) }}</button>
+<div class="adm-overlay" id="admOverlay"></div>
+
+<!-- ═══ SIDEBAR ═══ -->
+<aside class="sidebar" id="admSidebar" aria-label="Admin navigation">
+  <div class="sidebar-logo">
+    <img src="{{ url_for('static', filename='images/ffhnas.jpg') }}"
+         alt="SoilSense logo"
+         style="width:36px;height:36px;border-radius:8px;object-fit:cover;flex-shrink:0;
+                
+                box-shadow:0 0 8px rgba(3, 3, 3, 0.2);"/>
+    <div>
+      <span>SoilSense</span>
+      <small>Admin Panel</small>
+    </div>
+    <button class="adm-close" type="button" id="admClose" aria-label="Close menu">{{ icon('x', 20) }}</button>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Overview</div>
+    <a class="nav-item active" onclick="switchTab('overview',this)">
+      <span class="icon">{{ icon('dashboard',18) }}</span> Dashboard
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">Management</div>
+    <a class="nav-item" onclick="switchTab('users',this)">
+      <span class="icon">{{ icon('users',18) }}</span> Users
+      <span class="nav-badge">{{ total_users }}</span>
+    </a>
+    <a class="nav-item" onclick="switchTab('crops',this)">
+      <span class="icon">{{ icon('sprout',18) }}</span> Crop Config
+    </a>
+    <a class="nav-item" onclick="switchTab('records',this)">
+      <span class="icon">{{ icon('clipboard',18) }}</span> All Records
+      <span class="nav-badge">{{ total_records }}</span>
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">System</div>
+    <a class="nav-item" onclick="switchTab('settings',this)">
+      <span class="icon">{{ icon('settings',18) }}</span> Settings
+    </a>
+  </div>
+
+  <div class="nav-section">
+    <div class="nav-label">App</div>
+    <a class="nav-link-out" href="{{ url_for('overview') }}">{{ icon('dashboard',18) }} Overview</a>
+    <a class="nav-link-out" href="{{ url_for('pair') }}">{{ icon('cpu',18) }} Link Device</a>
+    <a class="nav-link-out" href="{{ url_for('sensors') }}">{{ icon('activity',18) }} Sensors</a>
+    <a class="nav-link-out" href="{{ url_for('crops') }}">{{ icon('sprout',18) }} Crops</a>
+    <a class="nav-link-out" href="{{ url_for('ai_assistant') }}">{{ icon('sparkles',18) }} AI Assistant</a>
+    <a class="nav-link-out" href="{{ url_for('learning') }}">{{ icon('book',18) }} Learning</a>
+    <a class="nav-link-out" href="{{ url_for('about') }}">{{ icon('info',18) }} About</a>
+    <a class="nav-link-out" href="{{ url_for('contact') }}">{{ icon('mail',18) }} Contact</a>
+  </div>
+  <div class="sidebar-footer">
+    <div class="admin-badge">
+      <div class="admin-avatar">{{ admin_user[0] }}</div>
+      <div class="admin-info">
+        <div class="admin-name">{{ admin_user }}</div>
+        <div class="admin-role">Administrator</div>
+      </div>
+    </div>
+    <a href="{{ url_for('logout') }}" style="text-decoration:none">
+      <button class="logout-btn">{{ icon('logout',16) }} Sign out</button>
+    </a>
+  </div>
+</aside>
+
+<!-- ═══ MAIN ═══ -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Dashboard Overview</div>
+    <div class="topbar-actions">
+      <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Soil Analysis</a>
+      <a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a>
+    </div>
+  </div>
+
+  <div class="content">
+
+    {% if admin_msg %}
+    <div class="alert-banner flash-{{ admin_msg.kind }}">
+      <span style="display:flex;color:var(--{{ 'green' if admin_msg.kind == 'ok' else 'red' }})">{{ icon('check' if admin_msg.kind == 'ok' else 'alert',18) }}</span>
+      <span>{{ admin_msg.text }}</span>
+      <button class="alert-close" onclick="this.parentElement.remove()" aria-label="Dismiss">{{ icon('x',16) }}</button>
+    </div>
+    {% endif %}
+
+    <!-- ══════ OVERVIEW ══════ -->
+    <div id="tab-overview" class="tab-pane active">
+
+      <div class="alert-banner">
+        <span style="color:var(--amber);display:flex;">{{ icon('alert',18) }}</span>
+        <span><strong>Admin Panel:</strong> Use the sidebar to manage users, readings, and crop data.</span>
+        <button class="alert-close" onclick="this.parentElement.remove()">{{ icon('x',16) }}</button>
+      </div>
+
+      <div class="alert-banner" style="border-color:{{ 'var(--green-dim)' if device_status.connected else 'var(--amber)' }};">
+        <span style="color:{{ 'var(--green)' if device_status.connected else 'var(--amber)' }};display:flex;">{{ icon('cpu',18) }}</span>
+        <span><strong>{{ 'Device connected' if device_status.connected else 'Device not connected' }}:</strong>
+          {% if device_status.connected %}your scanner is linked to this admin account.{% else %}link a scanner to receive its scans on this account.{% endif %}</span>
+        <a class="btn btn-ghost" style="margin-left:auto;" href="{{ url_for('pair') }}">{{ 'Manage device' if device_status.connected else 'Link device' }}</a>
+      </div>
+
+      <div class="stats-row">
+        <div class="stat-card green">
+          
+          <div class="stat-label">Total Users</div>
+          <div class="stat-value">{{ total_users }}</div>
+          <div class="stat-sub">{{ student_count }} students &middot; {{ admin_count }} admins</div>
+        </div>
+        <div class="stat-card amber">
+          
+          <div class="stat-label">Total Records</div>
+          <div class="stat-value">{{ total_records }}</div>
+          <div class="stat-sub">soil analyses submitted</div>
+        </div>
+        <div class="stat-card blue">
+          
+          <div class="stat-label">Unique Crops</div>
+          <div class="stat-value">{{ chart_labels | length }}</div>
+          <div class="stat-sub">distinct predictions</div>
+        </div>
+        <div class="stat-card red">
+          
+          <div class="stat-label">Avg Health Score</div>
+          <div class="stat-value">{{ avg_health }}</div>
+          <div class="stat-sub">across all readings (0–100)</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"> Crop Distribution (All Users)</div>
+          </div>
+          <div class="panel-body">
+            <div class="chart-area" id="bar-chart">
+              {% if not chart_labels %}
+              <p style="color:var(--muted);font-size:13px;align-self:center;width:100%;text-align:center">No records yet.</p>
+              {% endif %}
+            </div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title"> Recent Submissions</div>
+          </div>
+          <div class="panel-body" style="padding:8px 22px">
+            {% for r in records[:8] %}
+            <div class="log-item">
+              <div class="log-dot green"></div>
+              <div class="log-text"><strong>{{ r['username'] }}</strong> <span style="color:var(--muted);display:inline-flex;vertical-align:middle;">{{ icon('arrow-right',12) }}</span> <em>{{ r['crop'] }}</em></div>
+              <div class="log-time">pH {{ r['ph'] }}</div>
+            </div>
+            {% else %}
+            <p style="color:var(--muted);font-size:13px;padding:8px 0">No submissions yet.</p>
+            {% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title"> Users Overview</div>
+          <button class="btn btn-ghost btn-sm" onclick="switchTab('users', null)">Manage {{ icon('arrow-right',14) }}</button>
+        </div>
+        <div class="panel-body" style="padding:0">
+          <table class="data-table">
+            <thead><tr>
+              <th class="th-l">User</th>
+              <th>Role</th>
+              <th>Submissions</th>
+            </tr></thead>
+            <tbody>
+              {% for u in users %}
+              <tr>
+                <td class="td-l">
+                  <div class="user-cell">
+                    <div class="avatar-sm">{{ u['username'][0] }}</div>
+                    {{ u['username'] }}
+                  </div>
+                </td>
+                <td>
+                  <span class="role-pill {{ 'admin' if u['role']|lower == 'admin' else 'student' }}">
+                    {{ u['role']|capitalize }}
+                  </span>
+                </td>
+                <td><strong>{{ user_counts.get(u['username'], 0) }}</strong></td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /overview -->
+
+
+    <!-- ══════ USERS ══════ -->
+    <div id="tab-users" class="tab-pane">
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">{{ icon('user-plus',17) }} Add New User</div>
+        </div>
+        <div class="panel-body">
+          <form action="/admin/add_user" method="POST">
+            <div class="form-grid">
+              <div class="form-group">
+                <label class="form-label">Username</label>
+                <input class="form-input" name="username" type="text" placeholder="e.g. student01" autocomplete="off" required/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Password</label>
+                <input class="form-input" name="password" type="password" placeholder="••••••••" autocomplete="new-password" required/>
+              </div>
+              <div class="form-group">
+                <label class="form-label">Role</label>
+                <select class="form-select" name="role">
+                  <option value="user">Student / Field user</option>
+                  <option value="admin">Admin (full access)</option>
+                </select>
+              </div>
+              <div class="form-group" style="justify-content:flex-end;flex-direction:row;align-items:flex-end">
+                <button class="btn btn-primary" type="submit">Add User</button>
+              </div>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">{{ icon('users',17) }} Accounts</div>
+          <input class="form-input" id="userSearch" style="width:220px;padding:6px 10px" placeholder="Search by name…" oninput="applyUserFilter()"/>
+        </div>
+        <div class="seg" role="tablist" aria-label="Filter accounts by role">
+          <button type="button" class="seg-btn active" data-role="all"     onclick="setRole('all',this)">All <span>{{ total_users }}</span></button>
+          <button type="button" class="seg-btn"        data-role="student" onclick="setRole('student',this)">Students <span>{{ student_count }}</span></button>
+          <button type="button" class="seg-btn"        data-role="admin"   onclick="setRole('admin',this)">Admins <span>{{ admin_count }}</span></button>
+        </div>
+        <div class="panel-body" style="padding:0">
+          <ul class="ulist" id="users-list">
+            {% for u in users %}
+            {% set is_admin = (u['role'] or '')|lower|trim == 'admin' %}
+            <li class="urow" data-role="{{ 'admin' if is_admin else 'student' }}" data-name="{{ u['username']|lower }}">
+              <div class="urow-main">
+                <div class="avatar-sm">{{ u['username'][0] }}</div>
+                <div class="urow-id">
+                  <div class="urow-name">{{ u['username'] }}{% if u['username'] == admin_user %} <span class="you-tag">you</span>{% endif %}</div>
+                  <div class="urow-meta">
+                    <span class="role-pill {{ 'admin' if is_admin else 'student' }}">{{ 'Admin' if is_admin else 'Student' }}</span>
+                    <span class="urow-count">{{ user_counts.get(u['username'], 0) }} reading{{ '' if user_counts.get(u['username'], 0) == 1 else 's' }}</span>
+                  </div>
+                </div>
+              </div>
+              <div class="urow-actions">
+                {% if is_admin %}
+                  <span class="prot-tag" title="Admin accounts can only be removed or changed in the database (backend).">{{ icon('lock',13) }} Protected</span>
+                {% else %}
+                  <button type="button" class="act-btn" data-user="{{ u['username'] }}" onclick="viewRecords(this.dataset.user)">{{ icon('eye',14) }} Readings</button>
+                  <button type="button" class="act-btn" data-user="{{ u['username'] }}" onclick="openReset(this.dataset.user)">{{ icon('key',14) }} Reset password</button>
+                  <form action="/admin/promote/{{ u['username']|urlencode }}" method="POST" data-user="{{ u['username'] }}" onsubmit="return confirm('Make ' + this.dataset.user + ' an admin? They will get full admin access.')">
+                    <button class="act-btn" type="submit">{{ icon('shield',14) }} Make admin</button>
+                  </form>
+                  <form action="/admin/delete_user/{{ u['username']|urlencode }}" method="POST" data-user="{{ u['username'] }}" onsubmit="return confirm('Delete ' + this.dataset.user + ' and all their readings? This cannot be undone.')">
+                    <button class="act-btn danger" type="submit" aria-label="Delete user">{{ icon('trash',14) }} Delete</button>
+                  </form>
+                {% endif %}
+              </div>
+            </li>
+            {% endfor %}
+          </ul>
+          <p class="sx-empty-adm" id="userEmpty" hidden>No accounts match.</p>
+        </div>
+      </div>
+
+      <p class="note" style="margin:0 2px 18px">Admin accounts are protected: they can't be deleted or have their password reset from this page. Those changes are made in the database.</p>
+    </div><!-- /users -->
+
+    <dialog id="pwDlg" class="dlg">
+      <form method="POST" id="pwForm">
+        <h3>Reset password</h3>
+        <p class="note" style="margin:4px 0 14px">Set a new password for <b id="pwName"></b>.</p>
+        <input class="form-input" type="password" name="password" minlength="4" placeholder="New password (min 4 characters)" autocomplete="new-password" required/>
+        <div class="dlg-actions">
+          <button type="button" class="btn btn-ghost" onclick="document.getElementById('pwDlg').close()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save password</button>
+        </div>
+      </form>
+    </dialog>
+
+
+    <!-- ══════ CROP CONFIG ══════ -->
+    <div id="tab-crops" class="tab-pane">
+      <div class="two-col">
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">{{ icon('sprout',17) }} Crops in Database</div>
+          </div>
+          <div class="panel-body" style="padding:0">
+            <table class="data-table">
+              <thead><tr>
+                <th class="th-l">Crop</th>
+                <th>Records</th>
+                <th>% of Total</th>
+              </tr></thead>
+              <tbody>
+                {% for i in range(chart_labels | length) %}
+                <tr>
+                  <td class="td-l"><strong>{{ chart_labels[i] }}</strong></td>
+                  <td>{{ chart_values[i] }}</td>
+                  <td>
+                    {% if total_records > 0 %}
+                      {{ "%.1f" | format(chart_values[i] / total_records * 100) }}%
+                    {% else %}—{% endif %}
+                  </td>
+                </tr>
+                {% else %}
+                <tr><td class="td-l" colspan="3" style="color:var(--muted);padding:20px">No records yet.</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-header">
+            <div class="panel-title">{{ icon('file-text',17) }} Supported Crops</div>
+          </div>
+          <div class="panel-body">
+            {% set crops = ['rice','maize','chickpea','kidneybeans','pigeonpeas','mothbeans','mungbean','blackgram','lentil','pomegranate','banana','mango','grapes','watermelon','muskmelon','apple','orange','papaya','coconut','cotton','jute','coffee'] %}
+            {% for c in crops %}
+            <div class="toggle-row">
+              <span style="display:inline-flex;align-items:center;gap:9px;"><span style="color:var(--green);display:flex;">{{ icon('leaf',16) }}</span> <span class="toggle-label">{{ c | capitalize }}</span></span>
+              <label class="toggle">
+                <input type="checkbox" checked/>
+                <div class="toggle-track"></div>
+                <div class="toggle-thumb"></div>
+              </label>
+            </div>
+            {% endfor %}
+            <p class="note"><span style="color:var(--amber);display:inline-flex;vertical-align:middle;">{{ icon('alert',13) }}</span> To truly remove a crop from predictions, delete its entry in the <code>CROP_INFO</code> dict in <code>app.py</code>.</p>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /crops -->
+
+
+    <!-- ══════ ALL RECORDS ══════ -->
+    <div id="tab-records" class="tab-pane">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">{{ icon('clipboard',17) }} All Records ({{ total_records }})</div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
+            <input class="form-input" id="recSearch" style="width:200px;padding:6px 10px" placeholder="Filter by user, crop…" oninput="filterTable('records-tbody',this.value)"/>
+            <a class="btn btn-ghost btn-sm" href="{{ url_for('export_records') }}">{{ icon('download',14) }} Export CSV</a>
+          </div>
+        </div>
+        <div class="panel-body" style="padding:0;overflow-x:auto">
+          <table class="data-table cards-sm">
+            <thead><tr>
+              <th class="th-l">#</th>
+              <th>User</th>
+              <th>Date</th><th>N</th><th>P</th><th>K</th>
+              <th>pH</th><th>Temp</th><th>Humidity</th><th>Rainfall</th>
+              <th>Crop</th><th>Health</th>
+              <th>Del</th>
+            </tr></thead>
+            <tbody id="records-tbody">
+              {% for r in records %}
+              <tr>
+                <td class="td-l td-id" data-label="Record" style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px">#{{ r['id'] }}</td>
+                <td class="td-user" data-label="User">
+                  <div class="user-cell">
+                    <div class="avatar-sm">{{ r['username'][0] }}</div>
+                    {{ r['username'] }}
+                  </div>
+                </td>
+                <td class="td-date" data-label="Date">{{ r['created_at'] or '—' }}</td>
+                <td data-label="N">{{ r['N'] }}</td><td data-label="P">{{ r['P'] }}</td><td data-label="K">{{ r['K'] }}</td>
+                <td data-label="pH">{{ r['ph'] }}</td><td data-label="Temp">{{ r['temp'] }}</td>
+                <td data-label="Humidity">{{ r['humidity'] }}</td><td data-label="Rainfall">{{ r['rainfall'] }}</td>
+                <td class="td-crop" data-label="Crop"><strong>{{ r['crop']|capitalize if r['crop'] else '—' }}</strong></td>
+                <td class="td-health" data-label="Health">{{ r['fertility']|round(0,'floor')|int if r['fertility'] else '—' }}</td>
+                <td class="td-del">
+                  <form action="/admin/delete_record/{{ r['id'] }}" method="POST"
+                        onsubmit="return confirm('Delete record #{{ r.id }}?')">
+                    <button class="icon-btn del" type="submit" title="Delete" aria-label="Delete record #{{ r['id'] }}">{{ icon('trash',14) }}<span class="del-txt">Delete record</span></button>
+                  </form>
+                </td>
+              </tr>
+              {% else %}
+              <tr class="empty-row"><td class="td-l" colspan="13" style="color:var(--muted);padding:20px">No records found.</td></tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div><!-- /records -->
+
+
+    <!-- ══════ SETTINGS ══════ -->
+    <div id="tab-settings" class="tab-pane">
+      <div class="two-col">
+
+        <div>
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">{{ icon('key',17) }} Your admin password</div>
+            </div>
+            <div class="panel-body">
+              <form action="/admin/change_password" method="POST">
+                <div class="form-grid">
+                  <div class="form-group full"><label class="form-label">Current password</label><input class="form-input" type="password" name="current" autocomplete="current-password" required/></div>
+                  <div class="form-group full"><label class="form-label">New password</label><input class="form-input" type="password" name="password" minlength="4" autocomplete="new-password" required/></div>
+                  <div class="form-group full"><button class="btn btn-primary" type="submit">Change password</button></div>
+                </div>
+              </form>
+              <p class="note">Each admin manages their own password. Nobody else can reset it from the panel.</p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"> ML Model Info</div>
+            </div>
+            <div class="panel-body">
+              <div class="form-grid">
+                <div class="form-group">
+                  <label class="form-label">Algorithm</label>
+                  <input class="form-input" value="K-Nearest Neighbors" readonly style="opacity:.6"/>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">K Neighbors</label>
+                  <input class="form-input" value="5" readonly style="opacity:.6"/>
+                </div>
+                <div class="form-group full">
+                  <label class="form-label">Training Dataset</label>
+                  <input class="form-input" value="Crop_recommendation.csv" readonly style="opacity:.6"/>
+                </div>
+              </div>
+              <p class="note">To change the algorithm, edit <code>app.py</code> line: <code>KNeighborsClassifier(n_neighbors=5)</code></p>
+            </div>
+          </div>
+
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title">{{ icon('lock',17) }} Security Info</div>
+            </div>
+            <div class="panel-body">
+              <div class="form-grid">
+                <div class="form-group full">
+                  <label class="form-label">Registration</label>
+                  <input class="form-input" value="Open (anyone can register)" readonly style="opacity:.6"/>
+                </div>
+                <div class="form-group full">
+                  <label class="form-label">Session Secret Key</label>
+                  <input class="form-input" value="set via the SOILSENSE_SECRET_KEY environment variable" readonly style="opacity:.6"/>
+                </div>
+              </div>
+              <p class="note">To disable open registration, remove or restrict the <code>/register</code> route in <code>app.py</code>.</p>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel">
+            <div class="panel-header">
+              <div class="panel-title"> Student Table Columns</div>
+            </div>
+            <div class="panel-body">
+              <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Reference: columns shown in the Soil Analysis history table</p>
+              {% for col in ['Date','N (Nitrogen)','P (Phosphorus)','K (Potassium)','pH Value','Temperature','Humidity','Rainfall','Crop Result','Health','Source'] %}
+              <div class="toggle-row">
+                <span class="toggle-label">{{ col }}</span>
+                <label class="toggle">
+                  <input type="checkbox" checked/>
+                  <div class="toggle-track"></div>
+                  <div class="toggle-thumb"></div>
+                </label>
+              </div>
+              {% endfor %}
+              <p class="note"><span style="color:var(--amber);display:inline-flex;vertical-align:middle;">{{ icon('alert',13) }}</span> Apply column changes directly in the <code>dashboard.html</code> table markup.</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </div><!-- /settings -->
+
+  </div><!-- /content -->
+</div><!-- /main -->
+
+<script>
+/* ── TAB SWITCHER ── */
+const titles = {
+  overview:'Dashboard Overview', users:'User Management',
+  crops:'Crop Configuration',   records:'All Records',
+  settings:'System Settings'
+};
+function switchTab(name, el) {
+  document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('tab-' + name).classList.add('active');
+  if (el) el.classList.add('active');
+  document.getElementById('page-title').textContent = titles[name] || name;
+  setAdmNav(false);
+  window.scrollTo({ top: 0 });
+}
+
+/* ── MOBILE DRAWER ── */
+const admSb = document.getElementById('admSidebar'), admOv = document.getElementById('admOverlay'),
+      admBg = document.getElementById('admBurger'), admCl = document.getElementById('admClose');
+function setAdmNav(open) {
+  admSb.classList.toggle('open', open);
+  admOv.classList.toggle('show', open);
+  admBg.classList.toggle('hide', open);
+  admBg.setAttribute('aria-expanded', open ? 'true' : 'false');
+  document.body.classList.toggle('adm-lock', open);
+}
+admBg.addEventListener('click', () => setAdmNav(!admSb.classList.contains('open')));
+admOv.addEventListener('click', () => setAdmNav(false));
+admCl.addEventListener('click', () => setAdmNav(false));
+admSb.addEventListener('click', e => { if (e.target.closest('a[href]')) setAdmNav(false); });
+document.addEventListener('keydown', e => { if (e.key === 'Escape') setAdmNav(false); });
+window.matchMedia('(min-width: 901px)').addEventListener('change', e => { if (e.matches) setAdmNav(false); });
+let _sx = null, _sy = null;
+admSb.addEventListener('touchstart', e => { _sx = e.touches[0].clientX; _sy = e.touches[0].clientY; }, { passive: true });
+admSb.addEventListener('touchend', e => {
+  if (_sx === null) return;
+  const dx = e.changedTouches[0].clientX - _sx, dy = e.changedTouches[0].clientY - _sy;
+  if (dx < -60 && Math.abs(dx) > Math.abs(dy) * 1.5) setAdmNav(false);
+  _sx = _sy = null;
+}, { passive: true });
+
+/* ── BAR CHART ── */
+(function() {
+  const labels = {{ chart_labels | tojson }};
+  const values = {{ chart_values | tojson }};
+  if (!labels.length) return;
+  const maxVal = Math.max(...values, 1);
+  const el = document.getElementById('bar-chart');
+  labels.forEach((name, i) => {
+    const h = Math.max(Math.round((values[i] / maxVal) * 150), 4);
+    const wrap = document.createElement('div');
+    wrap.className = 'bar-wrap';
+    wrap.innerHTML = `
+      <div class="bar" style="height:${h}px">
+        <div class="bar-tip">${name}: ${values[i]}</div>
+      </div>
+      <div class="bar-lbl">${name}</div>`;
+    el.appendChild(wrap);
+  });
+})();
+
+
+/* ── ACCOUNT FILTERS ── */
+let roleFilter = 'all';
+function setRole(r, btn) {
+  roleFilter = r;
+  document.querySelectorAll('.seg-btn').forEach(b => b.classList.toggle('active', b === btn));
+  applyUserFilter();
+}
+function applyUserFilter() {
+  const q = (document.getElementById('userSearch').value || '').trim().toLowerCase();
+  let shown = 0;
+  document.querySelectorAll('#users-list .urow').forEach(row => {
+    const ok = (roleFilter === 'all' || row.dataset.role === roleFilter) && row.dataset.name.includes(q);
+    row.hidden = !ok; if (ok) shown++;
+  });
+  document.getElementById('userEmpty').hidden = shown > 0;
+}
+function openReset(name) {
+  document.getElementById('pwName').textContent = name;
+  document.getElementById('pwForm').action = '/admin/reset_password/' + encodeURIComponent(name);
+  const d = document.getElementById('pwDlg'); d.querySelector('input').value = ''; d.showModal();
+}
+function goTab(name) {
+  const link = [...document.querySelectorAll('.nav-item')].find(n => (n.getAttribute('onclick') || '').includes("'" + name + "'"));
+  switchTab(name, link || null);
+}
+function viewRecords(name) {
+  goTab('records');
+  const f = document.getElementById('recSearch'); f.value = name; filterTable('records-tbody', name);
+}
+function tabFromHash() { const t = location.hash.slice(1); if (t && document.getElementById('tab-' + t)) goTab(t); }
+window.addEventListener('hashchange', tabFromHash);
+tabFromHash();
+
+/* ── TABLE SEARCH ── */
+function filterTable(tbodyId, query) {
+  const q = query.toLowerCase();
+  document.querySelectorAll('#' + tbodyId + ' tr').forEach(row => {
+    row.style.display = row.textContent.toLowerCase().includes(q) ? '' : 'none';
+  });
+}
+</script>
+{% if session.get('user') %}<script src="{{ url_for('static', filename='js/scan-popup.js') }}" data-api="{{ url_for('api_latest_scan') }}" data-dashboard="{{ url_for('overview') }}" data-user="{{ session['user'] }}" defer></script>{% endif %}
+</body>
+</html>

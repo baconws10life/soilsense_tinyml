@@ -1,0 +1,127 @@
+{% extends "base.html" %}
+{% from '_icons.html' import icon %}
+{% block title %}Learning Guide{% endblock %}
+{% set active = 'learning' %}
+{% block topbar_left %}Learning Guide{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Learning Guide</h1>
+<p class="page-subtitle">Everything you need to know about soil testing — explained simply.</p>
+
+<div class="tip-banner">
+  <span class="emoji">{{ icon('lightbulb',22) }}</span>
+  <div>
+    <h4>Student tip</h4>
+    <p>Read each section, then go to <b style="color:var(--text);">AI Assistant</b> to ask follow-up questions about your specific readings. The assistant uses your actual sensor data to give personalized explanations.</p>
+  </div>
+</div>
+
+<div class="accordion" data-group="guide">
+  <div class="accordion-head">
+    <span class="accordion-emoji">{{ icon('globe',19) }}</span>
+    <span class="accordion-title">What is Soil Testing?</span>
+    <span class="accordion-chevron">▾</span>
+  </div>
+  <div class="accordion-body"><div class="accordion-inner">
+    <p>Soil testing is the process of analyzing soil samples to measure their physical and chemical properties.</p>
+    <p>By knowing what's in your soil, you can make smarter decisions about fertilizers, irrigation, and crop selection — saving money and improving yields.</p>
+    <h5>Why it matters for students</h5>
+    <p>Understanding soil science is fundamental to agriculture, environmental science, and food security. Your TinyML sensor device makes real-time soil analysis accessible right in the field.</p>
+    <h5>What your device measures</h5>
+    <ul>
+      <li>pH — Acidity or alkalinity</li>
+      <li>Moisture — Water content percentage</li>
+      <li>Temperature — Soil warmth, which drives root activity</li>
+      <li>Nitrogen, Phosphorus, Potassium (N-P-K) — Core plant nutrients</li>
+      <li>Rainfall — Natural irrigation input for the growing season</li>
+    </ul>
+  </div></div>
+</div>
+
+<div class="accordion" data-group="guide">
+  <div class="accordion-head">
+    <span class="accordion-emoji">{{ icon('flask',19) }}</span>
+    <span class="accordion-title">Understanding Soil pH</span>
+    <span class="accordion-chevron">▾</span>
+  </div>
+  <div class="accordion-body"><div class="accordion-inner">
+    <p>pH is measured on a 0-14 scale: below 7 is acidic, above 7 is alkaline, and 7 is neutral. Most crops grow best between pH 6.0 and 7.0, where nutrients dissolve into a form roots can absorb.</p>
+    <h5>Why extremes are a problem</h5>
+    <ul>
+      <li><b>Too acidic (below 5.5):</b> aluminum and manganese can reach toxic levels, and phosphorus becomes hard to absorb.</li>
+      <li><b>Too alkaline (above 7.5):</b> iron, zinc, and manganese become less available, often causing yellowing leaves.</li>
+    </ul>
+    <p>Adding lime raises pH; adding sulfur or organic matter tends to lower it.</p>
+  </div></div>
+</div>
+
+<div class="accordion" data-group="guide">
+  <div class="accordion-head">
+    <span class="accordion-emoji">{{ icon('leaf',19) }}</span>
+    <span class="accordion-title">NPK Nutrients Explained</span>
+    <span class="accordion-chevron">▾</span>
+  </div>
+  <div class="accordion-body"><div class="accordion-inner">
+    <p>N-P-K is shorthand for the three nutrients plants need in the largest amounts.</p>
+    <ul>
+      <li><b>Nitrogen (N):</b> fuels leafy, green growth. Too little causes yellowing; too much delays flowering.</li>
+      <li><b>Phosphorus (P):</b> builds strong roots, flowers, and seeds.</li>
+      <li><b>Potassium (K):</b> strengthens stems, improves drought tolerance, and boosts fruit quality.</li>
+    </ul>
+    <p>Most field crops are comfortable with each nutrient somewhere between 40-120 mg/kg — your Sensor Readings page flags anything outside that band.</p>
+  </div></div>
+</div>
+
+<div class="accordion" data-group="guide">
+  <div class="accordion-head">
+    <span class="accordion-emoji">{{ icon('droplet',19) }}</span>
+    <span class="accordion-title">Moisture &amp; Irrigation</span>
+    <span class="accordion-chevron">▾</span>
+  </div>
+  <div class="accordion-body"><div class="accordion-inner">
+    <p>Soil moisture is reported as a percentage of water content. 50-90% is usually called "field capacity" — enough water for roots without drowning them.</p>
+    <p>Readings below 40% usually mean it's time to irrigate; readings above 95% can signal poor drainage and root-rot risk.</p>
+  </div></div>
+</div>
+
+<div class="accordion" data-group="guide">
+  <div class="accordion-head">
+    <span class="accordion-emoji">{{ icon('layers',19) }}</span>
+    <span class="accordion-title">Organic Matter (Estimated)</span>
+    <span class="accordion-chevron">▾</span>
+  </div>
+  <div class="accordion-body"><div class="accordion-inner">
+    <p>Organic matter is decomposed plant and animal material — it improves water retention, feeds soil microbes, and slowly releases nutrients. Healthy fields usually sit around 3-6%.</p>
+    <p><b>Note:</b> true organic-matter testing needs a lab. The number on your dashboard is a quick estimate derived from your N and K readings, clearly labeled as an estimate rather than a lab result.</p>
+  </div></div>
+</div>
+
+<div class="accordion" data-group="guide">
+  <div class="accordion-head">
+    <span class="accordion-emoji">{{ icon('bar-chart',19) }}</span>
+    <span class="accordion-title">Reading Your Health Score</span>
+    <span class="accordion-chevron">▾</span>
+  </div>
+  <div class="accordion-body"><div class="accordion-inner">
+    <p>Your Health Score checks all seven readings against their optimal ranges — each one in range adds about 14 points, for a score out of 100.</p>
+    <ul>
+      <li><b>85-100 — Grade A:</b> excellent, soil is in great shape</li>
+      <li><b>65-84 — Grade B:</b> good, minor fixes needed</li>
+      <li><b>45-64 — Grade C:</b> fair, needs attention</li>
+      <li><b>Below 45 — Grade D:</b> poor, action needed soon</li>
+    </ul>
+  </div></div>
+</div>
+
+<div class="accordion" data-group="guide">
+  <div class="accordion-head">
+    <span class="accordion-emoji">{{ icon('bot',19) }}</span>
+    <span class="accordion-title">Using the AI Assistant</span>
+    <span class="accordion-chevron">▾</span>
+  </div>
+  <div class="accordion-body"><div class="accordion-inner">
+    <p>The AI Assistant answers questions about pH, NPK nutrients, moisture, organic matter, rainfall, your health score, and crop matching — always grounded in your own latest reading.</p>
+    <p>Try the suggestion chips for a quick start, or type your own question in plain language.</p>
+  </div></div>
+</div>
+{% endblock %}

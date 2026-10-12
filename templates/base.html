@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1410">
+<title>{% block title %}SoilSense{% endblock %} · SoilSense</title>
+<link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/theme.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+{% block head %}{% endblock %}
+</head>
+<body>
+{% include "_navbar.html" %}
+
+<div class="shell">
+  <main class="main">
+    <header class="topbar">
+      <div class="topbar-left">{% block topbar_left %}{% endblock %}</div>
+      <div class="topbar-right">
+        {% if device_status is defined and device_status.connected %}
+        <a href="{{ url_for('pair') }}" class="chip chip-live" title="Manage linked devices"><span class="dot"></span><span class="chip-txt">Device connected</span></a>
+        {% elif device_status is defined %}
+        <a href="{{ url_for('pair') }}" class="chip chip-off" title="Link your scanner"><span class="dot"></span><span class="chip-txt">No device</span></a>
+        {% endif %}
+        <span class="chip chip-date">{{ today or '' }}</span>
+      </div>
+    </header>
+    <div class="page">
+      {% block content %}{% endblock %}
+    </div>
+  </main>
+</div>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>
+{% if session.get('user') %}<script src="{{ url_for('static', filename='js/scan-popup.js') }}" data-api="{{ url_for('api_latest_scan') }}" data-dashboard="{{ url_for('overview') }}" data-user="{{ session['user'] }}" defer></script>{% endif %}
+{% block scripts %}{% endblock %}
+</body>
+</html>

@@ -1,0 +1,136 @@
+/* ==========================================================================
+   SoilSense — theme layer
+   Re-skins the existing sidebar-shell pages (overview, sensors, crops,
+   AI assistant, learning) with the Smart Agriculture design: DM Sans /
+   Fraunces / DM Mono, #4caf6f green, dark + light themes, left sidebar.
+   Loaded AFTER style.css so nothing in style.css has to change.
+   ========================================================================== */
+:root, [data-theme="dark"] {
+  /* new-design tokens (used by the shared navbar) */
+  --green: #4caf6f; --green-dim: #2d7a4a; --green-glow: rgba(76,175,111,0.15);
+  --surface: #141c16; --surface2: #1a241d; --muted: #6b8a72; --heading: #f0f7f2;
+  --nav-bg: rgba(14,20,16,0.85);
+  /* remap of the original SoilSense tokens */
+  --bg: #0e1410; --bg-raised: #141c16;
+  --panel: #141c16; --panel-strong: #1a241d;
+  --border: rgba(76,175,111,0.30); --border-soft: #253028;
+  --accent: #4caf6f; --accent-strong: #5bc87e;
+  --accent-dim: rgba(76,175,111,0.15); --accent-dim-strong: rgba(76,175,111,0.28);
+  --text: #d4e8da; --text-muted: #8aa892; --text-faint: #5f7a66;
+  --amber: #e8b84b; --amber-dim: rgba(232,184,75,0.15);
+  --red: #e05c5c;   --red-dim: rgba(224,92,92,0.15);
+  --soft: rgba(255,255,255,0.06);
+  --font-sans: 'DM Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'DM Mono', 'SFMono-Regular', Consolas, monospace;
+  --radius-lg: 14px; --radius-md: 10px; --radius-sm: 8px;
+}
+[data-theme="light"] {
+  --green: #2d7a4a; --green-dim: #4caf6f; --green-glow: rgba(45,122,74,0.10);
+  --surface: #ffffff; --surface2: #e8f5ec; --muted: #5a7a62; --heading: #0e1410;
+  --nav-bg: rgba(240,247,242,0.92);
+  --bg: #f0f7f2; --bg-raised: #ffffff;
+  --panel: #ffffff; --panel-strong: #e8f5ec;
+  --border: rgba(45,122,74,0.30); --border-soft: #c8e0cf;
+  --accent: #2d7a4a; --accent-strong: #1f6a3b;
+  --accent-dim: rgba(45,122,74,0.10); --accent-dim-strong: rgba(45,122,74,0.20);
+  --text: #1a3324; --text-muted: #4f6f58; --text-faint: #7d9a85;
+  --amber: #b9851a; --amber-dim: rgba(185,133,26,0.12);
+  --red: #c94444;   --red-dim: rgba(201,68,68,0.10);
+  --soft: rgba(15,60,30,0.08);
+}
+
+html { scroll-behavior: smooth; }
+body { background: var(--bg); color: var(--text); font-family: var(--font-sans); transition: background .3s, color .3s; }
+body::before { display: none; }              /* drop the old ambient glow */
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border-soft); border-radius: 6px; }
+
+/* ---- layout: the shared left sidebar lives in templates/_navbar.html ---- */
+.sidebar, .nav-toggle { display: none !important; }
+.shell { display: block; }
+.main { padding-top: 0; }
+.topbar {
+  top: 0; background: var(--nav-bg);
+  padding: 12px 32px; border-bottom: 1px solid var(--border-soft);
+}
+.topbar-left { font-family: 'Fraunces', serif; font-size: 15px; color: var(--heading); }
+.chip { font-family: var(--font-mono); font-size: 11px; background: var(--surface); }
+.chip-live, .chip-health { background: var(--accent-dim); }
+.chip-health { color: var(--accent-strong); border-color: var(--border); }
+.page { padding: 34px 32px 70px; max-width: 1180px; margin: 0 auto; }
+
+/* ---- type ---- */
+h1.page-title, .hero-title, .card h3, .section-title { font-family: 'Fraunces', serif; color: var(--heading); }
+h1.page-title { font-weight: 700; }
+.section-label, .hero-eyebrow, .nav-label { font-family: var(--font-mono); }
+
+/* ---- cards / panels ---- */
+.card, .glance-card, .npk-card, .empty-state {
+  background: var(--panel); border-color: var(--border-soft);
+  box-shadow: 0 1px 0 rgba(0,0,0,0.02);
+}
+.glance-card:hover, a.glance-card:hover { border-color: var(--border); }
+
+/* ---- buttons ---- */
+.btn-primary {
+  background: var(--accent); border-color: var(--accent); color: #0e1410;
+  font-weight: 700; box-shadow: 0 6px 24px rgba(76,175,111,0.28);
+}
+.btn-primary:hover { background: var(--accent-strong); box-shadow: 0 8px 28px rgba(76,175,111,0.4); }
+[data-theme="light"] .btn-primary { color: #ffffff; }
+.pill-ai { color: #0e1410; }
+
+/* ---- inputs ---- */
+.field-group input, .field-group select, .chat-input {
+  background: var(--surface2); color: var(--text); border-color: var(--border-soft);
+}
+
+/* ---- hard-coded dark values in style.css ---- */
+.health-bar, .npk-track, .sensor-bar, .toggle-switch, .role-badge.user, .tier-Fair { background: var(--soft); }
+.grade-ring-bg, .ring-bg { stroke: var(--soft); }
+
+/* ---- overview hero: the Smart Agriculture hero treatment ---- */
+.hero-card {
+  --text: #eaf6ee; --text-muted: rgba(212,232,218,0.82); --accent-strong: #5bc87e;
+  --border: rgba(255,255,255,0.22); --border-soft: rgba(255,255,255,0.14); --soft: rgba(255,255,255,0.14);
+  position: relative; overflow: hidden; min-height: 280px; padding: 38px 40px;
+  border: none; border-radius: 18px; color: var(--text);
+  background:
+    linear-gradient(105deg, rgba(10,18,12,0.86) 0%, rgba(10,18,12,0.58) 55%, rgba(10,18,12,0.18) 100%),
+    url('../images/farm.png') center / cover no-repeat;
+}
+.hero-card .hero-title { font-size: clamp(1.7rem, 3.4vw, 2.4rem); color: #f0f7f2; line-height: 1.15; }
+.hero-card .hero-eyebrow { color: #4caf6f; }
+.hero-card .hero-chip { background: rgba(255,255,255,0.08); backdrop-filter: blur(6px); }
+.hero-card .hero-chip.ok { background: rgba(76,175,111,0.2); color: #8fe0aa; border-color: rgba(76,175,111,0.5); }
+.hero-card .btn-primary { color: #0e1410; }
+
+@media (max-width: 800px) {
+  .topbar { padding: 10px 16px; top: 0; }
+  .topbar-right .chip:not(.chip-live) { display: none; }
+  .page { padding: 22px 16px 60px; }
+  .hero-card { padding: 26px 22px; }
+}
+
+/* ---- icons ---- */
+.ico { flex-shrink: 0; }
+.glance-icon, .accordion-emoji, .info-icon, .highlight-icon, .why-icon, .chat-avatar, .img-placeholder-icon, .emoji {
+  display: inline-flex; align-items: center; justify-content: center; color: var(--accent);
+}
+.glance-icon, .info-icon, .highlight-icon, .why-icon {
+  width: 42px; height: 42px; border-radius: 11px;
+  background: var(--accent-dim); border: 1px solid var(--border-soft);
+}
+.empty-state .emoji { display: flex; width: 56px; height: 56px; border-radius: 16px; background: var(--accent-dim); margin: 0 auto 14px; }
+.tip-banner .emoji { width: 38px; height: 38px; border-radius: 10px; background: var(--accent-dim); }
+.accordion-emoji { width: 34px; height: 34px; border-radius: 9px; background: var(--accent-dim); margin-right: 4px; }
+.chat-avatar { background: var(--accent-dim); border: 1px solid var(--border-soft); }
+
+.crop-emoji { color: var(--accent); background: var(--accent-dim); }
+.summary-picks { display: inline-flex; flex-wrap: wrap; gap: 8px; vertical-align: middle; }
+.pick-chip { display: inline-flex; align-items: center; gap: 6px; padding: 5px 11px; border-radius: 20px;
+  font-size: 12.5px; font-weight: 600; color: var(--accent-strong); background: var(--accent-dim); border: 1px solid var(--border); }
+.sensor-icon { display: inline-flex; align-items: center; justify-content: center; color: var(--accent);
+  width: 42px; height: 42px; border-radius: 11px; background: var(--accent-dim); border: 1px solid var(--border-soft); }
+.hero-chip { display: inline-flex; align-items: center; gap: 7px; }

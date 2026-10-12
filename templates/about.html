@@ -1,0 +1,415 @@
+{% from '_icons.html' import icon %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1410">
+<title>About · SoilSense</title>
+<link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+:root {
+  --green:      #4caf6f;
+  --green-dim:  #2d7a4a;
+  --green-glow: rgba(76,175,111,0.18);
+  --red:        #e05c5c;
+  --surface:    rgba(14, 22, 16, 0.72);
+  --surface2:   rgba(20, 32, 22, 0.82);
+  --border:     rgba(76, 175, 111, 0.2);
+  --text:       #d4e8da;
+  --muted:      #7faa87;
+  --heading:    #f0f7f2;
+  --nav-bg:     rgba(8, 14, 10, 0.84);
+  --overlay:    rgba(5, 12, 7, 0.58);
+}
+
+[data-theme="light"] {
+  --green:      #2d7a4a;
+  --green-dim:  #4caf6f;
+  --green-glow: rgba(45,122,74,0.12);
+  --surface:    rgba(235, 248, 240, 0.80);
+  --surface2:   rgba(215, 238, 222, 0.88);
+  --border:     rgba(45, 122, 74, 0.24);
+  --text:       #1a3324;
+  --muted:      #3d6b4a;
+  --heading:    #0e1410;
+  --nav-bg:     rgba(225, 243, 230, 0.84);
+  --overlay:    rgba(200, 235, 210, 0.38);
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  transition: color 0.3s;
+}
+
+/* ── BACKGROUND ── */
+.bg-image {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: url("{{ url_for('static', filename='images/bgschool.jpg') }}")
+              center center / cover no-repeat;
+}
+
+[data-theme="light"] .bg-image {
+  filter: brightness(1.08) saturate(0.85);
+}
+
+.bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--overlay);
+  transition: background 0.4s;
+}
+
+/* glass utility */
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+/* ── NAVBAR ── */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 60px;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.navbar-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+.navbar-logo .leaf { font-size: 20px; filter: drop-shadow(0 0 6px var(--green)); }
+.navbar-logo span {
+  font-family: 'Fraunces', serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--heading); transition: color 0.3s;
+}
+
+.navbar-right { display: flex; align-items: center; gap: 10px; }
+
+.user-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px 4px 5px;
+  border-radius: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.user-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--green-dim), var(--green));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-size: 11px; font-weight: 700;
+  color: #fff; text-transform: uppercase; flex-shrink: 0;
+}
+
+.user-name { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text); transition: color 0.3s; }
+
+.logout-link {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
+  padding: 6px 12px; border-radius: 7px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+
+.logout-link:hover { color: var(--red); border-color: rgba(224,92,92,0.4); background: rgba(224,92,92,0.08); }
+
+.theme-toggle {
+  width: 34px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 15px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s, background 0.3s, box-shadow 0.2s;
+}
+
+.theme-toggle:hover { border-color: var(--green); box-shadow: 0 0 10px rgba(76,175,111,0.25); }
+.theme-toggle .icon-dark  { display: block; }
+.theme-toggle .icon-light { display: none;  }
+[data-theme="light"] .theme-toggle .icon-dark  { display: none;  }
+[data-theme="light"] .theme-toggle .icon-light { display: block; }
+
+/* ── PAGE ── */
+.page {
+  padding: 88px 24px 52px;
+  max-width: 1100px; margin: 0 auto;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ── HERO BANNER ── */
+.hero-banner {
+  border-radius: 18px; overflow: hidden;
+  margin-bottom: 24px; position: relative;
+  min-height: 240px; display: flex; align-items: flex-end;
+  border: 1px solid rgba(76,175,111,0.25);
+}
+
+.hero-banner-bg {
+  position: absolute; inset: 0;
+  background: url("{{ url_for('static', filename='images/bgschool.jpg') }}")
+              center 35% / cover no-repeat;
+  filter: brightness(0.42) saturate(0.75);
+  transition: filter 0.4s;
+}
+
+[data-theme="light"] .hero-banner-bg { filter: brightness(0.52) saturate(0.8); }
+
+.hero-banner-gradient {
+  position: absolute; inset: 0;
+  background: linear-gradient(to top, rgba(4,12,6,0.94) 0%, rgba(4,12,6,0.35) 55%, transparent 100%);
+}
+
+[data-theme="light"] .hero-banner-gradient {
+  background: linear-gradient(to top, rgba(8,22,12,0.90) 0%, rgba(8,22,12,0.25) 55%, transparent 100%);
+}
+
+.hero-banner-content { position: relative; z-index: 1; padding: 28px 32px; width: 100%; }
+
+.hero-label {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.16em; text-transform: uppercase;
+  color: #6ddb94; margin-bottom: 8px;
+}
+
+.hero-title {
+  font-family: 'Fraunces', serif; font-size: 28px; font-weight: 700;
+  color: #f0f7f2; line-height: 1.2; margin-bottom: 10px;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.6);
+}
+
+.hero-desc {
+  font-size: 13px; line-height: 1.7;
+  color: rgba(212,232,218,0.88); max-width: 680px;
+}
+
+.location-badge {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 4px 12px; border-radius: 20px;
+  background: rgba(76,175,111,0.22);
+  border: 1px solid rgba(76,175,111,0.4);
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  color: #8deaa8; margin-bottom: 12px;
+}
+
+/* ── HIGHLIGHT STRIP ── */
+.highlight-strip {
+  display: grid; grid-template-columns: repeat(3, 1fr);
+  gap: 14px; margin-bottom: 16px;
+}
+
+.highlight-card {
+  border-radius: 12px; padding: 18px 20px;
+  transition: background 0.3s, border-color 0.3s, box-shadow 0.2s, transform 0.2s;
+}
+
+.highlight-card:hover {
+  transform: translateY(-2px);
+  border-color: var(--green) !important;
+  box-shadow: 0 6px 24px rgba(76,175,111,0.18);
+}
+
+.highlight-icon { width:44px; height:44px; border-radius:11px; display:flex; align-items:center; justify-content:center; color:var(--green); background:var(--green-glow); border:1px solid var(--border); margin-bottom:12px; }
+.highlight-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--heading); margin-bottom: 5px; transition: color 0.3s; }
+.highlight-desc { font-size: 12px; line-height: 1.6; color: var(--muted); }
+
+/* ── TWO-COL ── */
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+
+/* ── PANEL ── */
+.panel { border-radius: 12px; overflow: hidden; }
+.panel-header { padding: 13px 20px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; transition: border-color 0.3s; }
+.panel-title { font-family: 'Fraunces', serif; font-size: 13px; font-weight: 600; color: var(--heading); transition: color 0.3s; }
+.panel-body { padding: 16px 20px; }
+
+/* ── LIST ── */
+.list-item { display: flex; align-items: flex-start; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px; line-height: 1.5; color: var(--text); }
+.list-item:last-child { border-bottom: none; }
+.list-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--green); flex-shrink: 0; margin-top: 5px; }
+.list-item strong { color: var(--heading); font-weight: 600; display: block; font-size: 12px; margin-bottom: 1px; transition: color 0.3s; }
+
+/* ── MISSION / VISION ── */
+.mv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+.mv-card { border-radius: 12px; padding: 22px; position: relative; overflow: hidden; }
+.mv-card::before { content: ''; position: absolute; top: 0; left: 0; right: 0; height: 3px; background: var(--green); border-radius: 12px 12px 0 0; }
+.mv-tag { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--green); margin-bottom: 10px; }
+.mv-title { font-family: 'Fraunces', serif; font-size: 15px; font-weight: 700; color: var(--heading); margin-bottom: 10px; transition: color 0.3s; }
+.mv-text { font-size: 12px; line-height: 1.7; color: var(--muted); }
+
+/* ── WHY ── */
+.why-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.why-card { background: var(--surface2); border: 1px solid var(--border); border-radius: 10px; padding: 14px 16px; display: flex; align-items: flex-start; gap: 12px; backdrop-filter: blur(12px); transition: background 0.3s, border-color 0.3s; }
+.why-icon { width:38px; height:38px; border-radius:10px; display:flex; align-items:center; justify-content:center; color:var(--green); background:var(--green-glow); border:1px solid var(--border); flex-shrink:0; }
+.why-title { font-size: 12px; font-weight: 600; color: var(--heading); margin-bottom: 3px; transition: color 0.3s; }
+.why-desc { font-size: 11px; line-height: 1.6; color: var(--muted); }
+
+/* ── FOOTER ── */
+.about-footer { text-align: center; padding: 24px 28px; border-radius: 12px; }
+.footer-label { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--green); margin-bottom: 6px; }
+.footer-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+@media (max-width: 768px) {
+  .highlight-strip, .two-col, .mv-grid, .why-grid { grid-template-columns: 1fr; }
+  .hero-title { font-size: 20px; }
+  .hero-banner-content { padding: 20px; }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(76,175,111,0.35); border-radius: 6px; }
+
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+</head>
+<body>
+
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+
+{% set active = 'about' %}
+{% include '_navbar.html' %}
+
+<!-- ── PAGE ── -->
+<div class="page">
+
+  <!-- HERO BANNER -->
+  <div class="hero-banner">
+    <div class="hero-banner-bg"></div>
+    <div class="hero-banner-gradient"></div>
+    <div class="hero-banner-content">
+      <div class="hero-label">About Us</div>
+      <div style="display:flex;align-items:center;gap:16px;margin-bottom:10px;">
+        <img src="{{ url_for('static', filename='images/ffhnas.jpg') }}"
+             alt="SoilSense logo"
+             style="width:72px;height:72px;border-radius:12px;object-fit:cover;box-shadow:0 4px 18px rgba(0,0,0,0.45);"/>
+        <div class="hero-title">About SoilSense</div>
+      </div>
+      <p class="hero-desc">
+        A TinyML soil-intelligence platform for classrooms and small fields. SoilSense pairs a low-cost
+        RS485 soil probe (built around an ESP32-S3) with a lightweight k-nearest-neighbors model trained on a
+        public 2,200-row crop dataset spanning 22 crops.
+      </p>
+    </div>
+  </div>
+
+  <!-- HIGHLIGHTS -->
+  <div class="highlight-strip">
+    <div class="highlight-card glass">
+      <div class="highlight-icon">{{ icon('radio-tower',22) }}</div>
+      <div class="highlight-title">Seven Raw Readings</div>
+      <div class="highlight-desc">Nitrogen, phosphorus, potassium, pH, temperature, humidity, and rainfall — captured by a field probe or entered by hand.</div>
+    </div>
+    <div class="highlight-card glass">
+      <div class="highlight-icon">{{ icon('cpu',22) }}</div>
+      <div class="highlight-title">Lightweight ML</div>
+      <div class="highlight-desc">A 5-neighbor KNN classifier turns those readings into a soil health score and a ranked list of suitable crops.</div>
+    </div>
+    <div class="highlight-card glass">
+      <div class="highlight-icon">{{ icon('graduation',22) }}</div>
+      <div class="highlight-title">Built for Learning</div>
+      <div class="highlight-desc">Every number is paired with a plain-language explanation a student can actually use.</div>
+    </div>
+  </div>
+
+  <!-- HOW IT WORKS -->
+  <div class="two-col">
+    <div class="panel glass">
+      <div class="panel-header">
+        <span></span>
+        <div class="panel-title">How a Reading Becomes a Recommendation</div>
+      </div>
+      <div class="panel-body">
+        <div class="list-item"><div class="list-dot"></div><div><strong>Health score</strong>Every reading is scored against agronomic optimal ranges to produce a 0–100 health score and a letter grade.</div></div>
+        <div class="list-item"><div class="list-dot"></div><div><strong>Crop comfort bands</strong>Each of the 22 crops has a learned band for every feature (the 10th–90th percentile of readings that produced that label).</div></div>
+        <div class="list-item"><div class="list-dot"></div><div><strong>Match percentage</strong>A reading's match against a crop is the share of features that fall inside its band. The single best match also comes from a 5-neighbor KNN classifier.</div></div>
+      </div>
+    </div>
+    <div class="panel glass">
+      <div class="panel-header">
+        <span></span>
+        <div class="panel-title">Hardware</div>
+      </div>
+      <div class="panel-body">
+        <div class="list-item"><div class="list-dot"></div><div><strong>ESP32-S3 + RS485 probe</strong>A low-cost soil probe that can run unattended in the field.</div></div>
+        <div class="list-item"><div class="list-dot"></div><div><strong>Straight to the dashboard</strong>Field devices POST JSON to <code>/api/esp32</code>, so probe readings appear next to manual entries.</div></div>
+        <div class="list-item"><div class="list-dot"></div><div><strong>One shared history</strong>Device and manual readings share the same history, charts, and crop picks.</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- LEARNING -->
+  <div class="mv-grid">
+    <div class="mv-card glass">
+      <div class="mv-tag">Sensor Readings</div>
+      <div class="mv-title">The “why” behind every number</div>
+      <p class="mv-text">Every number on the Sensor Readings page is paired with a short explanation, so the reasoning behind each reading is as visible as the value itself.</p>
+    </div>
+    <div class="mv-card glass">
+      <div class="mv-tag">Learning Guide &amp; AI Assistant</div>
+      <div class="mv-title">Ask, explore, understand</div>
+      <p class="mv-text">The Learning Guide and AI Assistant exist to make soil science approachable — ask a question in plain language and get an answer grounded in your latest reading.</p>
+    </div>
+  </div>
+
+  <!-- WHAT YOU GET -->
+  <div class="panel glass" style="margin-bottom: 16px;">
+    <div class="panel-header">
+      <span></span>
+      <div class="panel-title">What You Get</div>
+    </div>
+    <div class="panel-body">
+      <div class="why-grid">
+        <div class="why-card"><div class="why-icon">{{ icon('award',20) }}</div><div><div class="why-title">Soil Health Score</div><div class="why-desc">A 0–100 score and letter grade for every reading.</div></div></div>
+        <div class="why-card"><div class="why-icon">{{ icon('sprout',20) }}</div><div><div class="why-title">Ranked Crop Picks</div><div class="why-desc">The crops that best match your soil and climate, with match percentages.</div></div></div>
+        <div class="why-card"><div class="why-icon">{{ icon('message',20) }}</div><div><div class="why-title">Plain-Language Answers</div><div class="why-desc">Explanations a student can actually use, on every page.</div></div></div>
+        <div class="why-card"><div class="why-icon">{{ icon('trending-up',20) }}</div><div><div class="why-title">Full History</div><div class="why-desc">Every reading logged and charted, whether manual or from the probe.</div></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="about-footer glass">
+    <div class="footer-label">SoilSense · TinyML Platform</div>
+    <p class="footer-text">A TinyML soil-intelligence platform for classrooms and small fields.</p>
+  </div>
+
+</div>
+
+<script>
+  function toggleTheme() {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  }
+  const saved = localStorage.getItem('theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+</script>
+
+{% if session.get('user') %}<script src="{{ url_for('static', filename='js/scan-popup.js') }}" data-api="{{ url_for('api_latest_scan') }}" data-dashboard="{{ url_for('overview') }}" data-user="{{ session['user'] }}" defer></script>{% endif %}
+</body>
+</html>

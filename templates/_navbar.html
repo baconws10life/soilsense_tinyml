@@ -1,0 +1,288 @@
+{# Shared left sidebar (same design as the Admin dashboard sidebar).
+   Pages set {% set active = '...' %} before including this. #}
+{% from '_icons.html' import icon %}
+<style>
+/* ── APP SIDEBAR ── */
+:root { --sb-w: 240px; --sb-bg: #141c16; }
+[data-theme="light"] { --sb-bg: #ffffff; }
+.ico { flex-shrink: 0; display: block; }
+
+.app-sidebar {
+  position: fixed; top: 0; left: 0; bottom: 0;
+  width: var(--sb-w);
+  max-width: 86vw;
+  height: 100vh; height: 100dvh;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  z-index: 100;
+  display: flex; flex-direction: column;
+  background: var(--sb-bg);
+  border-right: 1px solid var(--border);
+  overflow-y: auto; overflow-x: hidden;
+  padding: 0 0 max(12px, env(safe-area-inset-bottom));
+  transition: transform .25s ease, background .3s, border-color .3s;
+}
+.app-sidebar::-webkit-scrollbar { width: 4px; }
+
+.sb-head { display: flex; align-items: center; border-bottom: 1px solid var(--border); padding-right: 12px; }
+.sb-logo {
+  display: flex; align-items: center; gap: 12px; flex: 1; min-width: 0;
+  padding: 26px 22px 22px;
+  text-decoration: none;
+}
+.sb-logo img {
+  width: 38px; height: 38px; border-radius: 9px; object-fit: cover; flex-shrink: 0;
+  box-shadow: 0 0 0 1px var(--border), 0 0 14px var(--green-glow);
+}
+.sb-logo-text span {
+  display: block; font-family: 'Fraunces', serif; font-size: 18px; font-weight: 700;
+  color: var(--heading); line-height: 1.1;
+}
+.sb-logo-text small {
+  display: block; margin-top: 3px;
+  font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .12em;
+  text-transform: uppercase; color: var(--green);
+}
+
+.sb-section { padding: 20px 14px 4px; }
+.sb-label {
+  font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .15em;
+  text-transform: uppercase; color: var(--muted);
+  padding: 0 10px; margin-bottom: 8px;
+}
+.sb-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 12px; margin-bottom: 3px;
+  border-radius: 9px; border: 1px solid transparent;
+  font-family: 'DM Sans', sans-serif; font-size: 14px; font-weight: 500;
+  color: var(--muted); text-decoration: none;
+  transition: background .15s, color .15s, border-color .15s;
+}
+.sb-item .ico { opacity: .9; }
+.sb-item:hover { background: var(--green-glow); color: var(--text); }
+.sb-item:hover .ico { color: var(--green); }
+.sb-item.active {
+  background: var(--green-glow); color: var(--green);
+  border-color: rgba(76,175,111,.28); font-weight: 600;
+}
+.sb-item.active .ico { color: var(--green); opacity: 1; }
+
+.sb-footer { margin-top: auto; position: sticky; bottom: 0; background: var(--sb-bg); padding: 16px 16px 4px; border-top: 1px solid var(--border); }
+.sb-user { display: flex; align-items: center; gap: 11px; margin-bottom: 14px; }
+.sb-avatar {
+  width: 36px; height: 36px; border-radius: 50%; flex-shrink: 0;
+  background: linear-gradient(135deg, var(--green-dim), var(--green));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-size: 14px; font-weight: 700; color: #fff;
+  text-transform: uppercase;
+}
+.sb-user-info { min-width: 0; flex: 1; }
+.sb-user-name {
+  font-size: 13.5px; font-weight: 600; color: var(--heading);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.sb-user-role { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--green); text-transform: capitalize; }
+
+.sb-btn {
+  display: flex; align-items: center; justify-content: center; gap: 9px;
+  width: 100%; padding: 10px 12px; margin-bottom: 8px;
+  border-radius: 9px; border: 1px solid var(--border);
+  background: transparent; color: var(--muted);
+  font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+  cursor: pointer; text-decoration: none;
+  transition: color .15s, border-color .15s, background .15s;
+}
+.sb-btn:hover { color: var(--green); border-color: var(--green); background: var(--green-glow); }
+.sb-btn.danger:hover { color: #e05c5c; border-color: rgba(224,92,92,.5); background: rgba(224,92,92,.07); }
+.sb-actions { display: flex; gap: 8px; }
+.sb-actions .sb-btn { margin-bottom: 8px; padding: 10px 6px; white-space: nowrap; }
+.sb-btn span { align-items: center; gap: 8px; }
+.sb-btn .t-dark { display: inline-flex; }
+.sb-btn .t-light { display: none; }
+[data-theme="light"] .sb-btn .t-dark { display: none; }
+[data-theme="light"] .sb-btn .t-light { display: inline-flex; }
+
+/* close button inside the drawer (mobile only) */
+.sb-close {
+  display: none; margin-left: auto; flex-shrink: 0;
+  width: 44px; height: 44px; border-radius: 10px;
+  border: 1px solid var(--border); background: transparent; color: var(--muted);
+  cursor: pointer; align-items: center; justify-content: center;
+}
+.sb-close:active { background: var(--green-glow); color: var(--green); }
+
+/* mobile menu button + overlay */
+.sb-burger {
+  display: none; position: fixed;
+  top: max(10px, env(safe-area-inset-top)); left: max(12px, env(safe-area-inset-left)); z-index: 110;
+  width: 44px; height: 44px; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--sb-bg); color: var(--text);
+  cursor: pointer; align-items: center; justify-content: center;
+  box-shadow: 0 2px 10px rgba(0,0,0,.25); -webkit-tap-highlight-color: transparent;
+}
+.sb-burger.hide { display: none !important; }
+.sb-overlay {
+  display: none; position: fixed; inset: 0; z-index: 90;
+  background: rgba(0,0,0,.55); backdrop-filter: blur(2px);
+  -webkit-tap-highlight-color: transparent;
+}
+body.sb-lock { overflow: hidden; }
+
+/* push page content to the right of the sidebar */
+body { padding-left: var(--sb-w); }
+body > .page { padding-top: 36px !important; }
+.main { padding-top: 0 !important; }
+.topbar { top: 0 !important; }
+
+@media (max-width: 900px) {
+  body { padding-left: 0; }
+  .app-sidebar { transform: translateX(-100%); box-shadow: 30px 0 60px rgba(0,0,0,.35); }
+  .app-sidebar.open { transform: none; }
+  .app-sidebar { visibility: hidden; transition: transform .25s ease, visibility 0s linear .25s; }
+  .app-sidebar.open { visibility: visible; transition: transform .25s ease, visibility 0s; }
+  .sb-burger { display: flex; }
+  .sb-close { display: flex; }
+  .sb-overlay.show { display: block; }
+  .sb-logo { padding: max(18px, env(safe-area-inset-top)) 16px 16px 20px; }
+  .sb-item { padding: 13px 12px; font-size: 15px; min-height: 46px; }
+  .sb-btn { min-height: 44px; font-size: 14px; }
+  .sb-footer { padding-bottom: 8px; }
+  body > .page { padding-top: calc(68px + env(safe-area-inset-top)) !important; }
+  .topbar { padding-left: calc(68px + env(safe-area-inset-left)) !important; min-height: 64px; }
+}
+@media (prefers-reduced-motion: reduce) { .app-sidebar { transition: none !important; } }
+</style>
+
+{% set _u = session.get('user','') %}
+{% set _role = session.get('role','').strip().lower() %}
+
+<button class="sb-burger" type="button" id="sbBurger" aria-label="Open menu">{{ icon('menu', 20) }}</button>
+<div class="sb-overlay" id="sbOverlay"></div>
+
+<aside class="app-sidebar" id="appSidebar" aria-label="Main navigation">
+  <div class="sb-head">
+  <a href="{{ url_for('overview') }}" class="sb-logo">
+    <img src="{{ url_for('static', filename='images/ffhnas.jpg') }}" alt="SoilSense logo"/>
+    <div class="sb-logo-text">
+      <span>SoilSense</span>
+      <small>Soil Monitoring</small>
+    </div>
+  </a>
+  <button class="sb-close" type="button" id="sbClose" aria-label="Close menu">{{ icon('x', 20) }}</button>
+  </div>
+
+  <div class="sb-section">
+    <a href="{{ url_for('overview') }}"     class="sb-item {{ 'active' if active=='overview' else '' }}">{{ icon('dashboard') }} Overview</a>
+    <a href="{{ url_for('dashboard') }}"    class="sb-item {{ 'active' if active in ('log','dashboard') else '' }}">{{ icon('flask') }} Analyze Soil</a>
+    <a href="{{ url_for('sensors') }}"      class="sb-item {{ 'active' if active=='sensors' else '' }}">{{ icon('activity') }} Sensors</a>
+    <a href="{{ url_for('crops') }}"        class="sb-item {{ 'active' if active=='crops' else '' }}">{{ icon('sprout') }} Crops</a>
+    <a href="{{ url_for('ai_assistant') }}" class="sb-item {{ 'active' if active=='ai' else '' }}">{{ icon('sparkles') }} AI Assistant</a>
+    <a href="{{ url_for('learning') }}"     class="sb-item {{ 'active' if active=='learning' else '' }}">{{ icon('book') }} Learn</a>
+    <a href="{{ url_for('pair') }}"         class="sb-item {{ 'active' if active=='pair' else '' }}">{{ icon('cpu') }} Device{% if device_status is defined and device_status.connected %}<span class="sb-pip on" title="Device connected"></span>{% elif device_status is defined %}<span class="sb-pip off" title="No device linked"></span>{% endif %}</a>
+  </div>
+
+  {% if _role == 'admin' %}
+  <div class="sb-section">
+    <div class="sb-label">Admin</div>
+    <a href="{{ url_for('admin_dashboard') }}" class="sb-item {{ 'active' if active=='admin' else '' }}">{{ icon('shield') }} Admin Panel</a>
+  </div>
+  {% endif %}
+
+  <div class="sb-section sb-more">
+    <a href="{{ url_for('about') }}"   class="sb-item sb-item-sm {{ 'active' if active=='about' else '' }}">{{ icon('info',16) }} About</a>
+    <a href="{{ url_for('contact') }}" class="sb-item sb-item-sm {{ 'active' if active=='contact' else '' }}">{{ icon('mail',16) }} Contact</a>
+  </div>
+
+  <div class="sb-footer">
+    <div class="sb-user">
+      <div class="sb-avatar">{{ _u[0] if _u else '?' }}</div>
+      <div class="sb-user-info">
+        <div class="sb-user-name">{{ _u }}</div>
+        <div class="sb-user-role">{{ 'Administrator' if _role == 'admin' else (_role or 'member') }}</div>
+      </div>
+    </div>
+    <div class="sb-actions">
+      <button class="sb-btn" type="button" onclick="toggleTheme()" title="Toggle theme">
+        <span class="t-dark">{{ icon('sun', 16) }} Light</span>
+        <span class="t-light">{{ icon('moon', 16) }} Dark</span>
+      </button>
+      <a href="{{ url_for('logout') }}" class="sb-btn danger">{{ icon('logout', 16) }} Sign out</a>
+    </div>
+  </div>
+</aside>
+
+<nav class="tabbar" aria-label="Quick navigation">
+  <a href="{{ url_for('overview') }}"  class="{{ 'active' if active=='overview' else '' }}">{{ icon('dashboard',22) }}<span>Home</span></a>
+  <a href="{{ url_for('sensors') }}"   class="{{ 'active' if active=='sensors' else '' }}">{{ icon('activity',22) }}<span>Sensors</span></a>
+  <a href="{{ url_for('dashboard') }}" class="tabbar-main {{ 'active' if active in ('log','dashboard') else '' }}"><i>{{ icon('plus',24) }}</i><span>Analyze</span></a>
+  <a href="{{ url_for('crops') }}"     class="{{ 'active' if active=='crops' else '' }}">{{ icon('sprout',22) }}<span>Crops</span></a>
+  <button type="button" id="tabMore">{{ icon('menu',22) }}<span>More</span></button>
+</nav>
+
+<script>
+  function toggleTheme() {
+    var html = document.documentElement;
+    var next = html.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    if (typeof updateChart === 'function') updateChart();
+  }
+  try {
+    var _saved = localStorage.getItem('theme');
+    if (_saved) document.documentElement.setAttribute('data-theme', _saved);
+  } catch (e) {}
+
+  (function () {
+    var sb = document.getElementById('appSidebar');
+    var ov = document.getElementById('sbOverlay');
+    var bg = document.getElementById('sbBurger');
+    var cl = document.getElementById('sbClose');
+    var mq = window.matchMedia('(max-width: 900px)');
+    function setOpen(o) {
+      sb.classList.toggle('open', o);
+      ov.classList.toggle('show', o);
+      bg.classList.toggle('hide', o);
+      bg.setAttribute('aria-expanded', o ? 'true' : 'false');
+      document.body.classList.toggle('sb-lock', o);
+      if (o && cl) cl.focus({ preventScroll: true });
+      if (!o && document.activeElement && sb.contains(document.activeElement)) bg.focus({ preventScroll: true });
+    }
+    var more = document.getElementById('tabMore');
+    if (more) more.addEventListener('click', function () { setOpen(true); });
+    bg.setAttribute('aria-controls', 'appSidebar');
+    bg.setAttribute('aria-expanded', 'false');
+    bg.addEventListener('click', function () { setOpen(!sb.classList.contains('open')); });
+    ov.addEventListener('click', function () { setOpen(false); });
+    if (cl) cl.addEventListener('click', function () { setOpen(false); });
+    // close when a link is tapped (same-page links, hash links) and on Escape
+    sb.addEventListener('click', function (e) { if (e.target.closest('a')) setOpen(false); });
+    document.addEventListener('keydown', function (e) { if (e.key === 'Escape') setOpen(false); });
+    // leaving mobile width (rotate / resize) resets the drawer
+    var reset = function () { if (!mq.matches) setOpen(false); };
+    if (mq.addEventListener) mq.addEventListener('change', reset); else mq.addListener(reset);
+    // restore state when coming back via the browser's back/forward cache
+    window.addEventListener('pageshow', function (e) { if (e.persisted) setOpen(false); });
+    // pages with no sticky top bar: tuck the menu button away while scrolling down so it never covers content
+    if (!document.querySelector('.topbar')) {
+      var lastY = window.pageYOffset, ticking = false;
+      window.addEventListener('scroll', function () {
+        if (ticking) return; ticking = true;
+        requestAnimationFrame(function () {
+          var y = window.pageYOffset;
+          if (y > 90 && y > lastY + 6) bg.classList.add('away');
+          else if (y < lastY - 6 || y <= 90) bg.classList.remove('away');
+          lastY = y; ticking = false;
+        });
+      }, { passive: true });
+    }
+    // swipe left on the drawer to close it
+    var sx = null, sy = null;
+    sb.addEventListener('touchstart', function (e) { sx = e.touches[0].clientX; sy = e.touches[0].clientY; }, { passive: true });
+    sb.addEventListener('touchend', function (e) {
+      if (sx === null) return;
+      var dx = e.changedTouches[0].clientX - sx, dy = e.changedTouches[0].clientY - sy;
+      if (dx < -60 && Math.abs(dx) > Math.abs(dy) * 1.5) setOpen(false);
+      sx = sy = null;
+    }, { passive: true });
+  })();
+</script>

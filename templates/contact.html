@@ -1,0 +1,281 @@
+{% from '_icons.html' import icon %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1410">
+<title>Contact · SoilSense</title>
+<link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+:root {
+  --green:      #4caf6f;
+  --green-dim:  #2d7a4a;
+  --green-glow: rgba(76,175,111,0.18);
+  --red:        #e05c5c;
+  --surface:    rgba(14, 22, 16, 0.72);
+  --surface2:   rgba(20, 32, 22, 0.82);
+  --border:     rgba(76, 175, 111, 0.2);
+  --text:       #d4e8da;
+  --muted:      #7faa87;
+  --heading:    #f0f7f2;
+  --nav-bg:     rgba(8, 14, 10, 0.84);
+  --overlay:    rgba(5, 12, 7, 0.58);
+}
+
+[data-theme="light"] {
+  --green:      #2d7a4a;
+  --green-dim:  #4caf6f;
+  --green-glow: rgba(45,122,74,0.12);
+  --surface:    rgba(235, 248, 240, 0.80);
+  --surface2:   rgba(215, 238, 222, 0.88);
+  --border:     rgba(45, 122, 74, 0.24);
+  --text:       #1a3324;
+  --muted:      #3d6b4a;
+  --heading:    #0e1410;
+  --nav-bg:     rgba(225, 243, 230, 0.84);
+  --overlay:    rgba(200, 235, 210, 0.38);
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  color: var(--text);
+  min-height: 100vh;
+  transition: color 0.3s;
+}
+
+/* ── BACKGROUND ── */
+.bg-image {
+  position: fixed;
+  inset: 0;
+  z-index: -2;
+  background: url("{{ url_for('static', filename='images/bgschool.jpg') }}")
+              center center / cover no-repeat;
+}
+
+[data-theme="light"] .bg-image {
+  filter: brightness(1.08) saturate(0.85);
+}
+
+.bg-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: -1;
+  background: var(--overlay);
+  transition: background 0.4s;
+}
+
+.glass {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+/* ── NAVBAR ── */
+.navbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 100;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 28px;
+  height: 60px;
+  background: var(--nav-bg);
+  border-bottom: 1px solid var(--border);
+  backdrop-filter: blur(18px);
+  -webkit-backdrop-filter: blur(18px);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.navbar-logo { display: flex; align-items: center; gap: 9px; text-decoration: none; }
+
+.navbar-logo span {
+  font-family: 'Fraunces', serif;
+  font-size: 16px; font-weight: 700;
+  color: var(--heading); transition: color 0.3s;
+}
+
+.navbar-right { display: flex; align-items: center; gap: 10px; }
+
+.user-pill {
+  display: flex; align-items: center; gap: 8px;
+  padding: 4px 12px 4px 5px;
+  border-radius: 20px;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  backdrop-filter: blur(12px);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.user-avatar {
+  width: 26px; height: 26px; border-radius: 50%;
+  background: linear-gradient(135deg, var(--green-dim), var(--green));
+  display: flex; align-items: center; justify-content: center;
+  font-family: 'Fraunces', serif; font-size: 11px; font-weight: 700;
+  color: #fff; text-transform: uppercase; flex-shrink: 0;
+}
+
+.user-name { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text); transition: color 0.3s; }
+
+.logout-link {
+  font-family: 'DM Mono', monospace; font-size: 10px;
+  letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--muted); text-decoration: none;
+  padding: 6px 12px; border-radius: 7px;
+  border: 1px solid var(--border);
+  transition: all 0.15s;
+}
+
+.logout-link:hover { color: var(--red); border-color: rgba(224,92,92,0.4); background: rgba(224,92,92,0.08); }
+
+.theme-toggle {
+  width: 34px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--border);
+  background: var(--surface); color: var(--text); font-size: 15px;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  backdrop-filter: blur(12px);
+  transition: border-color 0.2s, background 0.3s, box-shadow 0.2s;
+}
+
+.theme-toggle:hover { border-color: var(--green); box-shadow: 0 0 10px rgba(76,175,111,0.25); }
+.theme-toggle .icon-dark  { display: block; }
+.theme-toggle .icon-light { display: none;  }
+[data-theme="light"] .theme-toggle .icon-dark  { display: none;  }
+[data-theme="light"] .theme-toggle .icon-light { display: block; }
+
+/* ── PAGE ── */
+.page {
+  padding: 88px 24px 52px;
+  max-width: 1100px; margin: 0 auto;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+
+/* ── PAGE HEADER ── */
+.page-header {
+  text-align: center;
+  margin-bottom: 36px;
+}
+
+.page-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.16em; text-transform: uppercase;
+  color: var(--green); margin-bottom: 10px;
+}
+
+.page-title {
+  font-family: 'Fraunces', serif;
+  font-size: 32px; font-weight: 700;
+  color: var(--heading); margin-bottom: 10px;
+  text-shadow: 0 2px 16px rgba(0,0,0,0.4);
+  transition: color 0.3s;
+}
+
+.page-desc {
+  font-size: 13px; line-height: 1.7;
+  color: var(--muted); max-width: 520px;
+  margin: 0 auto;
+}
+
+/* ── FOOTER STRIP ── */
+.contact-footer {
+  text-align: center;
+  padding: 24px 28px;
+  border-radius: 12px;
+}
+
+.footer-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase;
+  color: var(--green); margin-bottom: 6px;
+}
+
+.footer-text { font-size: 12px; color: var(--muted); line-height: 1.6; }
+
+@media (max-width: 900px) {
+}
+
+@media (max-width: 560px) {
+  .page-title { font-size: 24px; }
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: rgba(76,175,111,0.35); border-radius: 6px; }
+
+/* ── contact info cards (no people / no personal contact details) ── */
+.info-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-bottom:14px; }
+.info-card { border-radius:14px; padding:24px 26px; position:relative; overflow:hidden; }
+.info-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--green); }
+.info-icon { width:44px; height:44px; border-radius:11px; display:flex; align-items:center; justify-content:center; color:var(--green); background:var(--green-glow); border:1px solid var(--border); margin-bottom:12px; }
+.info-title { font-family:'Fraunces',serif; font-size:16px; font-weight:700; color:var(--heading); margin-bottom:8px; }
+.info-text { font-size:13px; line-height:1.7; color:var(--muted); }
+.info-text a { color:var(--green); font-weight:600; text-decoration:none; }
+.info-text a:hover { text-decoration:underline; }
+@media (max-width:760px){ .info-grid { grid-template-columns:1fr; } }
+
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+<link rel="stylesheet" href="{{ url_for('static', filename='css/clean.css') }}">
+</head>
+<body>
+
+<div class="bg-image"></div>
+<div class="bg-overlay"></div>
+
+{% set active = 'contact' %}
+{% include '_navbar.html' %}
+
+<!-- ── PAGE ── -->
+<div class="page">
+
+  <!-- HEADER -->
+  <div class="page-header">
+    <div class="page-label">Contact</div>
+    <div class="page-title">Need a hand?</div>
+    <p class="page-desc">Questions about a reading, your device, or account access.</p>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card glass">
+      <div class="info-icon">{{ icon('wrench',22) }}</div>
+      <div class="info-title">Device or account issues</div>
+      <p class="info-text">Reach your program's SoilSense administrator — they can add users, reset access, or review your field's full reading history from the Admin panel.</p>
+    </div>
+    <div class="info-card glass">
+      <div class="info-icon">{{ icon('message',22) }}</div>
+      <div class="info-title">Questions about a reading</div>
+      <p class="info-text">The fastest path is usually the <a href="{{ url_for('ai_assistant') }}">AI Assistant</a> — it already has your latest sensor data loaded.</p>
+    </div>
+  </div>
+
+  <!-- FOOTER -->
+  <div class="contact-footer glass">
+    <div class="footer-label">SoilSense · TinyML Platform</div>
+    <p class="footer-text">Soil detection &amp; crop recommendations for classrooms and small fields.</p>
+  </div>
+
+</div>
+
+<script>
+  function toggleTheme() {
+    const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    document.documentElement.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  }
+  const saved = localStorage.getItem('theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+</script>
+
+{% if session.get('user') %}<script src="{{ url_for('static', filename='js/scan-popup.js') }}" data-api="{{ url_for('api_latest_scan') }}" data-dashboard="{{ url_for('overview') }}" data-user="{{ session['user'] }}" defer></script>{% endif %}
+</body>
+</html>

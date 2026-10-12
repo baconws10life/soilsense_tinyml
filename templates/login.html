@@ -1,0 +1,408 @@
+{% from '_icons.html' import icon %}
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0e1410">
+<title>Log in · SoilSense</title>
+<link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
+<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<style>
+:root {
+  --bg:         #0e1410;
+  --surface:    #141c16;
+  --surface2:   #1a241d;
+  --border:     #253028;
+  --green:      #4caf6f;
+  --green-dim:  #2d7a4a;
+  --green-glow: rgba(76,175,111,0.15);
+  --text:       #d4e8da;
+  --muted:      #6b8a72;
+  --heading:    #f0f7f2;
+}
+
+[data-theme="light"] {
+  --bg:         #f0f7f2;
+  --surface:    #ffffff;
+  --surface2:   #e8f5ec;
+  --border:     #c8e0cf;
+  --green:      #2d7a4a;
+  --green-dim:  #4caf6f;
+  --green-glow: rgba(45,122,74,0.1);
+  --text:       #1a3324;
+  --muted:      #5a7a62;
+  --heading:    #0e1410;
+}
+
+*,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition: background 0.3s, color 0.3s;
+}
+
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(76,175,111,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(76,175,111,0.04) 1px, transparent 1px);
+  background-size: 40px 40px;
+  animation: gridDrift 20s linear infinite;
+  pointer-events: none;
+  z-index: 0;
+}
+
+@keyframes gridDrift {
+  from { background-position: 0 0; }
+  to   { background-position: 40px 40px; }
+}
+
+body::after {
+  content: '';
+  position: fixed;
+  width: 600px;
+  height: 600px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(76,175,111,0.08) 0%, transparent 70%);
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+  z-index: 0;
+  animation: pulse 6s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
+  50%       { transform: translate(-50%, -50%) scale(1.1); opacity: 0.6; }
+}
+
+/* Theme toggle button */
+.theme-toggle {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  width: 40px;
+  height: 40px;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  font-size: 18px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, background 0.3s, box-shadow 0.2s;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
+}
+
+.theme-toggle:hover {
+  border-color: var(--green);
+  box-shadow: 0 2px 16px rgba(76,175,111,0.2);
+}
+
+.theme-toggle .icon-dark { display: block; }
+.theme-toggle .icon-light { display: none; }
+[data-theme="light"] .theme-toggle .icon-dark { display: none; }
+[data-theme="light"] .theme-toggle .icon-light { display: block; }
+
+.login-wrap {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  max-width: 420px;
+  padding: 20px;
+  animation: fadeUp 0.5s ease both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: none; }
+}
+
+.login-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 24px 80px rgba(0,0,0,0.15), 0 0 0 1px rgba(76,175,111,0.05);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.card-header {
+  padding: 32px 32px 24px;
+  border-bottom: 1px solid var(--border);
+  text-align: center;
+  transition: border-color 0.3s;
+}
+
+.logo-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 14px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  animation: leafGlow 3s ease-in-out infinite;
+}
+
+@keyframes leafGlow {
+  0%, 100% { filter: drop-shadow(0 0 8px  rgba(76,175,111,0.3)); }
+  50%       { filter: drop-shadow(0 0 20px rgba(76,175,111,0.6)); }
+}
+
+.card-title {
+  font-family: 'Fraunces', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--heading);
+  margin-bottom: 4px;
+  transition: color 0.3s;
+}
+
+.card-subtitle {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: var(--green);
+}
+
+.card-body {
+  padding: 28px 32px 32px;
+}
+
+.form-group { margin-bottom: 16px; }
+
+.form-label {
+  display: block;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-bottom: 7px;
+}
+
+.form-input {
+  width: 100%;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 11px 14px;
+  font-size: 14px;
+  color: var(--text);
+  font-family: 'DM Sans', sans-serif;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s, background 0.3s, color 0.3s;
+}
+
+.form-input::placeholder { color: var(--muted); }
+
+.form-input:focus {
+  border-color: var(--green);
+  box-shadow: 0 0 0 3px rgba(76,175,111,0.1);
+}
+
+.btn-login {
+  width: 100%;
+  padding: 12px;
+  margin-top: 8px;
+  border-radius: 8px;
+  border: none;
+  background: var(--green);
+  color: #fff;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
+  box-shadow: 0 4px 20px rgba(76,175,111,0.25);
+}
+
+.btn-login:hover {
+  background: var(--green-dim);
+  box-shadow: 0 6px 28px rgba(76,175,111,0.4);
+}
+
+.btn-login:active { transform: scale(0.98); }
+
+.divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 20px 0;
+  font-size: 11px;
+  color: var(--muted);
+}
+
+.divider::before,
+.divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: var(--border);
+}
+
+.register-link {
+  text-align: center;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.register-link a {
+  color: var(--green);
+  text-decoration: none;
+  font-weight: 600;
+  transition: color 0.15s;
+}
+
+.register-link a:hover { color: var(--green-dim); }
+
+.status-bar {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 12px;
+  background: var(--surface2);
+  border-top: 1px solid var(--border);
+  transition: background 0.3s, border-color 0.3s;
+}
+
+.status-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: blink 2s ease-in-out infinite;
+}
+
+.status-dot:nth-child(2) { animation-delay: 0.3s; background: rgba(76,175,111,0.5); width: 4px; height: 4px; }
+.status-dot:nth-child(3) { animation-delay: 0.6s; background: rgba(76,175,111,0.3); width: 3px; height: 3px; }
+
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50%       { opacity: 0.3; }
+}
+
+.status-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin-left: 2px;
+}
+
+::-webkit-scrollbar { width: 6px; }
+::-webkit-scrollbar-track { background: var(--bg); }
+::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
+
+</style>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
+</head>
+<body>
+
+<!-- Theme Toggle -->
+<button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
+  <span class="icon-dark">{{ icon('moon',17) }}</span>
+  <span class="icon-light">{{ icon('sun',17) }}</span>
+</button>
+
+<div class="login-wrap">
+  <div class="login-card">
+
+    <div class="card-header">
+  <div class="logo-mark">
+    <img src="{{ url_for('static', filename='images/ffhnas.jpg') }}"
+         alt="SoilSense logo"
+         style="width:52px;height:52px;border-radius:12px;object-fit:cover;display:block;"/>
+  </div>
+  <div class="card-title">SoilSense</div>
+  <div class="card-subtitle">TinyML Soil Intelligence Platform</div>
+</div>
+
+  <div class="card-body">
+  <form method="POST">
+
+    {% if error %}
+    <div style="
+      display:flex;align-items:center;gap:8px;
+      padding:10px 14px;margin-bottom:16px;
+      border-radius:8px;
+      background:rgba(224,92,92,0.08);
+      border:1px solid rgba(224,92,92,0.35);
+      font-family:'DM Mono',monospace;
+      font-size:11px;color:#e05c5c;
+      line-height:1.4;">
+      {{ icon('alert',14) }} {{ error }}
+    </div>
+    {% endif %}
+
+    <div class="form-group">
+      <label class="form-label">Username</label>
+      <input class="form-input" type="text" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"
+             placeholder="Enter your username"
+             value="{{ request.form.get('username', '') }}"
+             required/>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" name="password" autocomplete="current-password" enterkeyhint="go"
+             placeholder="••••••••" required/>
+    </div>
+
+    <button class="btn-login" type="submit">Sign In</button>
+
+  </form>
+
+  <div class="divider">or</div>
+
+  <p class="register-link">
+    Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+  </p>
+</div>
+
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <div class="status-dot"></div>
+      <div class="status-dot"></div>
+      <span class="status-text">System Online</span>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  function toggleTheme() {
+    const html = document.documentElement;
+    const current = html.getAttribute('data-theme');
+    const next = current === 'dark' ? 'light' : 'dark';
+    html.setAttribute('data-theme', next);
+    localStorage.setItem('theme', next);
+  }
+
+  // Persist theme across page loads
+  const saved = localStorage.getItem('theme');
+  if (saved) document.documentElement.setAttribute('data-theme', saved);
+</script>
+
+</body>
+</html>

@@ -1,0 +1,243 @@
+{% extends "base.html" %}
+{% from '_icons.html' import icon, sensor_icon %}
+{% block title %}Sensor Readings{% endblock %}
+{% set active = 'sensors' %}
+{% block topbar_left %}Sensor Readings{% endblock %}
+
+{% block content %}
+<h1 class="page-title">Sensor Readings</h1>
+<p class="page-subtitle">
+  {% if record %}
+    Latest scan{% if summary.when %} &middot; {{ summary.when }}{% endif %} &middot; {{ summary.source_label }}
+    {% if summary.was_offline %}<span class="sx-tag sx-tag-offline" title="Scanned with no Wi-Fi, stored on the ESP32-S3 and uploaded later">Saved offline, then synced</span>{% endif %}
+  {% else %}No sensor data yet{% endif %}
+</p>
+
+{% if record %}
+
+{# ---------- 1. AT A GLANCE ---------- #}
+<section class="card sx-overview">
+  <div class="sx-grade">
+    <div class="sx-grade-ring">
+      <div data-ring data-percent="{{ record.fertility|round(0)|int }}" data-size="112" data-stroke="9"></div>
+      <div class="sx-grade-letter">{{ grade }}</div>
+    </div>
+    <div>
+      <div class="sx-grade-score">{{ record.fertility|round(0)|int }}<span>/100</span></div>
+      <div class="sx-grade-copy">{{ grade_copy }}</div>
+    </div>
+  </div>
+
+  <div class="sx-counts" role="group" aria-label="Filter readings by status">
+    <button type="button" class="sx-count sx-count-optimal"   data-filter="optimal"><b>{{ summary.counts.optimal }}</b><span>Optimal</span></button>
+    <button type="button" class="sx-count sx-count-watch"     data-filter="watch"><b>{{ summary.counts.watch }}</b><span>Monitor</span></button>
+    <button type="button" class="sx-count sx-count-attention" data-filter="attention"><b>{{ summary.counts.attention }}</b><span>Needs attention</span></button>
+  </div>
+
+  <div class="sx-todo">
+    <h2 class="sx-h">{% if summary.todo %}Do this first{% else %}All clear{% endif %}</h2>
+    {% if summary.todo %}
+    <ol class="sx-todo-list">
+      {% for r in summary.todo %}
+      <li>
+        <span class="badge badge-{{ r.status }}">{{ 'Monitor' if r.status == 'watch' else r.status|capitalize }}</span>
+        <div><b>{{ r.label }} {{ r.value }} {{ r.unit }}</b><br>{{ r.action }}</div>
+      </li>
+      {% endfor %}
+    </ol>
+    {% else %}
+    <p class="sx-muted">All {{ summary.total }} readings are in their optimal range. Nothing to fix right now.</p>
+    {% endif %}
+  </div>
+
+  {% if summary.crop %}
+  <div class="sx-crop">
+    <div class="sx-crop-main">
+      <span class="sx-crop-icon">{{ icon('cpu', 18) }}</span>
+      <div>
+        <div class="sx-crop-label">Suggested crop</div>
+        <div class="sx-crop-name">{{ summary.crop }}{% if summary.crop_conf is not none %} <small>{{ summary.crop_conf }}% confidence</small>{% endif %}</div>
+        <div class="sx-crop-by">Picked by {{ summary.crop_by }}</div>
+      </div>
+    </div>
+    <div class="sx-crop-links">
+      <a href="{{ url_for('crops') }}" class="btn btn-ghost btn-sm">See crop picks</a>
+      <a href="{{ url_for('ai_assistant') }}?ask={{ 'Why did my scan pick this crop?'|urlencode }}" class="btn btn-ghost btn-sm">{{ icon('bot',15) }} Why this crop?</a>
+    </div>
+  </div>
+  {% endif %}
+</section>
+
+{# ---------- 1b. ON-DEVICE TINYML ANALYSIS (only for scans from the ESP32) ---------- #}
+{% if summary.tiny %}
+<section class="card sx-tiny">
+  <div class="sx-tiny-head">
+    <span class="sx-crop-icon">{{ icon('cpu', 18) }}</span>
+    <div>
+      <h2 class="sx-h" style="margin:0;">On-device TinyML analysis</h2>
+      <div class="sx-crop-by">Three tiny neural networks on the ESP32-S3, computed at scan time with no Wi-Fi</div>
+    </div>
+  </div>
+  <div class="sx-tiny-grid">
+    {% if summary.tiny.top3 %}
+    <div class="sx-tiny-box">
+      <h3>Top crops</h3>
+      {% for c in summary.tiny.top3 %}
+      <div class="sx-top">
+        <span class="sx-top-name">{{ loop.index }}. {{ c.emoji }} {{ c.label }}</span>
+        <span class="sx-top-bar"><i style="width: {{ c.conf or 0 }}%"></i></span>
+        <span class="sx-top-pct">{{ c.conf if c.conf is not none else '-' }}%</span>
+      </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+    {% if summary.tiny.odd is not none %}
+    <div class="sx-tiny-box">
+      <h3>Probe check</h3>
+      {% if summary.tiny.odd %}
+      <p class="sx-probe sx-probe-bad"><b>Odd value.</b> This reading does not look like real soil. Push the probe in fully, wait a few seconds and scan again.</p>
+      {% else %}
+      <p class="sx-probe sx-probe-ok"><b>Looks like real soil.</b> The reading is consistent with normal soil data.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+    {% if summary.tiny.advice is not none %}
+    <div class="sx-tiny-box">
+      <h3>Advisor</h3>
+      {% if summary.tiny.advice %}
+      <div class="sx-chips">{% for a in summary.tiny.advice %}<span class="badge badge-watch">{{ a }}</span>{% endfor %}</div>
+      {% else %}
+      <p class="sx-probe sx-probe-ok"><b>Nothing to fix.</b> No problem flagged.</p>
+      {% endif %}
+    </div>
+    {% endif %}
+  </div>
+  <a href="{{ url_for('ai_assistant') }}?ask={{ 'What is TinyML?'|urlencode }}" class="btn btn-ghost btn-sm">{{ icon('bot',15) }} How does this work?</a>
+</section>
+{% endif %}
+
+{# ---------- 2. FILTER BAR ---------- #}
+<div class="sx-toolbar">
+  <div class="sx-filters" role="tablist" aria-label="Show readings">
+    <button type="button" class="sx-filter active" data-filter="all">All <span>{{ summary.total }}</span></button>
+    <button type="button" class="sx-filter" data-filter="issues">All issues <span>{{ summary.counts.attention + summary.counts.watch }}</span></button>
+    <button type="button" class="sx-filter" data-filter="attention">Urgent <span>{{ summary.counts.attention }}</span></button>
+    <button type="button" class="sx-filter" data-filter="watch">Monitor <span>{{ summary.counts.watch }}</span></button>
+    <button type="button" class="sx-filter" data-filter="optimal">Optimal <span>{{ summary.counts.optimal }}</span></button>
+  </div>
+  <div class="sx-legend"><span class="sx-legend-zone"></span> Optimal zone <span class="sx-legend-mark"></span> Your reading</div>
+</div>
+
+{# ---------- 3. READINGS, GROUPED ---------- #}
+{% for g in groups %}
+<section class="sx-group" data-group>
+  <header class="sx-group-head">
+    <h2>{{ g.title }}</h2>
+    <p>{{ g.subtitle }}</p>
+  </header>
+
+  {% for r in g.rows %}
+  {% set bucket = 'optimal' if r.status == 'optimal' else ('watch' if r.status == 'watch' else 'attention') %}
+  <article class="card sx-row sx-{{ bucket }}" data-status="{{ bucket }}" id="reading-{{ r.key }}">
+    <div class="sx-row-top">
+      <div class="sx-icon">{{ sensor_icon(r.key, 22) }}</div>
+      <div class="sx-name">
+        <h3>{{ r.label }}</h3>
+        <div class="sx-meta">
+          <button type="button" class="badge badge-{{ r.status }} sx-badge" data-filter="{{ bucket }}" title="Show only {{ 'Monitor' if bucket == 'watch' else bucket }} readings">{{ 'Monitor' if r.status == 'watch' else r.status|capitalize }}</button>
+          <span class="sx-tag">{{ r.how }}</span>
+        </div>
+      </div>
+      <div class="sx-value"><span class="num">{{ r.value }}</span><span class="unit">{{ r.unit }}</span></div>
+    </div>
+
+    <div class="sx-bar-wrap" aria-hidden="true">
+      <div class="sx-bar">
+        <div class="sx-bar-optimal" style="left: {{ (r.optimal_min/r.scale_max*100)|round(1) }}%; width: {{ ((r.optimal_max-r.optimal_min)/r.scale_max*100)|round(1) }}%;"></div>
+        <div class="sx-bar-marker" style="left: {{ r.percent }}%;"></div>
+      </div>
+      <div class="sx-bar-scale"><span>{{ r.scale_min }}</span><span>Optimal {{ r.optimal_min }}&ndash;{{ r.optimal_max }} {{ r.unit }}</span><span>{{ r.scale_max }}</span></div>
+    </div>
+
+    <p class="sx-copy">{{ r['copy'] }}</p>
+    <p class="sx-action"><b>What to do:</b> {{ r.action }}</p>
+
+    <details class="sx-details">
+      <summary>Details</summary>
+      <dl class="sx-dl">
+        <div><dt>Your reading</dt><dd>{{ r.value }} {{ r.unit }}</dd></div>
+        <div><dt>Optimal range</dt><dd>{{ r.optimal_min }}&ndash;{{ r.optimal_max }} {{ r.unit }}</dd></div>
+        <div><dt>Monitor range</dt><dd>{{ r.watch_min }}&ndash;{{ r.watch_max }} {{ r.unit }}</dd></div>
+        <div><dt>Compared to optimal</dt><dd>{{ r.gap }}</dd></div>
+      </dl>
+      <p class="sx-why"><b>Why it matters:</b> {{ r.why }}</p>
+      {% if r.key == 'rainfall' and r.how == 'Assumed' %}
+      <p class="sx-note">The soil probe cannot measure rainfall, so the scanner sends an assumed value. Treat this card as a placeholder, not a field measurement.</p>
+      {% elif r.key == 'organic_matter' %}
+      <p class="sx-note">Organic matter is estimated from nitrogen and potassium. It is not measured directly by the probe.</p>
+      {% endif %}
+      <a href="{{ url_for('ai_assistant') }}?ask={{ r.label|urlencode }}" class="btn btn-ghost btn-sm ask-ai-btn">{{ icon('bot',15) }} Ask AI about {{ r.label }}</a>
+    </details>
+  </article>
+  {% endfor %}
+</section>
+{% endfor %}
+
+<p class="sx-empty" id="sxEmpty" hidden>No readings in this group.</p>
+
+{% else %}
+<div class="empty-state">
+  <span class="emoji">{{ icon('radio-tower',28) }}</span>
+  <h3>No readings to show yet</h3>
+  <p>Press <b>Scan now</b> on the scanner, or log a reading by hand, to see the full breakdown here.</p>
+  <a href="{{ url_for('dashboard') }}" class="btn btn-primary" style="margin-top:16px;">+ Add a reading</a>
+</div>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if record %}
+<script>
+(function () {
+  var rows = document.querySelectorAll('.sx-row');
+  var groups = document.querySelectorAll('[data-group]');
+  var tabs = document.querySelectorAll('.sx-filter');
+  var empty = document.getElementById('sxEmpty');
+  function apply(f) {
+    rows.forEach(function (r) { r.hidden = !(f === 'all' || (f === 'issues' ? r.dataset.status !== 'optimal' : r.dataset.status === f)); });
+    var any = false;
+    groups.forEach(function (g) {
+      var vis = g.querySelectorAll('.sx-row:not([hidden])').length > 0;
+      g.hidden = !vis; if (vis) any = true;
+    });
+    tabs.forEach(function (t) { t.classList.toggle('active', t.dataset.filter === f); });
+    if (empty) empty.hidden = any;
+  }
+  // deep links from the Overview: /sensors?filter=issues#reading-ph
+  var qf = new URLSearchParams(location.search).get('filter');
+  if (qf && document.querySelector('.sx-filter[data-filter="' + qf + '"]')) apply(qf);
+  if (location.hash.indexOf('#reading-') === 0) {
+    var target = document.querySelector(location.hash);
+    if (target) {
+      target.hidden = false;
+      var g = target.closest('[data-group]'); if (g) g.hidden = false;
+      var d = target.querySelector('details'); if (d) d.open = true;
+      target.classList.add('sx-flash');
+      setTimeout(function () { target.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 150);
+    }
+  }
+  document.querySelectorAll('[data-filter]').forEach(function (b) {
+    b.addEventListener('click', function () {
+      var f = b.dataset.filter;
+      var current = document.querySelector('.sx-filter.active');
+      apply(current && current.dataset.filter === f && f !== 'all' ? 'all' : f);
+      if (b.classList.contains('sx-count') || b.classList.contains('sx-badge')) {
+        var bar = document.querySelector('.sx-toolbar');
+        if (bar) bar.scrollIntoView({behavior: 'smooth', block: 'start'});
+      }
+    });
+  });
+})();
+</script>
+{% endif %}
+{% endblock %}
