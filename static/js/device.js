@@ -7,6 +7,10 @@
  * States shown (all come from /api/devices, never guessed in the browser):
  *   searching | none found | available | connected (you) | in use by someone else |
  *   connection lost | server unreachable | "you were disconnected" notice
+ *
+ * Also: a "Scan now" button under the scanner you are connected to. It asks the server to
+ * tell the scanner to take a reading (POST /api/devices/<id>/scan), then waits for the new
+ * reading to appear (GET /api/latest-scan). The scan-popup then shows the values.
  */
 (function () {
   'use strict';
@@ -19,6 +23,11 @@
   var chip = document.getElementById('devChip');
   var POLL_MS = 4000, MIN_SEARCH_MS = 1300;
   var busy = false, timer = null, lastErr = '', searching = true;
+  // "Scan now" button state. Kept here (not in the DOM) because the list is redrawn every few seconds.
+  //   phase: idle | sending | waiting | done | error
+  var SCAN_TIMEOUT_MS = 45000, SCAN_POLL_MS = 1500;
+  var scan = { phase: 'idle', msg: '', devId: null, baseline: 0, t0: 0, timer: null, reset: null };
+  var lastMine = null, scanEl = null;
 
   function h(tag, cls, text) {
     var e = document.createElement(tag);
@@ -37,6 +46,7 @@
   var ICON = {
     wifi:  '<path d="M5 12.55a11 11 0 0 1 14.08 0"/><path d="M1.42 9a16 16 0 0 1 21.16 0"/><path d="M8.53 16.11a6 6 0 0 1 6.95 0"/><line x1="12" y1="20" x2="12.01" y2="20"/>',
     probe: '<path d="M14 4v10.54a4 4 0 1 1-4 0V4a2 2 0 0 1 4 0Z"/>',
+    scan:  '<path d="M3 7V5a2 2 0 0 1 2-2h2"/><path d="M17 3h2a2 2 0 0 1 2 2v2"/><path d="M21 17v2a2 2 0 0 1-2 2h-2"/><path d="M7 21H5a2 2 0 0 1-2-2v-2"/><circle cx="12" cy="12" r="3"/>',
     lock:  '<rect width="18" height="11" x="3" y="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>',
     alert: '<path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/>'
   };
@@ -111,6 +121,95 @@
     return li;
   }
 
+
+  /* ---------- Scan now (website button) ---------- */
+
+  function scanBlock(d) {
+    var box = h('div', 'dp-scan dp-scan-' + scan.phase);
+    var b = h('button', 'btn btn-primary dp-scan-btn'); b.type = 'button';
+    b.appendChild(icon(ICON.scan, 20));
+    var working = scan.phase === 'sending' || scan.phase === 'waiting';
+    var label = scan.phase === 'sending' ? 'Sending…'
+              : scan.phase === 'waiting' ? 'Scanning…' : 'Scan now';
+    b.appendChild(h('span', null, label));
+    b.disabled = working;
+    if (working) b.classList.add('is-working');
+    b.addEventListener('click', function () { startScan(d); });
+    box.appendChild(b);
+
+    var line = h('div', 'dp-scan-msg'); line.setAttribute('role', 'status'); line.setAttribute('aria-live', 'polite');
+    if (scan.phase === 'sending')      line.textContent = 'Telling the scanner…';
+    else if (scan.phase === 'waiting') line.textContent = (lastMine && lastMine.scan_pending)
+                                          ? 'Waiting for the scanner to answer…'
+                                          : 'The scanner is reading the soil – keep the probe in the ground.';
+    else if (scan.phase === 'done' || scan.phase === 'error') line.textContent = scan.msg;
+    else line.textContent = 'Takes one reading with the probe, same as pressing the scanner’s screen.';
+    box.appendChild(line);
+    return box;
+  }
+
+  function paintScan() {          // redraw only the button block (phase changed between list refreshes)
+    if (!scanEl || !scanEl.parentNode || !lastMine) return;
+    var fresh = scanBlock(lastMine);
+    scanEl.parentNode.replaceChild(fresh, scanEl);
+    scanEl = fresh;
+  }
+
+  function scanSet(phase, msg) {
+    scan.phase = phase; scan.msg = msg || '';
+    clearTimeout(scan.reset);
+    if (phase === 'done' || phase === 'error') {
+      scan.reset = setTimeout(function () { scan.phase = 'idle'; scan.msg = ''; paintScan(); }, phase === 'done' ? 8000 : 12000);
+    }
+    paintScan();
+  }
+
+  function getJson(url) {
+    return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
+      .then(function (r) { if (r.status === 401) { location.href = '/'; throw new Error('signed out'); } return r.json(); });
+  }
+
+  function startScan(d) {
+    if (scan.phase === 'sending' || scan.phase === 'waiting') return;
+    scan.devId = d.id;
+    scanSet('sending');
+    post('/api/devices/' + encodeURIComponent(d.id) + '/scan').then(function (j) {
+      if (!j.ok) { scanSet('error', j.message || 'Could not start the scan.'); return; }
+      scan.baseline = j.baseline || 0; scan.t0 = Date.now();
+      scanSet('waiting');
+      watchScan();
+    }).catch(function () { scanSet('error', 'Could not reach the website. Try again.'); });
+  }
+
+  // Wait for the reading to land: the scanner posts it, so a newer scan id shows up.
+  function watchScan() {
+    clearTimeout(scan.timer);
+    scan.timer = setTimeout(function () {
+      if (scan.phase !== 'waiting') return;
+      getJson('/api/latest-scan?since=' + scan.baseline).then(function (j) {
+        if (j && j.new) { scanSet('done', 'Done – your new reading has been saved.'); refresh(false); return; }
+        if (Date.now() - scan.t0 > SCAN_TIMEOUT_MS) { scanFailed(); return; }
+        watchScan();
+      }).catch(function () {
+        if (Date.now() - scan.t0 > SCAN_TIMEOUT_MS) scanFailed(); else watchScan();
+      });
+    }, SCAN_POLL_MS);
+  }
+
+  // Nothing arrived in time: ask the server why, so the message is specific.
+  function scanFailed() {
+    getJson('/api/devices').then(function (data) {
+      var d = (data.devices || []).filter(function (x) { return x.id === scan.devId; })[0];
+      var msg;
+      if (!d || d.state === 'lost' || d.state === 'offline') msg = 'The scanner stopped responding. Check it is powered on and on Wi-Fi.';
+      else if (d.state !== 'mine')                           msg = 'You are no longer connected to this scanner.';
+      else if (d.scan_pending)                               msg = 'The scanner did not pick up the request. Try again in a moment.';
+      else if (d.sensor === 'fail')                          msg = 'The scanner could not read the soil probe. Check the probe cable.';
+      else                                                   msg = 'No reading came back. Try again.';
+      scanSet('error', msg);
+    }).catch(function () { scanSet('error', 'No reading came back. Try again.'); });
+  }
+
   function btn(label, cls, fn) {
     var b = h('button', cls, label); b.type = 'button';
     b.addEventListener('click', function () { fn(b); });
@@ -130,7 +229,7 @@
     var free = devices.filter(function (d) { return d.state === 'available'; });
     var used = devices.filter(function (d) { return d.state === 'busy'; });
 
-    if (mine.length)       { setPill('ok',   'Connected');        sub.textContent = 'Press the big Scan now button on the scanner - your reading shows up here.'; hint.textContent = 'Done? Disconnect so the next person can use it.'; }
+    if (mine.length)       { setPill('ok',   'Connected');        sub.textContent = 'Press Scan now below (or the big button on the scanner) - your reading shows up here.'; hint.textContent = 'Done? Disconnect so the next person can use it.'; }
     else if (lost.length)  { setPill('err',  'Connection lost');  sub.textContent = 'Your scanner stopped responding.'; hint.textContent = 'It reconnects by itself when Wi-Fi is back.'; }
     else if (free.length)  { setPill('found','Scanner found');    sub.textContent = free.length > 1 ? free.length + ' scanners are free - pick one to connect.' : 'A scanner is ready. Connect to start scanning.'; hint.textContent = 'Only one person can use a scanner at a time.'; }
     else if (used.length)  { setPill('busy', 'In use');           sub.textContent = 'The scanner is being used by someone else right now.'; hint.textContent = 'You can connect as soon as they disconnect.'; }
@@ -139,6 +238,10 @@
     // "Find device" is the main action only when nothing has been found yet
     findBtn.classList.toggle('btn-primary', !devices.length);
     findBtn.classList.toggle('btn-ghost', !!devices.length);
+
+    lastMine = mine.length ? mine[0] : null;
+    if (!lastMine && (scan.phase === 'sending' || scan.phase === 'waiting')) { clearTimeout(scan.timer); scan.phase = 'idle'; }
+    scanEl = null;
 
     body.textContent = '';
     if (!devices.length) {
@@ -149,7 +252,10 @@
     } else {
       var order = { mine: 0, lost: 1, available: 2, busy: 3, offline: 4 };
       devices.slice().sort(function (a, b) { return order[a.state] - order[b.state]; })
-             .forEach(function (d) { body.appendChild(row(d, isAdmin)); });
+             .forEach(function (d) {
+               body.appendChild(row(d, isAdmin));
+               if (d.state === 'mine' && d.online) { scanEl = scanBlock(d); body.appendChild(scanEl); }
+             });
     }
   }
 

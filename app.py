@@ -192,7 +192,8 @@ def init_db():
     for _col, _type in (("last_seen_at", "TIMESTAMPTZ"), ("connected_at", "TIMESTAMPTZ"),
                         ("rssi", "INTEGER"), ("sensor_state", "TEXT"), ("fw", "TEXT"),
                         ("released_user", "TEXT"), ("released_reason", "TEXT"), ("dev_name", "TEXT"),
-                        ("released_at", "TIMESTAMPTZ")):
+                        ("released_at", "TIMESTAMPTZ"),
+                        ("scan_requested_at", "TIMESTAMPTZ")):
         _add_column_if_missing(conn, "devices", _col, _type)
 
     # Idempotent migrations for columns added after initial release
@@ -1228,6 +1229,7 @@ ESP32_API_KEY = os.environ.get("ESP32_API_KEY","")
 # one with a single atomic UPDATE, so two people can never both get it.
 DEVICE_ONLINE_SECS   = 25      # no heartbeat for this long -> the scanner counts as offline
 DEVICE_RELEASE_SECS  = 600     # an owned scanner offline this long is released automatically
+DEVICE_SCAN_TTL_SECS = 30      # a "Scan now" pressed on the website is dropped if the scanner has not taken it by then
 DEVICE_NOTICE_SECS   = 1800    # how long a disconnected user keeps seeing the "you were disconnected" notice
 
 
@@ -1250,7 +1252,7 @@ def _release_stale(cur):
     ghost connection never blocks the next student. The previous owner is told why."""
     cur.execute(
         "UPDATE devices SET released_user=owner, released_reason='offline', released_at=NOW(), "
-        "owner=NULL, paired_at=NULL "
+        "owner=NULL, paired_at=NULL, scan_requested_at=NULL "
         "WHERE owner IS NOT NULL AND "
         f"(last_seen_at IS NULL OR last_seen_at < NOW() - INTERVAL '{int(DEVICE_RELEASE_SECS)} seconds')")
 
@@ -1279,6 +1281,8 @@ def _device_view(row, viewer, is_admin):
         "idle_s": idle, "rssi": row.get("rssi"), "sensor": row.get("sensor_state") or "unknown",
         "in_use": bool(owner), "mine": bool(owner and owner == viewer),
     }
+    if owner and owner == viewer:      # a Scan now request still waiting for the scanner to pick it up
+        out["scan_pending"] = bool(row.get("scan_pending"))
     if is_admin:                       # only admins ever see who is using a scanner
         out["owner"] = owner
     return out
@@ -1288,6 +1292,7 @@ def _list_devices_for(cur, viewer, is_admin):
     _release_stale(cur)
     cur.execute(
         "SELECT LEFT(token_hash,8) AS id, owner, rssi, sensor_state, dev_name, "
+        f"(scan_requested_at > NOW() - INTERVAL '{int(DEVICE_SCAN_TTL_SECS)} seconds') AS scan_pending, "
         "EXTRACT(EPOCH FROM (NOW() - last_seen_at))::INT AS idle_s "
         "FROM devices WHERE last_seen_at IS NOT NULL ORDER BY last_seen_at DESC LIMIT 50")
     views = [_device_view(r, viewer, is_admin) for r in cur.fetchall()]
@@ -1316,7 +1321,8 @@ def _my_notice(cur, username):
 @app.route("/api/device/heartbeat", methods=["POST"])
 def api_device_heartbeat():
     """The scanner calls this every few seconds. It makes the scanner discoverable and
-    tells the LCD whether somebody is connected to it. Body (all optional):
+    tells the LCD whether somebody is connected to it. The reply also carries "scan": true
+    when the connected user pressed Scan now on the website. Body (all optional):
     {"rssi": -60, "sensor": "ok|fail|unknown", "fw": "2.0"}"""
     if not _api_key_ok():
         return jsonify({"error": "unauthorized"}), 401
@@ -1341,10 +1347,15 @@ def api_device_heartbeat():
     cur.execute(
         "UPDATE devices SET last_seen=NOW()::TEXT, last_seen_at=NOW(), rssi=%s, "
         "sensor_state=%s, fw=COALESCE(%s, fw), dev_name=COALESCE(%s, dev_name) "
-        "WHERE token_hash=%s RETURNING owner", (rssi, sensor, fw, name, th))
+        "WHERE token_hash=%s RETURNING owner, (scan_requested_at IS NOT NULL) AS has_req, "
+        f"(scan_requested_at > NOW() - INTERVAL '{int(DEVICE_SCAN_TTL_SECS)} seconds') AS scan_due", (rssi, sensor, fw, name, th))
     row = cur.fetchone()
+    # "Scan now" pressed on the website: hand it to the scanner exactly once, then clear it
+    scan = bool(row and row["owner"] and row["scan_due"])
+    if row and row["has_req"]:
+        cur.execute("UPDATE devices SET scan_requested_at=NULL WHERE token_hash=%s", (th,))
     conn.commit(); cur.close(); conn.close()
-    return jsonify({"status": "ok", "connected": bool(row and row["owner"])}), 200
+    return jsonify({"status": "ok", "connected": bool(row and row["owner"]), "scan": scan}), 200
 
 
 @app.route("/api/devices")
@@ -1377,7 +1388,7 @@ def api_device_connect(dev_id):
     try:
         _release_stale(cur)
         cur.execute(
-            "UPDATE devices SET owner=%s, paired_at=NOW()::TEXT, connected_at=NOW(), "
+            "UPDATE devices SET owner=%s, paired_at=NOW()::TEXT, connected_at=NOW(), scan_requested_at=NULL, "
             "released_user=NULL, released_reason=NULL, released_at=NULL "
             "WHERE LEFT(token_hash,8)=%s AND owner IS NULL "
             f"AND last_seen_at > NOW() - INTERVAL '{int(DEVICE_ONLINE_SECS)} seconds' "
@@ -1425,7 +1436,7 @@ def api_device_disconnect(dev_id):
             return jsonify({"ok": True, "already": True})
         if owner == user:
             cur.execute(
-                "UPDATE devices SET owner=NULL, paired_at=NULL, released_user=NULL, released_reason=NULL "
+                "UPDATE devices SET owner=NULL, paired_at=NULL, released_user=NULL, released_reason=NULL, scan_requested_at=NULL "
                 "WHERE LEFT(token_hash,8)=%s AND owner=%s", (dev_id, user))
             conn.commit()
             return jsonify({"ok": True})
@@ -1434,13 +1445,57 @@ def api_device_disconnect(dev_id):
                             "message": "Only the person using this scanner, or an admin, can disconnect it."}), 403
         cur.execute(
             "UPDATE devices SET released_user=owner, released_reason='admin', released_at=NOW(), "
-            "owner=NULL, paired_at=NULL WHERE LEFT(token_hash,8)=%s AND owner IS NOT NULL RETURNING released_user",
+            "owner=NULL, paired_at=NULL, scan_requested_at=NULL WHERE LEFT(token_hash,8)=%s AND owner IS NOT NULL RETURNING released_user",
             (dev_id,))
         gone = cur.fetchone()
         conn.commit()
         return jsonify({"ok": True, "disconnected_user": gone["released_user"] if gone else owner})
     finally:
         cur.close(); conn.close()
+
+
+@app.route("/api/devices/<dev_id>/scan", methods=["POST"])
+@login_required
+def api_device_scan(dev_id):
+    """'Scan now' on the website. Only the person connected to the scanner can press it.
+    It just leaves a note for the scanner; the scanner finds it on its next check-in
+    (every ~3 s while connected), reads the probe and sends the reading to /api/esp32 like
+    a tap on its screen. `baseline` = id of this user's newest scanner reading right now,
+    so the page can tell when the NEW one has arrived (GET /api/latest-scan?since=baseline)."""
+    dev_id = re.sub(r"[^0-9a-fA-F]", "", dev_id).lower()[:8]
+    user   = session["user"]
+    conn = get_db(); cur = conn.cursor()
+    try:
+        cur.execute("SELECT COALESCE(MAX(id),0) AS m FROM records WHERE username=%s AND source='esp32'", (user,))
+        baseline = cur.fetchone()["m"]
+        cur.execute(
+            "UPDATE devices SET scan_requested_at=NOW() "
+            "WHERE LEFT(token_hash,8)=%s AND owner=%s "
+            f"AND last_seen_at > NOW() - INTERVAL '{int(DEVICE_ONLINE_SECS)} seconds' "
+            f"AND (scan_requested_at IS NULL OR scan_requested_at < NOW() - INTERVAL '{int(DEVICE_SCAN_TTL_SECS)} seconds') "
+            "RETURNING token_hash", (dev_id, user))
+        if cur.fetchone():
+            conn.commit()
+            return jsonify({"ok": True, "baseline": baseline})
+        cur.execute(
+            "SELECT owner, EXTRACT(EPOCH FROM (NOW() - last_seen_at))::INT AS idle_s, "
+            f"(scan_requested_at > NOW() - INTERVAL '{int(DEVICE_SCAN_TTL_SECS)} seconds') AS pending "
+            "FROM devices WHERE LEFT(token_hash,8)=%s", (dev_id,))
+        row = cur.fetchone()
+        conn.commit()
+    finally:
+        cur.close(); conn.close()
+    if not row:
+        return jsonify({"ok": False, "error": "not_found", "message": "Scanner not found. Press Find device again."}), 404
+    if row["owner"] != user:
+        return jsonify({"ok": False, "error": "not_connected",
+                        "message": "Connect to this scanner first. Only the person connected to it can scan."}), 403
+    if row["idle_s"] is None or row["idle_s"] > DEVICE_ONLINE_SECS:
+        return jsonify({"ok": False, "error": "offline",
+                        "message": "The scanner is not responding. Check it is powered on and on Wi-Fi."}), 409
+    if row["pending"]:        # double click: the first request is still on its way
+        return jsonify({"ok": True, "already": True, "baseline": baseline})
+    return jsonify({"ok": False, "error": "busy", "message": "Could not start the scan. Please try again."}), 409
 
 
 @app.route("/api/devices/dismiss_notice", methods=["POST"])

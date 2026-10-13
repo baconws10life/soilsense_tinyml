@@ -194,3 +194,23 @@ it does exactly what touching the screen does. `status` and `help` also work. Ev
   analysed live when the Sensors page is opened. A scanner that still sends its own TinyML result is respected.
 * `static/js/tinyml.js` + `templates/tinyml.html` - the **TinyML** page (sidebar): what TinyML is, a live demo with sliders,
   a look inside the network, one neuron worked out by hand, accuracy numbers and honest limits. Runs entirely in the browser.
+
+
+## Update: "Scan now" button on the website (firmware 2.2)
+
+Once you are **connected** to a scanner (Overview or the *Find Device* page), a big **Scan now** button appears under it.
+Pressing it does the same as touching the scanner's screen: one reading, saved to your account, and the usual new-scan popup.
+
+How it works (Vercel cannot push to the scanner, so the scanner asks):
+1. `POST /api/devices/<id>/scan` - only the person connected to that scanner. It stores `devices.scan_requested_at` and returns `baseline`
+   (the id of your newest scanner reading).
+2. The scanner's next check-in (`/api/device/heartbeat`, every **3 s while someone is connected**, 8 s otherwise) gets `"scan": true`
+   in the reply - once, then the request is cleared. A request nobody picks up is dropped after 30 s.
+3. The scanner reads the probe and posts to `/api/esp32` as usual. The page watches `GET /api/latest-scan?since=<baseline>` and shows
+   *Done*, or a specific message if nothing came back within 45 s (scanner offline / probe not answering / not picked up).
+
+* New column `devices.scan_requested_at` is added automatically on the next start. Nothing else in the database changes.
+* `GET /api/devices` now includes `scan_pending` for the scanner you are connected to.
+* Disconnecting, an admin disconnect, or the scanner being released cancels any waiting request.
+* Firmware: flash `firmware/soilsense_scan_button.ino` (v2.2). Tunable: `HEARTBEAT_CONNECTED_MS` (3000 ms; smaller = faster button,
+  more traffic). Older firmware still works - it just ignores the website button.

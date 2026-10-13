@@ -21,6 +21,9 @@
 //    from the website to free it.
 //  * Touch anywhere = take one reading and send it to whoever is connected.
 //    If nobody is connected the screen says so instead of sending.
+//  * WEBSITE "SCAN NOW" BUTTON: the person connected on the website can also press
+//    Scan now there. The scanner hears about it on its next check-in (every
+//    HEARTBEAT_CONNECTED_MS while someone is connected) and does exactly what a touch does.
 //  * SERIAL MONITOR TAP: with the LCD/touch broken (or just for testing) open the Serial
 //    Monitor at 115200 baud and send  tap  (or  t  /  scan  /  s)  - it does exactly what
 //    touching the screen does. Type  help  for the list. Everything the screen would show
@@ -51,6 +54,9 @@ const float ASSUMED_RAINFALL_MM = 100.0;
 
 const unsigned long HEARTBEAT_MS = 8000;   // how often we tell the website "I'm here"
                                            // (website treats us as offline after 25 s)
+const unsigned long HEARTBEAT_CONNECTED_MS = 3000;  // check in faster while somebody is connected, so the
+                                           // website's Scan now button reacts quickly. Raise it if
+                                           // the touch screen feels sluggish
 #define SHOW_DEVICE_ID 1                   // tiny "ID A1B2" in the corner so you can tell
                                            // scanners apart on the website. 0 = hide
 const unsigned long LCD_BLIND_REFRESH_MS = 60000;  // see "LCD" notes below. 0 = off
@@ -58,7 +64,7 @@ const uint32_t      TFT_SPI_HZ  = 10000000;        // slower SPI = fewer glitche
 const wifi_power_t  WIFI_TX_POWER = WIFI_POWER_11dBm;  // smaller current bursts. Raise to
                                                        // WIFI_POWER_15dBm only if Wi-Fi won't connect
 
-#define FW_VERSION "2.1"
+#define FW_VERSION "2.2"
 
 // ============================================================
 // PINS
@@ -149,6 +155,7 @@ volatile bool inNetwork = false;
 volatile bool tapDuringNetwork = false;
 void IRAM_ATTR onTouchInt() { if (inNetwork) tapDuringNetwork = true; }
 
+bool webScan  = false;       // set when the website's Scan now button was pressed (arrives with a check-in)
 bool serialTap = false;       // set by the Serial Monitor "tap" command, handled like a touch
 
 void redrawUi();
@@ -612,6 +619,11 @@ bool sendHeartbeat() {
     connState = (jsonGet(reply, "connected") == "true") ? 1 : 0;
     serverOK  = true;
 
+    if (connState == 1 && jsonGet(reply, "scan") == "true") {
+      webScan = true;
+      Serial.println("[LINK] Scan now was pressed on the website");
+    }
+
     if (before != connState) {
       Serial.println(connState == 1 ? "[LINK] A user connected to this scanner"
                                     : "[LINK] Nobody is connected to this scanner");
@@ -1007,7 +1019,9 @@ void loop() {
   bootDiagTick();
 
   // --- announce ourselves / learn whether somebody is connected -------------
-  if (WiFi.status() == WL_CONNECTED && (lastHeartbeat == 0 || millis() - lastHeartbeat >= HEARTBEAT_MS)) {
+  unsigned long beatEvery = (connState == 1) ? HEARTBEAT_CONNECTED_MS : HEARTBEAT_MS;
+
+  if (WiFi.status() == WL_CONNECTED && (lastHeartbeat == 0 || millis() - lastHeartbeat >= beatEvery)) {
 
     sendHeartbeat();
   }
@@ -1026,6 +1040,15 @@ void loop() {
   }
 
   previousTouch = touched;
+
+  if (webScan) {                   // "Scan now" pressed on the website: same as a touch
+    webScan = false;
+    Serial.println("[SCAN] Website request received");
+    doScan();
+    webScan = false;               // ignore a second request that arrived during this scan
+    previousTouch = readTouch(touchX, touchY);
+    tapDuringNetwork = false;
+  }
 
   if (serialTap) {                 // "tap" typed in the Serial Monitor counts exactly like a touch
     serialTap = false;

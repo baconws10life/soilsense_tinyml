@@ -288,3 +288,16 @@ a.npk-row:hover .npk-name { color: var(--accent-strong); }
 .dp-find.btn-ghost { color: var(--text); border-color: var(--border); }
 .dp-find.btn-ghost:hover { border-color: var(--accent); color: var(--accent-strong); }
 .dp-item-act .btn-ghost { color: var(--text); border-color: var(--border); }
+
+/* ---- Scan now button (device panel) ---- */
+.dp-scan { display: flex; flex-direction: column; align-items: stretch; gap: 8px; margin-top: -2px; padding: 14px; border-radius: 12px; border: 1px solid var(--border); background: var(--soft); }
+.dp-scan-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; width: 100%; min-height: 54px; font-size: 17px; font-weight: 700; letter-spacing: .01em; }
+.dp-scan-btn.is-working { opacity: .85; cursor: progress; }
+.dp-scan-btn.is-working svg { animation: dpspin 1.1s linear infinite; }
+.dp-scan-msg { font-size: 13px; line-height: 1.45; color: var(--text-muted); text-align: center; min-height: 1.45em; }
+.dp-scan-done .dp-scan-msg { color: var(--accent-strong); font-weight: 600; }
+.dp-scan-error { border-color: rgba(224,92,92,.4); }
+.dp-scan-error .dp-scan-msg { color: var(--red); font-weight: 600; }
+@keyframes dpspin { to { transform: rotate(360deg); } }
+@media (prefers-reduced-motion: reduce) { .dp-scan-btn.is-working svg { animation: none; } }
+@media (max-width: 640px) { .dp-scan-btn { min-height: 56px; } }
