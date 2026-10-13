@@ -1,0 +1,27 @@
+{# Live "Find device" panel. Rendered by static/js/device.js (polls /api/devices).
+   Usage: {% include '_device_panel.html' %}  -  needs `icon` imported by the parent. #}
+<section class="card dp" id="devicePanel" data-device-panel aria-labelledby="dpTitle">
+  <div class="dp-head">
+    <span class="dp-icon">{{ icon('cpu', 22) }}</span>
+    <div class="dp-titles">
+      <h2 id="dpTitle">Soil scanner</h2>
+      <p class="dp-sub" id="dpSub">Looking for your SoilSense scanner&hellip;</p>
+    </div>
+    <span class="dp-pill dp-pill-search" id="dpPill" role="status" aria-live="polite"><i></i><span>Searching</span></span>
+  </div>
+
+  <div class="dp-notice" id="dpNotice" hidden>
+    <span class="dp-notice-ico">{{ icon('alert', 16) }}</span>
+    <span class="dp-notice-txt"></span>
+    <button type="button" class="dp-notice-x" aria-label="Dismiss">{{ icon('x', 16) }}</button>
+  </div>
+
+  <div class="dp-body" id="dpBody">
+    <div class="dp-radar" aria-hidden="true"><i></i><i></i><i></i><b>{{ icon('cpu', 20) }}</b></div>
+  </div>
+
+  <div class="dp-foot">
+    <button type="button" class="btn btn-ghost dp-find" id="dpFind">{{ icon('search', 16) }} <span>Find device</span></button>
+    <span class="dp-hint" id="dpHint">Power on the scanner and make sure it is on Wi-Fi.</span>
+  </div>
+</section>

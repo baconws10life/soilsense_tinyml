@@ -68,14 +68,19 @@
   {% endif %}
 </section>
 
-{# ---------- 1b. ON-DEVICE TINYML ANALYSIS (only for scans from the ESP32) ---------- #}
+{# ---------- 1b. TINYML ANALYSIS (computed on the ESP32 or, now, on the website) ---------- #}
 {% if summary.tiny %}
 <section class="card sx-tiny">
   <div class="sx-tiny-head">
     <span class="sx-crop-icon">{{ icon('cpu', 18) }}</span>
     <div>
+      {% if summary.tiny_where == 'device' %}
       <h2 class="sx-h" style="margin:0;">On-device TinyML analysis</h2>
       <div class="sx-crop-by">Three tiny neural networks on the ESP32-S3, computed at scan time with no Wi-Fi</div>
+      {% else %}
+      <h2 class="sx-h" style="margin:0;">TinyML analysis</h2>
+      <div class="sx-crop-by">Three tiny neural networks running on the website, using the same six probe readings</div>
+      {% endif %}
     </div>
   </div>
   <div class="sx-tiny-grid">
@@ -112,7 +117,8 @@
     </div>
     {% endif %}
   </div>
-  <a href="{{ url_for('ai_assistant') }}?ask={{ 'What is TinyML?'|urlencode }}" class="btn btn-ghost btn-sm">{{ icon('bot',15) }} How does this work?</a>
+  <a href="{{ url_for('tinyml_page') }}" class="btn btn-ghost btn-sm">{{ icon('layers',15) }} See how it works</a>
+  <a href="{{ url_for('ai_assistant') }}?ask={{ 'What is TinyML?'|urlencode }}" class="btn btn-ghost btn-sm">{{ icon('bot',15) }} Ask the assistant</a>
 </section>
 {% endif %}
 

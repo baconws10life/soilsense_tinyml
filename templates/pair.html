@@ -1,56 +1,30 @@
 {% extends "base.html" %}
 {% from '_icons.html' import icon %}
-{% block title %}Link Device{% endblock %}
+{% block title %}Find Device{% endblock %}
 {% set active = 'pair' %}
-{% block topbar_left %}Link Device{% endblock %}
+{% block topbar_left %}Find Device{% endblock %}
 
 {% block content %}
-<h1 class="page-title">Link a scanner</h1>
+<h1 class="page-title">Your soil scanner</h1>
 <p class="page-subtitle">
-  Type the 6-character code shown on the device screen to send your scans to this account.
+  The website looks for your SoilSense scanner for you &mdash; no codes to type.
+  Connect to a free scanner, press <b>Scan now</b> on it, and your reading appears here.
 </p>
 
-{% if message %}
-<div class="form-alert" style="color:var(--accent-strong);background:var(--accent-dim);border-color:var(--border);">
-  {{ icon('check',15) }} {{ message }}
-</div>
-{% endif %}
-{% if error %}
-<div class="form-alert">{{ icon('alert',15) }} {{ error }}</div>
-{% endif %}
+{% include '_device_panel.html' %}
 
-<div class="card" style="max-width:520px;">
-  <form method="POST" id="pairForm" autocomplete="off">
-    <div class="form-group">
-      <label class="form-label" for="code">Device code</label>
-      <input class="form-input" id="code" name="code" value="{{ prefill }}" maxlength="12"
-             placeholder="e.g. K7P2QX" autocapitalize="characters" spellcheck="false"
-             style="font-family:var(--font-mono);font-size:22px;letter-spacing:.25em;text-transform:uppercase;text-align:center;" required/>
-    </div>
-    <button class="btn btn-primary btn-block" type="submit">{{ icon('cpu',16) }} Link device</button>
-  </form>
-
+<div class="card dp-how">
+  <h3>How it works</h3>
+  <ol>
+    <li><b>Power on</b> the scanner. Its screen is one big <b>SCAN NOW</b> button.</li>
+    <li>Press <b>Find device</b>. Scanners that are online show up automatically.</li>
+    <li>Press <b>Connect</b>. If someone else is already using it, it is locked until they disconnect.</li>
+    <li>Press the scanner&rsquo;s screen to scan. <b>Disconnect</b> when you are done so the next person can use it.</li>
+  </ol>
+  <p class="dp-how-note">Stuck behind someone who forgot to disconnect? Ask an admin &mdash; they can disconnect any scanner.</p>
 </div>
+{% endblock %}
 
-<div class="card" style="max-width:520px;">
-  <h3 style="margin:0 0 10px;font-size:15.5px;">Your linked devices</h3>
-  {% if devices %}
-    {% for d in devices %}
-    <div style="display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-top:1px solid var(--border-soft);">
-      <div>
-        <div style="font-family:var(--font-mono);font-size:13px;">Scanner · {{ d.short_id }}</div>
-        <div style="font-size:12px;color:var(--text-muted);">
-          Linked {{ (d.paired_at or '')[:16] }}{% if d.last_seen %} · last seen {{ d.last_seen[:16] }} UTC{% endif %}
-        </div>
-      </div>
-      <form method="POST" action="{{ url_for('pair_unlink') }}" onsubmit="return confirm('Unlink this device? It will show a new code so someone else can use it.');">
-        <input type="hidden" name="short_id" value="{{ d.short_id }}"/>
-        <button class="btn btn-sm" type="submit">Unlink</button>
-      </form>
-    </div>
-    {% endfor %}
-  {% else %}
-    <p style="font-size:13px;color:var(--text-muted);margin:0;">No device is linked to your account yet.</p>
-  {% endif %}
-</div>
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/device.js') }}"></script>
 {% endblock %}

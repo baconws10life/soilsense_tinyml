@@ -5,6 +5,8 @@ SoilSense - train the on-device TinyML models and export them for the ESP32-S3.
 
 Reads   ../Crop_recommendation.csv
 Writes  soilsense_tinyml.h   -> copy next to the .ino sketch in the Arduino IDE
+        ../static/tinyml/soilsense_tinyml.json -> the SAME trained networks for the website
+                                  (read by the browser in static/js/tinyml.js and by tinyml_web.py)
 
 THREE tiny networks share the same 6 inputs (N, P, K, soil temp, soil moisture, pH):
 
@@ -21,7 +23,7 @@ THREE tiny networks share the same 6 inputs (N, P, K, soil temp, soil moisture, 
 The rainfall column is NOT used: the probe cannot measure it.
 Numbers printed at the end are the ones to quote in the thesis.
 """
-import os
+import os, json
 import numpy as np, pandas as pd
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier, MLPRegressor
@@ -195,5 +197,28 @@ static inline uint16_t tinymlAdvise(float N, float P, float K, float tempC, floa
 '''
 open(OUT, "w").write(h)
 print("wrote", OUT, f"({os.path.getsize(OUT)//1024} KB source, {nums*4/1024:.1f} KB weights)")
+
+# ---------------------------------------------------------------- export JSON for the website
+def layer(W, b): return {"W": np.round(W, 6).tolist(), "b": np.round(b, 6).tolist()}   # W is [nin][nout]
+web = {
+    "version": 1,
+    "inputs": ["N", "P", "K", "temperature", "humidity", "ph"],
+    "mean": [round(float(v), 6) for v in mu], "std": [round(float(v), 6) for v in sd],
+    "crops": [c.capitalize() for c in classes], "crop_keys": list(classes),
+    "advice": ["Low nitrogen", "Low phosphorus", "Low potassium", "Acidic soil",
+               "Alkaline soil", "Soil too dry", "Soil waterlogged", "Soil too hot"],
+    "anomaly_threshold": thr,
+    "crop":    [layer(crop.coefs_[0], crop.intercepts_[0]), layer(crop.coefs_[1], crop.intercepts_[1])],
+    "probe":   [layer(ae.coefs_[i], ae.intercepts_[i]) for i in range(4)],
+    "advisor": [layer(adv.coefs_[0], adv.intercepts_[0]), layer(adv.coefs_[1], adv.intercepts_[1])],
+    "metrics": {k: v for k, v in report.items()},
+    "n_params": int(nums), "kb_float32": round(nums * 4 / 1024, 1),
+    "train_rows": int(len(Xtr)), "test_rows": int(len(Xte)),
+}
+WEB_DIR = os.path.join(HERE, "..", "static", "tinyml")
+os.makedirs(WEB_DIR, exist_ok=True)
+WEB_OUT = os.path.join(WEB_DIR, "soilsense_tinyml.json")
+with open(WEB_OUT, "w") as f: json.dump(web, f, separators=(",", ":"))
+print("wrote", os.path.normpath(WEB_OUT), f"({os.path.getsize(WEB_OUT)//1024} KB)")
 print("\nRESULTS FOR THE THESIS")
 for k, v in report.items(): print(f"  {k:55s} {v}")

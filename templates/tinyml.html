@@ -1,0 +1,244 @@
+{% extends "base.html" %}
+{% from '_icons.html' import icon %}
+{% block title %}TinyML{% endblock %}
+{% set active = 'tinyml' %}
+{% block topbar_left %}TinyML{% endblock %}
+
+{% block head %}
+<style>
+.tm-lead { display: grid; grid-template-columns: 1.3fr 1fr; gap: 18px; align-items: start; }
+.tm-lead p { margin: 0 0 10px; color: var(--text-muted); font-size: 14.5px; line-height: 1.6; }
+.tm-lead p b { color: var(--text); }
+.tm-facts { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.tm-fact { background: var(--panel-strong); border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 12px 14px; }
+.tm-fact b { display: block; font-family: 'Fraunces', serif; font-size: 22px; color: var(--heading); }
+.tm-fact span { font-family: var(--font-mono); font-size: 10.5px; letter-spacing: .06em; text-transform: uppercase; color: var(--text-faint); }
+.tm-h { font-family: 'Fraunces', serif; color: var(--heading); font-size: 19px; margin: 0 0 4px; }
+.tm-sub { color: var(--text-muted); font-size: 13.5px; margin: 0 0 16px; }
+.tm-sec { margin-top: 18px; }
+
+.tm-demo { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr); gap: 22px; }
+.tm-in { display: grid; grid-template-columns: 96px minmax(0, 1fr) 74px; gap: 10px; align-items: center; margin-bottom: 11px; }
+.tm-in label { font-size: 13.5px; color: var(--text); }
+.tm-in label small { display: block; font-family: var(--font-mono); font-size: 10px; color: var(--text-faint); }
+.tm-in input[type=range] { width: 100%; accent-color: var(--accent); }
+.tm-in input[type=number] {
+  width: 100%; background: var(--panel-strong); border: 1px solid var(--border-soft); border-radius: 7px;
+  color: var(--text); padding: 6px 8px; font-family: var(--font-mono); font-size: 13px; min-height: 34px;
+}
+.tm-presets { display: flex; flex-wrap: wrap; gap: 8px; margin: 14px 0 0; }
+.tm-out { display: grid; gap: 12px; }
+.tm-state { font-size: 13.5px; line-height: 1.5; margin: 0; }
+.tm-ok  { color: var(--accent-strong); }
+.tm-bad { color: var(--red); }
+.tm-meter { height: 8px; border-radius: 5px; background: var(--soft); position: relative; margin: 10px 0 6px; overflow: hidden; }
+.tm-meter i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--accent); border-radius: 5px; }
+.tm-meter i.bad { background: var(--red); }
+.tm-meter u { position: absolute; top: -2px; bottom: -2px; width: 2px; background: var(--amber); }
+.tm-note { font-family: var(--font-mono); font-size: 11px; color: var(--text-faint); }
+
+.tm-inside { display: grid; grid-template-columns: 1fr 1.25fr 1fr; gap: 14px; align-items: start; }
+.tm-col h3 { margin: 0 0 4px; font-size: 12px; font-family: var(--font-mono); text-transform: uppercase; letter-spacing: .06em; color: var(--text-faint); font-weight: 500; }
+.tm-col p { margin: 0 0 10px; font-size: 12.5px; color: var(--text-muted); line-height: 1.5; }
+.tm-zrow { display: grid; grid-template-columns: 74px minmax(0, 1fr) 44px; gap: 6px; align-items: center; font-size: 12.5px; margin-bottom: 7px; }
+.tm-zbar { height: 8px; background: var(--soft); border-radius: 4px; position: relative; }
+.tm-zbar i { position: absolute; top: 0; bottom: 0; border-radius: 4px; }
+.tm-zbar::after { content: ""; position: absolute; left: 50%; top: -2px; bottom: -2px; width: 1px; background: var(--text-faint); }
+.tm-zval { font-family: var(--font-mono); font-size: 11px; color: var(--text-muted); text-align: right; }
+.tm-cells { display: grid; grid-template-columns: repeat(6, 1fr); gap: 5px; }
+.tm-cell { aspect-ratio: 1; border-radius: 6px; border: 1px solid var(--border-soft); display: flex; align-items: center; justify-content: center;
+  font-family: var(--font-mono); font-size: 9.5px; color: var(--text); cursor: pointer; padding: 0; background: var(--soft); }
+.tm-cell.sel { outline: 2px solid var(--amber); }
+.tm-oc { display: grid; grid-template-columns: minmax(0, 1fr) 54px 36px; gap: 6px; align-items: center; font-size: 12.5px; margin-bottom: 6px; }
+.tm-oc .sx-top-bar { height: 6px; }
+
+.tm-work { width: 100%; border-collapse: collapse; font-family: var(--font-mono); font-size: 12.5px; margin: 8px 0 10px; }
+.tm-work th, .tm-work td { padding: 6px 8px; text-align: right; border-bottom: 1px solid var(--border-soft); }
+.tm-work th:first-child, .tm-work td:first-child { text-align: left; font-family: var(--font-sans); }
+.tm-work th { color: var(--text-faint); font-weight: 500; font-size: 10.5px; text-transform: uppercase; letter-spacing: .05em; }
+.tm-work tfoot td { font-weight: 600; color: var(--heading); border-bottom: none; }
+.tm-pick { display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--text-muted); flex-wrap: wrap; }
+.tm-pick select { background: var(--panel-strong); border: 1px solid var(--border-soft); color: var(--text); border-radius: 7px; padding: 6px 8px; min-height: 34px; }
+
+.tm-steps { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 12px; counter-reset: s; }
+.tm-step { background: var(--panel-strong); border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 14px 16px; counter-increment: s; }
+.tm-step::before { content: counter(s); display: inline-flex; width: 24px; height: 24px; border-radius: 50%; align-items: center; justify-content: center;
+  background: var(--accent-dim-strong); color: var(--accent-strong); font-family: var(--font-mono); font-size: 12px; margin-bottom: 8px; }
+.tm-step h4 { margin: 0 0 4px; font-size: 14px; color: var(--heading); }
+.tm-step p { margin: 0; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.tm-nets { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 12px; }
+.tm-net { background: var(--panel-strong); border: 1px solid var(--border-soft); border-radius: var(--radius-md); padding: 14px 16px; }
+.tm-net h4 { margin: 0 0 2px; font-size: 15px; color: var(--heading); font-family: 'Fraunces', serif; }
+.tm-net code { font-family: var(--font-mono); font-size: 11.5px; color: var(--accent-strong); }
+.tm-net p { margin: 8px 0 0; font-size: 13px; color: var(--text-muted); line-height: 1.5; }
+.tm-metrics { width: 100%; border-collapse: collapse; font-size: 13px; }
+.tm-metrics td { padding: 8px 6px; border-bottom: 1px solid var(--border-soft); vertical-align: top; }
+.tm-metrics td:first-child { color: var(--text-muted); width: 52%; }
+.tm-metrics td:last-child { font-family: var(--font-mono); color: var(--text); }
+.tm-limits { margin: 0; padding-left: 18px; color: var(--text-muted); font-size: 13.5px; line-height: 1.65; }
+.tm-limits b { color: var(--text); }
+.tm-off { padding: 14px 16px; border: 1px solid rgba(224,92,92,.4); background: var(--red-dim); border-radius: var(--radius-md); color: var(--red); }
+
+@media (max-width: 900px) {
+  .tm-lead, .tm-demo, .tm-inside { grid-template-columns: 1fr; }
+  .tm-in { grid-template-columns: 84px minmax(0, 1fr) 70px; }
+}
+</style>
+{% endblock %}
+
+{% block content %}
+<h1 class="page-title">TinyML</h1>
+<p class="page-subtitle">Small neural networks that read your six soil-probe values. They run right here in your browser, and they ran on the scanner's chip before.</p>
+
+{% if not enabled %}
+<div class="tm-off">The TinyML model file could not be loaded on the server, so this page is switched off. Check that <code>static/tinyml/soilsense_tinyml.json</code> was deployed.</div>
+{% else %}
+
+{# ---------- WHAT IT IS ---------- #}
+<section class="card">
+  <div class="tm-lead">
+    <div>
+      <h2 class="tm-h">What is TinyML?</h2>
+      <p><b>TinyML is machine learning small enough to run on a tiny chip.</b> A normal AI model can fill gigabytes and needs a data centre. A TinyML model is a few kilobytes of numbers, small enough for a microcontroller like the ESP32-S3 in your scanner, a phone or a web page.</p>
+      <p><b>Why it suits a soil scanner:</b> it answers in a fraction of a millisecond, needs no internet connection to think, costs nothing per question, and your readings never have to leave the device for the model to work.</p>
+      <p><b>Why it is here on the website now:</b> the scanner's screen can no longer show the on-device results. So the website runs the same three networks on every scan it receives, and you can try them yourself below. Nothing about the maths changed. Only where it runs did.</p>
+    </div>
+    <div class="tm-facts">
+      <div class="tm-fact"><b>3</b><span>tiny networks</span></div>
+      <div class="tm-fact"><b>{{ kb }} KB</b><span>all the weights</span></div>
+      <div class="tm-fact"><b>{{ '{:,}'.format(n_params) }}</b><span>numbers learned</span></div>
+      <div class="tm-fact"><b>6</b><span>probe inputs</span></div>
+    </div>
+  </div>
+</section>
+
+{# ---------- LIVE DEMO ---------- #}
+<section class="card tm-sec" id="tm-app">
+  <h2 class="tm-h">Try it live</h2>
+  <p class="tm-sub">Move a slider and all three networks recompute instantly in your browser.{% if sample %} It starts with your latest scan.{% endif %}</p>
+  <div class="tm-demo">
+    <div>
+      <div id="tm-inputs"></div>
+      <div class="tm-presets">
+        {% if sample %}<button type="button" class="btn btn-ghost btn-sm" data-preset="mine">My latest scan</button>{% endif %}
+        <button type="button" class="btn btn-ghost btn-sm" data-preset="rice">Typical rice field</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-preset="chickpea">Typical chickpea field</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-preset="air">Probe in the air</button>
+      </div>
+    </div>
+    <div class="tm-out">
+      <div class="sx-tiny-box">
+        <h3>1 &middot; Top crops <span class="tm-note">(crop recommender)</span></h3>
+        <div id="tm-top"></div>
+      </div>
+      <div class="sx-tiny-box">
+        <h3>2 &middot; Probe check <span class="tm-note">(autoencoder)</span></h3>
+        <p class="tm-state" id="tm-probe"></p>
+        <div class="tm-meter" aria-hidden="true"><i id="tm-probe-bar"></i><u id="tm-probe-thr"></u></div>
+        <div class="tm-note" id="tm-probe-note"></div>
+      </div>
+      <div class="sx-tiny-box">
+        <h3>3 &middot; Advisor <span class="tm-note">(what to fix)</span></h3>
+        <div id="tm-adv"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+{# ---------- LOOK INSIDE ---------- #}
+<section class="card tm-sec" id="tm-inside-card">
+  <h2 class="tm-h">Look inside the crop network</h2>
+  <p class="tm-sub">This is the real thing, not a drawing. Every number below is computed live from the sliders above.</p>
+  <div class="tm-inside">
+    <div class="tm-col">
+      <h3>Input &middot; 6 values</h3>
+      <p>Each reading is rescaled to &ldquo;how far from a typical field, in standard steps&rdquo;, so pH 6.5 and N 90 can be compared fairly.</p>
+      <div id="tm-z"></div>
+    </div>
+    <div class="tm-col">
+      <h3>Hidden layer &middot; 24 neurons</h3>
+      <p>Each neuron is a small detector. Brighter = more active for this soil. Tap one to see its arithmetic below.</p>
+      <div class="tm-cells" id="tm-cells"></div>
+    </div>
+    <div class="tm-col">
+      <h3>Output &middot; 22 crops</h3>
+      <p>The 22 scores are squeezed into percentages that add to 100. Top six shown.</p>
+      <div id="tm-out"></div>
+    </div>
+  </div>
+</section>
+
+<section class="card tm-sec">
+  <h2 class="tm-h">One neuron, worked out by hand</h2>
+  <p class="tm-sub">A neuron does only multiplication and addition. Here is hidden neuron <b id="tm-nn">1</b> for the soil above.</p>
+  <div class="tm-pick"><label for="tm-neuron">Neuron</label><select id="tm-neuron"></select><span class="tm-note">(or tap a square above)</span></div>
+  <div style="overflow-x:auto">
+    <table class="tm-work" id="tm-work">
+      <thead><tr><th>Input</th><th>Value (rescaled)</th><th>&times; Weight</th><th>= Contribution</th></tr></thead>
+      <tbody></tbody>
+      <tfoot></tfoot>
+    </table>
+  </div>
+  <p class="tm-sub" style="margin:0" id="tm-work-note"></p>
+</section>
+
+{# ---------- HOW IT WORKS ---------- #}
+<section class="card tm-sec">
+  <h2 class="tm-h">How it works, step by step</h2>
+  <p class="tm-sub">From a lab dataset to a number on the screen.</p>
+  <div class="tm-steps">
+    <div class="tm-step"><h4>Learn once, on a computer</h4><p>A Python script (<code>tinyml/train_tinyml.py</code>) shows the network 2,200 labelled soil samples from the crop dataset. It nudges its numbers (&ldquo;weights&rdquo;) until its guesses match the labels. This takes about two minutes and happens only once.</p></div>
+    <div class="tm-step"><h4>Save the weights</h4><p>The trained network is just a list of numbers. They are saved as a C header for the ESP32 and as a small JSON file for the website. Same numbers, two homes.</p></div>
+    <div class="tm-step"><h4>Rescale the six readings</h4><p>Each value is turned into &ldquo;standard steps from average&rdquo; so no single unit dominates.</p></div>
+    <div class="tm-step"><h4>Multiply, add, switch</h4><p>Every neuron multiplies each input by its weight, adds them up plus a bias, and a ReLU switch turns any negative total into 0. That is the hidden layer.</p></div>
+    <div class="tm-step"><h4>Turn scores into percentages</h4><p>The output layer gives one score per crop. Softmax converts them into percentages that sum to 100, and the top three are shown.</p></div>
+    <div class="tm-step"><h4>No learning at scan time</h4><p>The device or page only <i>uses</i> the numbers. That is why it is so light: a few thousand multiplications, nothing is stored or sent anywhere.</p></div>
+  </div>
+</section>
+
+{# ---------- THE THREE NETWORKS ---------- #}
+<section class="card tm-sec">
+  <h2 class="tm-h">The three networks</h2>
+  <p class="tm-sub">All three read the same six values: N, P, K, soil temperature, soil moisture and pH.</p>
+  <div class="tm-nets">
+    <div class="tm-net"><h4>Crop recommender</h4><code>6 &rarr; 24 &rarr; 22</code>
+      <p>Ranks the 22 crops and shows the top three with a confidence. Rainfall is left out because the probe cannot measure it.</p></div>
+    <div class="tm-net"><h4>Probe check</h4><code>6 &rarr; 8 &rarr; 3 &rarr; 8 &rarr; 6</code>
+      <p>An <b>autoencoder</b>: it squeezes the reading through a 3-number bottleneck and tries to rebuild it. It only ever saw real soil, so a reading it cannot rebuild (probe in air, loose contact) is flagged &ldquo;odd&rdquo;.</p></div>
+    <div class="tm-net"><h4>Nutrient advisor</h4><code>6 &rarr; 16 &rarr; 8</code>
+      <p>Names what to fix: low N, P or K, acidic or alkaline, too dry, waterlogged, too hot. It copies the SoilSense threshold rules, so it matches them but does not beat them.</p></div>
+  </div>
+</section>
+
+{# ---------- HOW GOOD IS IT ---------- #}
+<section class="card tm-sec">
+  <h2 class="tm-h">How good is it? (measured, not guessed)</h2>
+  <p class="tm-sub">Measured on rows the network never saw during training.</p>
+  <table class="tm-metrics">
+    {% for k, v in metrics.items() %}
+    <tr><td>{{ k|capitalize }}</td><td>{{ v }}</td></tr>
+    {% endfor %}
+  </table>
+</section>
+
+<section class="card tm-sec">
+  <h2 class="tm-h">Honest limits</h2>
+  <ul class="tm-limits">
+    <li><b>Confidence is not correctness.</b> A network always answers. Try &ldquo;Probe in the air&rdquo;: it still names a crop, but the probe check flags the reading as odd. Trust the crop only when the probe check is happy.</li>
+    <li><b>It learned from a public dataset</b> of 2,200 samples, not from your own farm. Treat the result as a starting point to discuss, not a guarantee.</li>
+    <li><b>Rainfall is not measured</b> by the probe, so the networks ignore it. The website's separate KNN model on the Analyze page does use it.</li>
+    <li><b>The probe check is strong on gross faults</b> (probe in air, random values) but weak on subtle ones: in testing it caught only about a quarter of readings stuck at pH 7 and 100% moisture. Re-scan if something looks wrong.</li>
+    <li><b>The advisor is the rules in a smaller box.</b> It agrees with them about 99% of the time. Its benefit is working offline, not being smarter.</li>
+  </ul>
+</section>
+
+<script type="application/json" id="tm-cfg">{{ {"model": url_for('static', filename='tinyml/soilsense_tinyml.json'), "sample": sample, "emojis": emojis}|tojson }}</script>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if enabled %}
+<script src="{{ url_for('static', filename='js/tinyml.js') }}"></script>
+<script src="{{ url_for('static', filename='js/tinyml-page.js') }}"></script>
+{% endif %}
+{% endblock %}

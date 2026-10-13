@@ -1,0 +1,79 @@
+{# Filter + bulk-delete toolbar for a records table.
+   Include with:  {% with rt_tbody='records-tbody', rt_crops=[...], rt_admin=True %}{% include '_records_tools.html' %}{% endwith %}
+   Rows in the table need: data-id, data-source, data-crop, data-date and a first cell holding
+   <input type="checkbox" class="rt-check">.  The header's first cell holds <input type="checkbox" data-rt="all">. #}
+<style>
+.rt { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
+.rt-row { display: flex; flex-wrap: wrap; gap: 8px; align-items: flex-end; }
+.rt-f { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rt-f label { font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+.rt-f select, .rt-f input[type=date] {
+  background: var(--surface2); border: 1px solid var(--border); border-radius: 7px; padding: 7px 10px;
+  font-size: 12.5px; color: var(--text); font-family: 'DM Sans', sans-serif; outline: none; min-height: 34px;
+}
+.rt-f select:focus, .rt-f input[type=date]:focus { border-color: var(--green); }
+.rt-btn {
+  font-family: 'DM Sans', sans-serif; font-size: 12.5px; font-weight: 500; min-height: 34px;
+  padding: 7px 12px; border-radius: 7px; border: 1px solid var(--border); background: transparent;
+  color: var(--text); cursor: pointer; transition: all .15s; white-space: nowrap;
+}
+.rt-btn:hover:not(:disabled) { border-color: var(--green); color: var(--green); }
+.rt-btn.danger { color: var(--red); border-color: rgba(224,92,92,.45); }
+.rt-btn.danger:hover:not(:disabled) { background: rgba(224,92,92,.09); border-color: var(--red); color: var(--red); }
+.rt-btn:disabled { opacity: .4; cursor: not-allowed; }
+.rt-spacer { flex: 1 1 auto; }
+.rt-info { font-family: 'DM Mono', monospace; font-size: 11px; color: var(--muted); }
+.rt-msg { font-size: 12.5px; padding: 8px 12px; border-radius: 7px; display: none; }
+.rt-msg.ok  { display: block; background: rgba(76,175,111,.1); border: 1px solid rgba(76,175,111,.35); color: var(--green); }
+.rt-msg.err { display: block; background: rgba(224,92,92,.08); border: 1px solid rgba(224,92,92,.4); color: var(--red); }
+.rt-hidden { display: none !important; }
+.rt-col { width: 34px; text-align: center; }
+.rt-col input, .rt-check { width: 16px; height: 16px; accent-color: var(--green); cursor: pointer; }
+tr.rt-picked td { background: rgba(76,175,111,.07); }
+@media (max-width: 700px) {
+  .rt { padding: 12px 14px; }
+  .rt-f { flex: 1 1 42%; }
+  .rt-f select, .rt-f input[type=date] { width: 100%; }
+  .rt-btn { flex: 1 1 auto; min-height: 40px; }
+}
+</style>
+
+<div class="rt" data-rt-root data-tbody="{{ rt_tbody }}" data-admin="{{ '1' if rt_admin else '0' }}"
+     data-endpoint="{{ url_for('api_records_delete') }}">
+  <div class="rt-row">
+    <div class="rt-f">
+      <label for="{{ rt_tbody }}-src">Source</label>
+      <select id="{{ rt_tbody }}-src" data-rt="source">
+        <option value="">All sources</option>
+        <option value="esp32">Scanner</option>
+        <option value="manual">Manual entry</option>
+      </select>
+    </div>
+    <div class="rt-f">
+      <label for="{{ rt_tbody }}-crop">Crop</label>
+      <select id="{{ rt_tbody }}-crop" data-rt="crop">
+        <option value="">All crops</option>
+        {% for c in rt_crops %}<option value="{{ c }}">{{ c|capitalize }}</option>{% endfor %}
+      </select>
+    </div>
+    <div class="rt-f">
+      <label for="{{ rt_tbody }}-from">From</label>
+      <input type="date" id="{{ rt_tbody }}-from" data-rt="from">
+    </div>
+    <div class="rt-f">
+      <label for="{{ rt_tbody }}-to">To</label>
+      <input type="date" id="{{ rt_tbody }}-to" data-rt="to">
+    </div>
+    <button type="button" class="rt-btn" data-rt="reset">Reset filter</button>
+    <span class="rt-spacer"></span>
+    <span class="rt-info" data-rt="info"></span>
+  </div>
+  <div class="rt-row">
+    <button type="button" class="rt-btn danger" data-rt="del-selected" disabled>Delete selected</button>
+    <button type="button" class="rt-btn danger" data-rt="del-shown" disabled>Delete all shown</button>
+    <span class="rt-spacer"></span>
+    <button type="button" class="rt-btn danger" data-rt="clear-all">Clear all records{% if rt_admin %} (everyone){% endif %}</button>
+  </div>
+  <div class="rt-msg" data-rt="msg" role="status" aria-live="polite"></div>
+</div>
+<script src="{{ url_for('static', filename='js/records-tools.js') }}" defer></script>

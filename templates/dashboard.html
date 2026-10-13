@@ -710,10 +710,13 @@ body {
       <div class="history-title"> Analysis History</div>
       <span class="history-count">{{ records | length }} record(s)</span>
     </div>
+    {% set rt_crops = records|map(attribute='crop')|select|map('lower')|unique|sort|list %}
+    {% with rt_tbody='history-tbody', rt_crops=rt_crops, rt_admin=is_admin %}{% include '_records_tools.html' %}{% endwith %}
     <div class="history-wrap">
     <table class="history-table">
       <thead>
         <tr>
+          <th class="rt-col"><input type="checkbox" data-rt="all" aria-label="Select all shown records"></th>
           <th>Date</th>
           {% if is_admin %}<th>User</th>{% endif %}
           <th>N</th><th>P</th><th>K</th>
@@ -723,9 +726,10 @@ body {
           {% if is_admin %}<th></th>{% endif %}
         </tr>
       </thead>
-      <tbody>
+      <tbody id="history-tbody">
         {% for r in records %}
-        <tr>
+        <tr data-id="{{ r['id'] }}" data-source="{{ r['source'] or 'manual' }}" data-crop="{{ (r['crop'] or '')|lower }}" data-date="{{ (r['created_at'] or '')[:10] }}">
+          <td class="rt-col" data-label="Select"><input type="checkbox" class="rt-check" aria-label="Select record {{ r['id'] }}"></td>
           <td class="muted" data-label="Date">{{ r['created_at'] or '—' }}</td>
           {% if is_admin %}<td data-label="User">{{ r['username'] }}</td>{% endif %}
           <td data-label="N">{{ r['N'] }}</td>
@@ -748,7 +752,7 @@ body {
         </tr>
         {% else %}
         <tr class="empty-row">
-          <td colspan="{{ 12 if is_admin else 10 }}">No records yet. Submit your first analysis above.</td>
+          <td colspan="{{ 13 if is_admin else 11 }}">No records yet. Submit your first analysis above.</td>
         </tr>
         {% endfor %}
       </tbody>

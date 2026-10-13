@@ -176,9 +176,10 @@ body > .page { padding-top: 36px !important; }
     <a href="{{ url_for('dashboard') }}"    class="sb-item {{ 'active' if active in ('log','dashboard') else '' }}">{{ icon('flask') }} Analyze Soil</a>
     <a href="{{ url_for('sensors') }}"      class="sb-item {{ 'active' if active=='sensors' else '' }}">{{ icon('activity') }} Sensors</a>
     <a href="{{ url_for('crops') }}"        class="sb-item {{ 'active' if active=='crops' else '' }}">{{ icon('sprout') }} Crops</a>
+    <a href="{{ url_for('tinyml_page') }}"  class="sb-item {{ 'active' if active=='tinyml' else '' }}">{{ icon('layers') }} TinyML</a>
     <a href="{{ url_for('ai_assistant') }}" class="sb-item {{ 'active' if active=='ai' else '' }}">{{ icon('sparkles') }} AI Assistant</a>
     <a href="{{ url_for('learning') }}"     class="sb-item {{ 'active' if active=='learning' else '' }}">{{ icon('book') }} Learn</a>
-    <a href="{{ url_for('pair') }}"         class="sb-item {{ 'active' if active=='pair' else '' }}">{{ icon('cpu') }} Device{% if device_status is defined and device_status.connected %}<span class="sb-pip on" title="Device connected"></span>{% elif device_status is defined %}<span class="sb-pip off" title="No device linked"></span>{% endif %}</a>
+    <a href="{{ url_for('pair') }}"         class="sb-item {{ 'active' if active=='pair' else '' }}">{{ icon('cpu') }} Find Device{% if device_status is defined and device_status.connected %}<span class="sb-pip on" title="Device connected"></span>{% elif device_status is defined and device_status.lost %}<span class="sb-pip err" title="Connection lost"></span>{% elif device_status is defined %}<span class="sb-pip off" title="No device connected"></span>{% endif %}</a>
   </div>
 
   {% if _role == 'admin' %}

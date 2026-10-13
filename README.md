@@ -137,3 +137,60 @@ readings that do not look like real soil ("Odd value" on the LCD header), (3) **
 fix (distilled from the SoilSense threshold rules). The results travel with each scan and appear on the Sensors page
 in the "On-device TinyML analysis" card. Offline storage holds up to 80 scans. The script prints the accuracy numbers to
 quote in the thesis.
+
+
+---
+
+## Device discovery (replaces the 6-character code)
+
+The LCD is now **one big "SCAN NOW" button**. Nothing is typed on the device.
+
+**How the website "scans" for the scanner.** A browser cannot search a Wi-Fi network, and the site runs on Vercel, not on
+your LAN. So the scanner announces itself: every 8 s it posts a heartbeat to `/api/device/heartbeat`. **Find device**
+(Overview + the *Find Device* page) lists the scanners whose last heartbeat is under 25 s old, i.e. the ones online right now.
+
+| Who | What they can do |
+|---|---|
+| Student | See free scanners, **Connect** to a free one, **Disconnect** from their own. A scanner in use shows *In use* (no name) and cannot be connected. |
+| Admin | Everything above, plus **Disconnect user** on any scanner (Admin > Scanners). The kicked user sees an "admin disconnected you" notice. Admins also see who is using each scanner. |
+
+States shown on the website: *Searching, Scanner found, Connected, In use, Not found, Connection lost* (you own a scanner that
+stopped responding), *Can't reach server*, and a warning when the scanner is online but its soil probe isn't answering.
+
+Rules enforced on the server (not just hidden buttons):
+* Connecting is one atomic `UPDATE ... WHERE owner IS NULL AND online`, so two people pressing Connect at once cannot both win.
+* Readings are only accepted from a scanner that has an owner; otherwise `/api/esp32` answers 403 and the LCD says NOT CONNECTED.
+* A scanner offline for 10 minutes is released automatically (no ghost connections).
+* Only the owner or an admin can disconnect.
+
+New endpoints: `POST /api/device/heartbeat` (scanner), `GET /api/devices`, `POST /api/devices/<id>/connect`,
+`POST /api/devices/<id>/disconnect`, `POST /api/devices/dismiss_notice` (website). Removed: `/api/device/pair`, `/api/device/unlink`.
+New columns on `devices` are added automatically on the first request after deploying.
+
+**Firmware:** `firmware/soilsense_scan_button.ino`. Edit `WIFI_SSID`, `WIFI_PASSWORD`, `SERVER_BASE` (and `API_KEY` if you set
+`ESP32_API_KEY`). The sketch prints `Device ID on the website: SoilSense Scanner XXXX` on the Serial Monitor, and shows `ID XXXX`
+in a corner of the LCD, so you can tell scanners apart in a classroom.
+
+
+---
+
+## Update: clear records, Serial Monitor tap, TinyML on the website
+
+**Clear / filter-delete records.** *Analyze Soil > Analysis History* and *Admin > All Records* now have a toolbar:
+filter by source (scanner / manual), crop and date range, tick rows, then **Delete selected**, **Delete all shown**
+(appears when a filter is on) or **Clear all records**. Everything goes through `POST /api/records/delete`
+(JSON only). A student can only ever delete their own readings (checked on the server). An admin's *Clear all* removes
+everyone's readings and asks them to type `DELETE`. Files: `templates/_records_tools.html`, `static/js/records-tools.js`.
+
+**Serial Monitor tap (firmware 2.1).** Open the Serial Monitor at 115200 and send `tap` (or `t`, `scan`, `s`, `1`):
+it does exactly what touching the screen does. `status` and `help` also work. Everything the LCD would show is printed as
+`[SCREEN] ...` lines, so a broken LCD no longer blocks testing. Any line-ending setting works.
+
+**TinyML on the website.** The same three networks the ESP32 used now also run on the website:
+* `static/tinyml/soilsense_tinyml.json` - the trained weights (made by `tinyml/train_tinyml.py`, which now writes both the
+  Arduino header and this file).
+* `tinyml_web.py` - runs them with numpy on the server. A scan that arrives without on-device TinyML results is analysed here:
+  the record gets `crop_source = 'tinyml-web'`, its top-3 crops, probe check and advisor flags. Older and manual records are
+  analysed live when the Sensors page is opened. A scanner that still sends its own TinyML result is respected.
+* `static/js/tinyml.js` + `templates/tinyml.html` - the **TinyML** page (sidebar): what TinyML is, a live demo with sliders,
+  a look inside the network, one neuron worked out by hand, accuracy numbers and honest limits. Runs entirely in the browser.
