@@ -163,7 +163,7 @@ def init_db():
             id         SERIAL PRIMARY KEY,
             username   TEXT,
             "N"        REAL, "P" REAL, "K" REAL,
-            ph         REAL, temp REAL, humidity REAL, rainfall REAL,
+            ph         REAL, temp REAL, humidity REAL,
             crop       TEXT, image TEXT,
             source     TEXT DEFAULT 'manual',
             fertility  REAL,
@@ -257,7 +257,7 @@ def health():
 # ---------------------------------------------------------------------------
 # ML MODEL + CROP KNOWLEDGE BASE   (crops = Philippine crops, see data/make_ph_dataset.py)
 # ---------------------------------------------------------------------------
-FEATURES = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
+FEATURES = ["N", "P", "K", "temperature", "humidity", "ph"]     # no rainfall: the prototype does not use it
 
 df     = pd.read_csv(CSV_PATH)
 X      = df[FEATURES]
@@ -278,21 +278,21 @@ for label, group in df.groupby("label"):
 
 CROP_INFO = {
     "rice":        dict(category="Grains", emoji="\U0001F33E", harvest="105-130 days",
-                        desc="Rice (palay) is the Philippines' staple: it thrives in warm, wet lowland paddies or irrigated fields with heavy rainfall and slightly acidic, clay-rich soil."),
+                        desc="Rice (palay) is the Philippines' staple: it thrives in warm, wet lowland paddies or irrigated fields with plenty of water and slightly acidic, clay-rich soil."),
     "corn":        dict(category="Grains", emoji="\U0001F33D", harvest="90-115 days",
-                        desc="Corn (mais) is the country's second staple grain: it wants fertile, well-drained soil, steady warmth and moderate rainfall, and responds strongly to nitrogen."),
+                        desc="Corn (mais) is the country's second staple grain: it wants fertile, well-drained soil, steady warmth and steady moisture, and responds strongly to nitrogen."),
     "cassava":     dict(category="Root Crops", emoji="\U0001F360", harvest="8-12 months",
                         desc="Cassava (kamoteng kahoy) tolerates poor, sandy or sloping soil and dry spells, needs little nitrogen but plenty of potassium, and is a food, feed and starch crop."),
     "sweetpotato": dict(category="Root Crops", emoji="\U0001F360", harvest="90-120 days",
-                        desc="Sweet potato (kamote) grows fast in loose, well-drained soil with moderate rainfall; too much nitrogen gives lots of leaves but small roots."),
+                        desc="Sweet potato (kamote) grows fast in loose, well-drained soil with moderate moisture; too much nitrogen gives lots of leaves but small roots."),
     "mungbean":    dict(category="Legumes", emoji="\U0001F331", harvest="60-70 days",
                         desc="Mung bean (mongo) is a fast, drought-tolerant legume that fits after rice; it fixes its own nitrogen, so it needs very little added."),
     "peanut":      dict(category="Legumes", emoji="\U0001F95C", harvest="100-120 days",
-                        desc="Peanut (mani) wants light, loose, well-drained sandy loam with moderate rainfall and enough potassium and calcium for the pods to fill."),
+                        desc="Peanut (mani) wants light, loose, well-drained sandy loam with moderate moisture and enough potassium and calcium for the pods to fill."),
     "sitaw":       dict(category="Legumes", emoji="\U0001FADB", harvest="55-70 days",
                         desc="Sitaw (yardlong or string bean) climbs on trellises in warm, humid weather and well-drained loam, and is a quick-cycle vegetable legume."),
     "tomato":      dict(category="Vegetables", emoji="\U0001F345", harvest="65-90 days",
-                        desc="Tomato likes well-drained, fertile loam, plenty of phosphorus and potassium, and relatively cool, drier weather; heavy rain brings disease."),
+                        desc="Tomato likes well-drained, fertile loam, plenty of phosphorus and potassium, and relatively cool, drier weather; waterlogging brings disease."),
     "eggplant":    dict(category="Vegetables", emoji="\U0001F346", harvest="75-110 days",
                         desc="Eggplant (talong) is a hardy, warm-season vegetable that fruits for months in fertile, well-drained soil with steady moisture."),
     "ampalaya":    dict(category="Vegetables", emoji="\U0001F952", harvest="60-90 days",
@@ -300,7 +300,7 @@ CROP_INFO = {
     "cabbage":     dict(category="Vegetables", emoji="\U0001F96C", harvest="70-90 days",
                         desc="Cabbage is a highland crop (Benguet, Bukidnon): it needs cool weather, lots of nitrogen and fertile, moisture-holding loam."),
     "onion":       dict(category="Vegetables", emoji="\U0001F9C5", harvest="100-120 days",
-                        desc="Onion (sibuyas) is a dry-season crop (Nueva Ecija, Ilocos) that needs fertile, well-drained loam, high potassium and little rain at bulbing."),
+                        desc="Onion (sibuyas) is a dry-season crop (Nueva Ecija, Ilocos) that needs fertile, well-drained loam, high potassium and a dry spell at bulbing."),
     "banana":      dict(category="Fruits", emoji="\U0001F34C", harvest="9-12 months",
                         desc="Banana (saging) needs rich, moisture-retentive soil, high humidity and steady warmth all year round."),
     "mango":       dict(category="Fruits", emoji="\U0001F96D", harvest="Perennial (100-150 days post-flower)",
@@ -312,7 +312,7 @@ CROP_INFO = {
     "calamansi":   dict(category="Fruits", emoji="\U0001F34B", harvest="Perennial (fruits 2-3 years after planting)",
                         desc="Calamansi is the Philippines' own citrus: it likes warm, humid weather, slightly acidic, well-drained loam and light but regular feeding."),
     "coconut":     dict(category="Cash Crops", emoji="\U0001F965", harvest="Perennial (6-10 years to first nuts)",
-                        desc="Coconut (niyog) palms love hot, humid coastal climates with sandy or loamy soil and abundant, well-spread rainfall."),
+                        desc="Coconut (niyog) palms love hot, humid coastal climates with sandy or loamy soil and abundant, well-spread water."),
     "sugarcane":   dict(category="Cash Crops", emoji="\U0001F38D", harvest="10-14 months",
                         desc="Sugarcane (tubo) is a heavy feeder: it needs deep fertile soil, lots of nitrogen and potassium, warm weather and good drainage."),
     "coffee":      dict(category="Cash Crops", emoji="\U00002615", harvest="Perennial (~8-10 months flower-to-cherry)",
@@ -325,8 +325,8 @@ CROP_INFO = {
 CROP_CATEGORIES = ["Grains", "Root Crops", "Legumes", "Vegetables", "Fruits", "Cash Crops"]
 
 
-def recommend_crop(N, P, K, temp, humidity, ph, rainfall):
-    sample     = pd.DataFrame([[N, P, K, temp, humidity, ph, rainfall]], columns=FEATURES)
+def recommend_crop(N, P, K, temp, humidity, ph):
+    sample     = pd.DataFrame([[N, P, K, temp, humidity, ph]], columns=FEATURES)
     prediction = model.predict(sample)[0]
     info       = CROP_INFO.get(prediction.lower(), {})
     base_desc  = info.get("desc", "This crop is well suited to the analyzed soil and climate conditions.")
@@ -349,9 +349,9 @@ def _band_score(value, low, high):
     return                          max(0.0, 1 - (value - high)  / margin)
 
 
-def crop_matches(N, P, K, temp, humidity, ph, rainfall, category=None, suitable_only=False):
+def crop_matches(N, P, K, temp, humidity, ph, category=None, suitable_only=False):
     reading = {"N": N, "P": P, "K": K, "temperature": temp,
-               "humidity": humidity, "ph": ph, "rainfall": rainfall}
+               "humidity": humidity, "ph": ph}
     results = []
     for label, bands in _crop_bands.items():
         scores = {feat: _band_score(reading[feat], bands[feat][0], bands[feat][1]) for feat in FEATURES}
@@ -389,7 +389,6 @@ READING_RANGES = {
     "N":        dict(label="Nitrogen",    unit="mg/kg", icon="\U0001F343",        scale=(0,150), optimal=(40,120),   watch=(25,130)),
     "P":        dict(label="Phosphorus",  unit="mg/kg", icon="\U0001F33F",        scale=(0,150), optimal=(40,120),   watch=(25,130)),
     "K":        dict(label="Potassium",   unit="mg/kg", icon="\U0001F9C2",        scale=(0,220), optimal=(40,120),   watch=(25,150)),
-    "rainfall": dict(label="Rainfall",    unit="mm",    icon="\U0001F327\ufe0f",  scale=(0,300), optimal=(50,300),   watch=(30,300)),
 }
 READING_COPY = {
     "ph":       {"low":"Acidic soil — most crops will struggle to take up nutrients below pH 5.5.","watch":"Slightly outside the sweet spot — worth watching but not urgent.","optimal":"Slightly acidic to neutral — great for most crops!","high":"Alkaline soil — some micronutrients become harder for roots to absorb."},
@@ -398,14 +397,12 @@ READING_COPY = {
     "N":        {"low":"Below target — leaves may turn pale or yellow soon.","watch":"On the low side — a light nitrogen feed would help.","optimal":"Healthy nitrogen level for steady leafy growth.","high":"High nitrogen — can delay flowering and attract pests."},
     "P":        {"low":"Low phosphorus can stunt root development and delay flowering.","watch":"Slightly low — monitor root and flower development.","optimal":"Good phosphorus level for strong root and flower growth.","high":"Excess phosphorus can lock out micronutrients like zinc and iron."},
     "K":        {"low":"Low potassium weakens stems and reduces disease resistance.","watch":"Slightly low — keep watching fruit and stem quality.","optimal":"Solid potassium level for stem strength and fruit quality.","high":"Very high potassium can interfere with magnesium uptake."},
-    "rainfall": {"low":"Low rainfall — supplemental irrigation will likely be needed.","watch":"On the drier side of normal for most crops.","optimal":"Comfortable rainfall range for most field crops.","high":"Heavy rainfall — check drainage to avoid waterlogging."},
 }
 
 
 READING_GROUPS = [
     ("nutrients", "Nutrients (NPK)",  "What the plant eats",           ["N", "P", "K"]),
     ("condition", "Soil condition",   "How the soil itself is doing",  ["ph", "humidity", "temp", "organic_matter"]),
-    ("climate",   "Climate",          "Weather around the plot",       ["rainfall"]),
 ]
 READING_ACTION = {
     "ph":       {"low":"Too acidic. Spread agricultural lime (or wood ash) and re-test in 2-4 weeks.",
@@ -432,10 +429,6 @@ READING_ACTION = {
                  "watch":"Slightly low. A small potash or compost top-up is enough.",
                  "optimal":"Nothing to do.",
                  "high":"Skip potassium inputs. Excess can block magnesium uptake."},
-    "rainfall": {"low":"Plan supplemental irrigation for this period.",
-                 "watch":"On the dry side. Keep an eye on soil moisture.",
-                 "optimal":"Nothing to do.",
-                 "high":"Check drainage to avoid waterlogging."},
     "organic_matter": {"low":"Add compost, manure or a cover crop to build organic matter.",
                        "watch":"Slightly outside target. Regular compost will keep it moving the right way.",
                        "optimal":"Nothing to do. Keep returning crop residues.",
@@ -448,7 +441,6 @@ READING_WHY = {
     "N":"Nitrogen builds leaves and green growth.",
     "P":"Phosphorus builds roots and flowers.",
     "K":"Potassium builds strong stems and improves fruit quality and disease resistance.",
-    "rainfall":"Rainfall is the natural water supply for the crop over the growing period.",
     "organic_matter":"Organic matter holds water, feeds soil life and releases nutrients slowly.",
 }
 READING_SEVERITY = {"low": 3, "high": 3, "watch": 2, "optimal": 0}
@@ -478,7 +470,6 @@ def build_readings(rec):
         ("N",        rec["N"]),
         ("P",        rec["P"]),
         ("K",        rec["K"]),
-        ("rainfall", rec["rainfall"]),
     ])
     om  = estimate_organic_matter(rec["N"], rec["K"])
     out = []
@@ -488,10 +479,7 @@ def build_readings(rec):
         status, copy = reading_status(key, value)
         lo, hi       = spec["scale"]
         pct          = max(0.0, min(1.0, (value - lo) / (hi - lo))) * 100
-        if key == "rainfall":
-            how = "Assumed" if from_probe else "Entered"
-        else:
-            how = "Measured" if from_probe else "Entered"
+        how = "Measured" if from_probe else "Entered"
         out.append({
             "key": key, "label": spec["label"], "unit": spec["unit"], "icon": spec["icon"],
             "value": round(value, 1), "status": status, "copy": copy,
@@ -628,7 +616,7 @@ def sensors_summary(rec, readings):
     }
 
 
-def calculate_fertility(N, P, K, ph, temp, humidity, rainfall):
+def calculate_fertility(N, P, K, ph, temp, humidity):
     score = 0
     if 40 <= N <= 120:        score += 1
     if 40 <= P <= 120:        score += 1
@@ -636,8 +624,7 @@ def calculate_fertility(N, P, K, ph, temp, humidity, rainfall):
     if 5.5 <= ph <= 7.5:      score += 1
     if 20 <= temp <= 35:      score += 1
     if 50 <= humidity <= 90:  score += 1
-    if 50 <= rainfall <= 300: score += 1
-    return round((score / 7) * 100, 2)
+    return round((score / 6) * 100, 2)
 
 
 def grade_for_score(score):
@@ -658,7 +645,7 @@ def record_to_dict(rec):
     """Rows from RealDictCursor are already plain dicts."""
     d = dict(rec)
     if not d.get("fertility"):
-        d["fertility"] = calculate_fertility(d["N"], d["P"], d["K"], d["ph"], d["temp"], d["humidity"], d["rainfall"])
+        d["fertility"] = calculate_fertility(d["N"], d["P"], d["K"], d["ph"], d["temp"], d["humidity"])
     return d
 
 
@@ -687,14 +674,12 @@ AI_TOPICS = [
      "answer": lambda r: ("Your sensor estimates soil moisture as a percentage of water content, roughly where 0% is bone dry and 100% is fully saturated. Most crops do best between 50-90%, sometimes called 'field capacity'.{context}").format(context=(f" Your latest reading is {r['humidity']}%, which is {reading_status('humidity',r['humidity'])[1].lower()}" if r else ""))},
     {"id":"organic", "chip":"What is organic matter?",      "keywords":["organic","humus","compost"],
      "answer": lambda r: ("Organic matter is the decomposed plant and animal material in soil — it holds water, feeds soil microbes, and slowly releases nutrients. A healthy field usually sits around 3-6%.{context}").format(context=(f" Your estimate right now is about {estimate_organic_matter(r['N'],r['K'])}%." if r else ""))},
-    {"id":"weather", "chip":"Why does rainfall matter?",    "keywords":["rain","weather","climate"],
-     "answer": lambda r: ("Rainfall (in millimetres over the growing period) tells the model how much natural irrigation a crop will get. Crops like rice or coconut want abundant rainfall, while crops like onion or mango do better with a drier spell.{context}").format(context=(f" Your latest reading is {r['rainfall']} mm." if r else ""))},
     {"id":"score",   "chip":"How is my health score calculated?", "keywords":["health score","grade","fertility","score"],
-     "answer": lambda r: ("Your soil health score checks all seven readings — N, P, K, pH, temperature, moisture, and rainfall — against their optimal ranges. Each reading in range adds roughly 14 points, for a score out of 100. 85+ is Grade A, 65-84 is B, 45-64 is C, and below 45 is D.{context}").format(context=(f" You're currently at {r['fertility']}/100 (Grade {grade_for_score(r['fertility'])[0]})." if r else ""))},
+     "answer": lambda r: ("Your soil health score checks all six readings — N, P, K, pH, temperature and moisture — against their optimal ranges. Each reading in range adds roughly 17 points, for a score out of 100. 85+ is Grade A, 65-84 is B, 45-64 is C, and below 45 is D.{context}").format(context=(f" You're currently at {r['fertility']}/100 (Grade {grade_for_score(r['fertility'])[0]})." if r else ""))},
     {"id":"crops",   "chip":"How does crop matching work?", "keywords":["crop","recommend","match","grow","plant"],
      "answer": lambda r: "The Crop Picks page compares your readings against the typical range for each of 22 crops in the training dataset, feature by feature. A crop scores higher the more of your readings fall inside its comfort zone — 85%+ is 'Excellent match', 60-84% is 'Good match', below that is 'Fair'."},
 ]
-AI_FALLBACK = "I can walk you through pH, NPK nutrients, moisture, temperature, organic matter, rainfall, your health score, how crop matching works, what TinyML is, why your scanner picked a crop, and how offline scanning works. Try one of those, or tap a suggestion above."
+AI_FALLBACK = "I can walk you through pH, NPK nutrients, moisture, temperature, organic matter, your health score, how crop matching works, what TinyML is, why your scanner picked a crop, and how offline scanning works. Try one of those, or tap a suggestion above."
 
 
 # ---- TinyML-aware topics (added) ------------------------------------------------
@@ -754,13 +739,13 @@ def _why_crop(r):
 AI_TOPICS_TINYML = [
     {"id":"tinyknn", "chip":"TinyML vs the website model?", "keywords":["knn","website model","difference","compare","vs","versus"],
      "answer": lambda r: ("Two models work together. The TinyML network on the device picks a crop from the six probe readings, offline. "
-        "The website's KNN model uses all seven inputs including rainfall and handles readings you type in manually. "
+        "The website's KNN model uses the same six inputs and also handles readings you type in manually. "
         "The Crop Picks page then ranks all 22 crops by how many of your readings sit in each crop's comfort zone.")},
     {"id":"whycrop", "chip":"Why did my scan pick this crop?", "keywords":["why this crop","why did","why was","why is","explain my crop","explain the crop","my crop"],
      "answer": lambda r: _why_crop(r)},
     {"id":"reliable","chip":"How reliable is the crop result?", "keywords":["reliable","confidence","accurate","accuracy","trust"],
      "answer": lambda r: ("The confidence number is how strongly the model favours its top crop. 85%+ is Excellent, 60-84% Good, below that Fair. "
-        "Two honest limits: the probe does not measure rainfall, so the device model leaves rainfall out; and the training data is a reference table of Philippine crops built from agronomic ranges, not measurements from your own plot, "
+        "One honest limit: the training data is a reference table of Philippine crops built from agronomic ranges, not measurements from your own plot, "
         "so treat the result as a guide to discuss with your adviser, not a guarantee." + _tinyml_context(r))},
     {"id":"offline", "chip":"What if there is no Wi-Fi?", "keywords":["offline","no wifi","no wi-fi","no internet","without wifi","without wi-fi","saved scan","sync","upload"],
      "answer": lambda r: ("If the scanner cannot find Wi-Fi it asks 'Continue offline?'. Say yes and Scan now still works: the reading and the TinyML crop are stored in the ESP32-S3's memory "
@@ -1018,7 +1003,7 @@ def crops():
     category     = request.args.get("category","All Crops")
     sort_by      = request.args.get("sort","match")
     suitable_only = request.args.get("suitable","1") != "0"
-    matches      = crop_matches(rec["N"],rec["P"],rec["K"],rec["temp"],rec["humidity"],rec["ph"],rec["rainfall"],
+    matches      = crop_matches(rec["N"],rec["P"],rec["K"],rec["temp"],rec["humidity"],rec["ph"],
                                 category=category,suitable_only=suitable_only) if rec else []
     if sort_by == "name":
         matches = sorted(matches, key=lambda r: r["label"])
@@ -1117,15 +1102,14 @@ def dashboard():
             ph       = float(request.form["ph"])
             temp     = float(request.form["temp"])
             humidity = float(request.form["humidity"])
-            rainfall = float(request.form["rainfall"])
         except (KeyError, ValueError):
             records = _records_for(session["user"], session["role"])
             return render_template("dashboard.html", result=None, fertility=None,
                 error="Please enter valid numbers for every field.",
                 records=records, user=session["user"], **_chart_context(records))
 
-        fertility = calculate_fertility(N, P, K, ph, temp, humidity, rainfall)
-        result    = recommend_crop(N, P, K, temp, humidity, ph, rainfall)
+        fertility = calculate_fertility(N, P, K, ph, temp, humidity)
+        result    = recommend_crop(N, P, K, temp, humidity, ph)
 
         filename   = None
         image_file = request.files.get("soil_image")
@@ -1136,9 +1120,9 @@ def dashboard():
         cur  = conn.cursor()
         cur.execute("""
             INSERT INTO records
-              (username,"N","P","K",ph,temp,humidity,rainfall,crop,image,source,fertility,created_at)
-            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,'manual',%s,NOW()::TEXT)
-        """, (session["user"], N, P, K, ph, temp, humidity, rainfall, result["name"], filename, fertility))
+              (username,"N","P","K",ph,temp,humidity,crop,image,source,fertility,created_at)
+            VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'manual',%s,NOW()::TEXT)
+        """, (session["user"], N, P, K, ph, temp, humidity, result["name"], filename, fertility))
         conn.commit()
         cur.close()
         conn.close()
@@ -1525,7 +1509,6 @@ def api_esp32():
         N        = float(data["N"]);      P        = float(data["P"])
         K        = float(data["K"]);      ph       = float(data["ph"])
         temp     = float(data["temp"]);   humidity = float(data["humidity"])
-        rainfall = float(data.get("rainfall", 100.0))
     except (TypeError, ValueError):
         return jsonify({"error":"all sensor fields must be numeric"}), 400
 
@@ -1573,19 +1556,19 @@ def api_esp32():
             conn.commit(); cur.close(); conn.close()
             return jsonify({"status":"ok","duplicate":True}), 200
 
-    fertility = calculate_fertility(N, P, K, ph, temp, humidity, rainfall)
-    knn       = recommend_crop(N, P, K, temp, humidity, ph, rainfall)
+    fertility = calculate_fertility(N, P, K, ph, temp, humidity)
+    knn       = recommend_crop(N, P, K, temp, humidity, ph)
     crop_name   = tiny_crop or knn["name"]
 
     # Scans taken offline keep the time they were scanned (not the time they were uploaded)
     cur.execute("""
         INSERT INTO records
-          (username,"N","P","K",ph,temp,humidity,rainfall,crop,image,source,fertility,created_at,
+          (username,"N","P","K",ph,temp,humidity,crop,image,source,fertility,created_at,
            crop_source,tinyml_conf,offline,scan_uid,tiny_json)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,NULL,'esp32',%s,
+        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,NULL,'esp32',%s,
                 (NOW() - make_interval(secs => %s))::TEXT,
                 %s,%s,%s,%s,%s)
-    """, (username, N, P, K, ph, temp, humidity, rainfall, crop_name, fertility, age_s,
+    """, (username, N, P, K, ph, temp, humidity, crop_name, fertility, age_s,
           crop_source, tiny_conf, 1 if offline else 0, scan_uid, tiny_json))
     cur.execute("UPDATE devices SET last_seen=NOW()::TEXT, last_seen_at=NOW() WHERE token_hash=%s", (th,))
     conn.commit()
@@ -1597,7 +1580,7 @@ def api_esp32():
         "crop":crop_name,"crop_source":crop_source,
         "description":CROP_INFO.get(crop_name, {}).get("desc", knn["desc"]),
         "fertility_score":fertility,"grade":grade_for_score(fertility)[0],
-        "inputs":{"N":N,"P":P,"K":K,"ph":ph,"temp":temp,"humidity":humidity,"rainfall":rainfall},
+        "inputs":{"N":N,"P":P,"K":K,"ph":ph,"temp":temp,"humidity":humidity},
     }), 200
 
 
@@ -1851,11 +1834,11 @@ def export_records():
     cur.execute("SELECT * FROM records ORDER BY id DESC")
     rows = cur.fetchall(); cur.close(); conn.close()
     buf = io.StringIO(); w = csv.writer(buf)
-    w.writerow(["id","username","created_at","N","P","K","ph","temp","humidity","rainfall","crop","health","source"])
+    w.writerow(["id","username","created_at","N","P","K","ph","temp","humidity","crop","health","source"])
     for r in rows:
         d = record_to_dict(r)
         w.writerow([d["id"], d["username"], d.get("created_at"), d["N"], d["P"], d["K"], d["ph"],
-                    d["temp"], d["humidity"], d["rainfall"], d.get("crop"), d.get("fertility"), d.get("source")])
+                    d["temp"], d["humidity"], d.get("crop"), d.get("fertility"), d.get("source")])
     from flask import Response
     return Response(buf.getvalue(), mimetype="text/csv",
                     headers={"Content-Disposition": "attachment; filename=soilsense_records.csv"})
@@ -1874,6 +1857,77 @@ def about():
 @login_required
 def contact():
     return render_template("contact.html", user=session["user"])
+
+
+# ---------------------------------------------------------------------------
+# ONE-TIME UPDATE OF SAVED RECORDS  (new crop dataset, no rainfall)
+#
+# Records saved before the Philippine crop dataset still carry old crop names (apple, grapes,
+# chickpea, ...) and a health score that counted rainfall. On the first start with this
+# version every saved record is re-analysed with the CURRENT models: new crop, TinyML result
+# and 6-reading health score. The N, P, K, pH, temperature, humidity, date, owner and photo of
+# a record are never touched. A marker row in `app_meta` makes it run only once; to run it again
+# after changing the dataset, bump RECORDS_MIGRATION_VERSION.
+# ---------------------------------------------------------------------------
+RECORDS_MIGRATION_VERSION = "ph-crops-v1-no-rainfall"
+
+
+def relabel_record(row):
+    """New analysis for one saved record (pure function, no database).
+    -> (crop, crop_source, tinyml_conf, tiny_json, fertility)   or None if a reading is missing."""
+    try:
+        N, P, K, ph = float(row["N"]), float(row["P"]), float(row["K"]), float(row["ph"])
+        temp, hum   = float(row["temp"]), float(row["humidity"])
+    except (TypeError, ValueError, KeyError):
+        return None
+    fertility = calculate_fertility(N, P, K, ph, temp, hum)
+    if (row.get("source") or "manual") == "esp32":
+        wj = web_tiny_json(N, P, K, temp, hum, ph)          # same as a fresh scan arriving from the scanner
+        if wj:
+            name, conf = json.loads(wj)["top3"][0]
+            return name, "tinyml-web", conf, wj, fertility
+        return recommend_crop(N, P, K, temp, hum, ph)["name"], "knn", None, None, fertility
+    # manual entries: the website model, as when they were typed in
+    return recommend_crop(N, P, K, temp, hum, ph)["name"], None, None, None, fertility
+
+
+def migrate_records_to_current_dataset():
+    conn = get_db(); cur = conn.cursor()
+    try:
+        cur.execute("CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)")
+        cur.execute("SELECT pg_advisory_xact_lock(7140)")            # two cold starts never run it twice at once
+        cur.execute("SELECT value FROM app_meta WHERE key='records_dataset'")
+        done = cur.fetchone()
+        if done and done["value"] == RECORDS_MIGRATION_VERSION:
+            conn.commit()
+            return 0
+        cur.execute('SELECT id, "N", "P", "K", ph, temp, humidity, source FROM records ORDER BY id')
+        batch = []
+        for r in cur.fetchall():
+            new = relabel_record(r)
+            if new:
+                batch.append((r["id"],) + new)
+        for i in range(0, len(batch), 500):                          # one statement per 500 rows (fast on a remote database)
+            psycopg2.extras.execute_values(cur,
+                "UPDATE records AS r SET crop=v.crop, crop_source=v.src, tinyml_conf=v.conf, tiny_json=v.tj, fertility=v.f "
+                "FROM (VALUES %s) AS v(id, crop, src, conf, tj, f) WHERE r.id = v.id",
+                batch[i:i + 500], template="(%s::int, %s, %s, %s::real, %s, %s::real)")
+        cur.execute("INSERT INTO app_meta (key, value) VALUES ('records_dataset', %s) "
+                    "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (RECORDS_MIGRATION_VERSION,))
+        conn.commit()
+        print(f"[SoilSense] Re-analysed {len(batch)} saved records with the Philippine crop dataset.")
+        return len(batch)
+    except Exception:
+        conn.rollback()
+        raise
+    finally:
+        cur.close(); conn.close()
+
+
+try:
+    migrate_records_to_current_dataset()
+except Exception as _e:
+    print(f"[SoilSense] Record update skipped (will retry on next start): {_e}")
 
 
 if __name__ == "__main__":

@@ -597,7 +597,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
               <th class="th-l">#</th>
               <th>User</th>
               <th>Date</th><th>N</th><th>P</th><th>K</th>
-              <th>pH</th><th>Temp</th><th>Humidity</th><th>Rainfall</th>
+              <th>pH</th><th>Temp</th><th>Humidity</th>
               <th>Crop</th><th>Health</th>
               <th>Del</th>
             </tr></thead>
@@ -615,7 +615,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
                 <td class="td-date" data-label="Date">{{ r['created_at'] or '—' }}</td>
                 <td data-label="N">{{ r['N'] }}</td><td data-label="P">{{ r['P'] }}</td><td data-label="K">{{ r['K'] }}</td>
                 <td data-label="pH">{{ r['ph'] }}</td><td data-label="Temp">{{ r['temp'] }}</td>
-                <td data-label="Humidity">{{ r['humidity'] }}</td><td data-label="Rainfall">{{ r['rainfall'] }}</td>
+                <td data-label="Humidity">{{ r['humidity'] }}</td>
                 <td class="td-crop" data-label="Crop"><strong>{{ r['crop']|capitalize if r['crop'] else '—' }}</strong></td>
                 <td class="td-health" data-label="Health">{{ r['fertility']|round(0,'floor')|int if r['fertility'] else '—' }}</td>
                 <td class="td-del">
@@ -706,7 +706,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
             </div>
             <div class="panel-body">
               <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Reference: columns shown in the Soil Analysis history table</p>
-              {% for col in ['Date','N (Nitrogen)','P (Phosphorus)','K (Potassium)','pH Value','Temperature','Humidity','Rainfall','Crop Result','Health','Source'] %}
+              {% for col in ['Date','N (Nitrogen)','P (Phosphorus)','K (Potassium)','pH Value','Temperature','Humidity','Crop Result','Health','Source'] %}
               <div class="toggle-row">
                 <span class="toggle-label">{{ col }}</span>
                 <label class="toggle">

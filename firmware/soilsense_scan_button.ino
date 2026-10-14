@@ -47,9 +47,6 @@ const char* SERVER_BASE   = "https://soilsense-amber.vercel.app";
 // Leave "" unless you set ESP32_API_KEY on Vercel (then use the same value)
 const char* API_KEY       = "";
 
-// The probe does not measure rainfall; the website needs a number.
-const float ASSUMED_RAINFALL_MM = 100.0;
-
 // ---- OPTIONAL TUNING -------------------------------------------------------
 
 const unsigned long HEARTBEAT_MS = 8000;   // how often we tell the website "I'm here"
@@ -64,7 +61,7 @@ const uint32_t      TFT_SPI_HZ  = 10000000;        // slower SPI = fewer glitche
 const wifi_power_t  WIFI_TX_POWER = WIFI_POWER_11dBm;  // smaller current bursts. Raise to
                                                        // WIFI_POWER_15dBm only if Wi-Fi won't connect
 
-#define FW_VERSION "2.2"
+#define FW_VERSION "2.3"
 
 // ============================================================
 // PINS
@@ -651,9 +648,9 @@ int sendReading() {
   char body[320];
 
   snprintf(body, sizeof(body),
-           "{\"N\":%u,\"P\":%u,\"K\":%u,\"ph\":%.1f,\"temp\":%.1f,\"humidity\":%.1f,\"rainfall\":%.1f,\"scan_uid\":\"%s\"}",
+           "{\"N\":%u,\"P\":%u,\"K\":%u,\"ph\":%.1f,\"temp\":%.1f,\"humidity\":%.1f,\"scan_uid\":\"%s\"}",
            (unsigned)nitrogen, (unsigned)phosphorus, (unsigned)potassium,
-           soilPH, soilTemperature, soilHumidity, ASSUMED_RAINFALL_MM, uid);
+           soilPH, soilTemperature, soilHumidity, uid);
 
   String reply;
 

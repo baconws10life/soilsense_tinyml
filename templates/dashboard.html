@@ -603,11 +603,6 @@ body {
   <input class="form-input" name="humidity" inputmode="decimal" autocomplete="off" enterkeyhint="next" placeholder="e.g. 80" oninput="validateNumber(this)" required/>
   <span class="input-error" id="err-humidity"></span>
 </div>
-<div class="form-group">
-  <label class="form-label">Rainfall (mm)</label>
-  <input class="form-input" name="rainfall" inputmode="decimal" autocomplete="off" enterkeyhint="next" placeholder="e.g. 200" oninput="validateNumber(this)" required/>
-  <span class="input-error" id="err-rainfall"></span>
-</div>
 
           <div class="form-group">
             <label class="form-label">Soil Image (optional)</label>
@@ -721,7 +716,7 @@ body {
           {% if is_admin %}<th>User</th>{% endif %}
           <th>N</th><th>P</th><th>K</th>
           <th>pH</th><th>Temp</th>
-          <th>Humidity</th><th>Rainfall</th>
+          <th>Humidity</th>
           <th>Crop</th><th>Health</th><th>Source</th>
           {% if is_admin %}<th></th>{% endif %}
         </tr>
@@ -738,7 +733,6 @@ body {
           <td data-label="pH">{{ r['ph'] }}</td>
           <td data-label="Temp">{{ r['temp'] }}</td>
           <td data-label="Humidity">{{ r['humidity'] }}</td>
-          <td data-label="Rainfall">{{ r['rainfall'] }}</td>
           <td class="crop-cell" data-label="Crop">{{ r['crop']|capitalize if r['crop'] else '—' }}</td>
           <td data-label="Health">{{ r['fertility']|round(0,'floor')|int if r['fertility'] else '—' }}</td>
           <td class="muted" data-label="Source">{{ r['source'] or 'manual' }}</td>

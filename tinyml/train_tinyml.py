@@ -20,7 +20,7 @@ THREE tiny networks share the same 6 inputs (N, P, K, soil temp, soil moisture, 
                        threshold rules, so this net is those rules distilled into a tiny
                        model that runs offline. It agrees with the rules, it does not beat them.
 
-The rainfall column is NOT used: the probe cannot measure it.
+The dataset has no rainfall column: the prototype does not use rainfall.
 Numbers printed at the end are the ones to quote in the thesis.
 """
 import os, json

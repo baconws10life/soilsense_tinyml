@@ -219,7 +219,7 @@ How it works (Vercel cannot push to the scanner, so the scanner asks):
 ## Update: Philippine crop dataset
 
 `Crop_recommendation.csv` now holds **22 Philippine crops** instead of the original ones (apple, grapes, chickpea, lentil, cotton, ...).
-Same 8 columns, same 2,200 rows (100 per crop), same units and **same N-P-K scale**. Nothing about how the site reads NPK changed
+Same 2,200 rows (100 per crop), same units and **same N-P-K scale**; the `rainfall` column is gone (see the next section). Nothing about how the site reads NPK changed
 (soil health scoring, the scanner and the API are untouched); only the crops did.
 
 | Category | Crops |
@@ -234,7 +234,7 @@ Same 8 columns, same 2,200 rows (100 per crop), same units and **same N-P-K scal
 * Crops that were already in the original data and are grown here (rice, corn = old "maize", mungbean, banana, mango, papaya, coconut,
   coffee, calamansi ~ old "orange") **keep their original N-P-K ranges**. New crops get N-P-K on the same scale from their general
   nutrient demand (cabbage / sugarcane heavy N; cassava / abaca / pineapple potassium-hungry; legumes low N). Temperature, humidity, pH and
-  rainfall are set for Philippine conditions (lowland, highland, wet and dry-season crops).
+  are set for Philippine conditions (lowland, highland, wet and dry-season crops).
 * **It is a synthetic reference table**, like the original: every row is drawn uniformly inside a range written in
   `data/make_ph_dataset.py` (one line per crop). For the paper, check those ranges against BSWM / DA-BPI / PhilRice / PCAARRD references or
   your own soil samples, edit them, and rebuild.
@@ -245,3 +245,27 @@ Same 8 columns, same 2,200 rows (100 per crop), same units and **same N-P-K scal
 * TinyML was retrained on the new data (held-out top-1 97.5 %, top-3 100 %; website KNN on the same 6 inputs 93.9 %). New categories
   *Root Crops* and *Vegetables* appear as filters on the Crop Picks page.
 * Existing saved records keep the crop name they were saved with (e.g. an old "apple"); they are not rewritten.
+
+
+## Update: no rainfall + saved records re-labelled (firmware 2.3)
+
+**Rainfall is gone from the whole prototype.** The probe never measured it, so every place that used it was removed:
+dataset (`Crop_recommendation.csv` has 6 inputs: N, P, K, temperature, humidity, pH), the KNN crop model, Crop Picks matching, the
+health score (now **6 readings**, each worth ~17 points instead of 7 x 14), the New Reading form, the history tables, the Sensors page,
+the CSV export, the AI assistant (the "Why does rainfall matter?" topic was removed) and the scanner firmware (v2.3 no longer sends it).
+`POST /api/esp32` simply ignores a `rainfall` field if an older scanner still sends one.
+The `rainfall` column in the `records` table is **kept** (old values stay in the database, nothing is deleted) but nothing reads or writes it.
+
+**Saved records were updated to the new crop data.** On the first start of this version the website re-analyses every row in `records`
+once (`migrate_records_to_current_dataset()` at the end of `app.py`):
+
+* `crop`, `crop_source`, `tinyml_conf` and `tiny_json` are recomputed with the current models (scanner rows: the TinyML networks, like a new scan;
+  manual rows: the website KNN, like a typed-in reading), and `fertility` is recomputed with the 6-reading score.
+* Never changed: owner, date, source, N, P, K, pH, temperature, humidity, photo, scan id.
+* It runs once. A marker row (`app_meta.records_dataset`) records that it is done; it is safe if two serverless instances start together (advisory lock).
+  To run it again after changing the dataset or models, change `RECORDS_MIGRATION_VERSION` in `app.py` (or delete that row).
+* Check the Vercel log for `Re-analysed N saved records ...`.
+* An old record's N-P-K can land on a surprising new crop (e.g. an old "apple" with K 200 becomes the nearest Philippine crop). That is expected:
+  the crop is a recommendation recomputed from the saved readings, not a stored fact.
+
+TinyML was retrained on the 6-input data: held-out top-1 96.1 % (website KNN on the same inputs 94.8 %), top-3 100 %.

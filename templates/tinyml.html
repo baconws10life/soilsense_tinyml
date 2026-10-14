@@ -202,7 +202,7 @@
   <p class="tm-sub">All three read the same six values: N, P, K, soil temperature, soil moisture and pH.</p>
   <div class="tm-nets">
     <div class="tm-net"><h4>Crop recommender</h4><code>6 &rarr; 24 &rarr; 22</code>
-      <p>Ranks the 22 crops and shows the top three with a confidence. Rainfall is left out because the probe cannot measure it.</p></div>
+      <p>Ranks the 22 crops and shows the top three with a confidence.</p></div>
     <div class="tm-net"><h4>Probe check</h4><code>6 &rarr; 8 &rarr; 3 &rarr; 8 &rarr; 6</code>
       <p>An <b>autoencoder</b>: it squeezes the reading through a 3-number bottleneck and tries to rebuild it. It only ever saw real soil, so a reading it cannot rebuild (probe in air, loose contact) is flagged &ldquo;odd&rdquo;.</p></div>
     <div class="tm-net"><h4>Nutrient advisor</h4><code>6 &rarr; 16 &rarr; 8</code>
@@ -226,7 +226,7 @@
   <ul class="tm-limits">
     <li><b>Confidence is not correctness.</b> A network always answers. Try &ldquo;Probe in the air&rdquo;: it still names a crop, but the probe check flags the reading as odd. Trust the crop only when the probe check is happy.</li>
     <li><b>It learned from a reference dataset</b> of 2,200 samples of Philippine crops (built from agronomic ranges), not from measurements on your own farm. Treat the result as a starting point to discuss, not a guarantee.</li>
-    <li><b>Rainfall is not measured</b> by the probe, so the networks ignore it. The website's separate KNN model on the Analyze page does use it.</li>
+    <li><b>Both models use the same six readings</b> the probe measures: N, P, K, soil temperature, moisture and pH. Rainfall is not used anywhere.</li>
     <li><b>The probe check is strong on gross faults</b> (probe in air, random values) but weak on subtle ones: in testing it caught only about a quarter of readings stuck at pH 7 and 100% moisture. Re-scan if something looks wrong.</li>
     <li><b>The advisor is the rules in a smaller box.</b> It agrees with them about 99% of the time. Its benefit is working offline, not being smarter.</li>
   </ul>

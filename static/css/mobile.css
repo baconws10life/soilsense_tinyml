@@ -163,7 +163,6 @@ a, button, input, select, textarea, label, summary, [role="button"] { touch-acti
   .history-table td[data-label="pH"]       { order: 8; }
   .history-table td[data-label="Temp"]     { order: 9; }
   .history-table td[data-label="Humidity"] { order: 10; }
-  .history-table td[data-label="Rainfall"] { order: 11; }
   .history-table td[data-label="Source"]   { order: 12; grid-column: span 2; }
   .history-table td.act-cell { order: 13; grid-column: 1 / -1; }
   .history-table td.act-cell .del-btn { width: 100%; }
@@ -289,7 +288,6 @@ a, button, input, select, textarea, label, summary, [role="button"] { touch-acti
   .admin-page .cards-sm td[data-label="pH"] { order: 8; }
   .admin-page .cards-sm td[data-label="Temp"] { order: 9; }
   .admin-page .cards-sm td[data-label="Humidity"] { order: 10; }
-  .admin-page .cards-sm td[data-label="Rainfall"] { order: 11; }
   .admin-page .cards-sm td.td-id { order: 12; }
   .admin-page .cards-sm td.td-del { order: 13; grid-column: 1 / -1; }
   .admin-page .cards-sm td.td-del .icon-btn { width: 100%; height: 46px; gap: 8px; font-size: 13px; color: var(--red); border-color: rgba(224, 92, 92, .35); }

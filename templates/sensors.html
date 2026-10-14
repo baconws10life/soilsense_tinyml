@@ -177,9 +177,7 @@
         <div><dt>Compared to optimal</dt><dd>{{ r.gap }}</dd></div>
       </dl>
       <p class="sx-why"><b>Why it matters:</b> {{ r.why }}</p>
-      {% if r.key == 'rainfall' and r.how == 'Assumed' %}
-      <p class="sx-note">The soil probe cannot measure rainfall, so the scanner sends an assumed value. Treat this card as a placeholder, not a field measurement.</p>
-      {% elif r.key == 'organic_matter' %}
+      {% if r.key == 'organic_matter' %}
       <p class="sx-note">Organic matter is estimated from nitrogen and potassium. It is not measured directly by the probe.</p>
       {% endif %}
       <a href="{{ url_for('ai_assistant') }}?ask={{ r.label|urlencode }}" class="btn btn-ghost btn-sm ask-ai-btn">{{ icon('bot',15) }} Ask AI about {{ r.label }}</a>
