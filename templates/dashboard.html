@@ -679,7 +679,7 @@ body {
         <div class="panel-title">Recommended Crop</div>
       </div>
       <div class="panel-body">
-        {% set crop_photos = {'rice':'rice.jpg','maize':'maize.jpg','cotton':'cotton.jpg','mungbean':'mungbean.jpg'} %}
+        {% set crop_photos = {'rice':'rice.jpg','corn':'maize.jpg','mungbean':'mungbean.jpg'} %}
         {% if result %}
           {% set photo = crop_photos.get(result.name|lower) %}
           <div class="crop-img-wrap">

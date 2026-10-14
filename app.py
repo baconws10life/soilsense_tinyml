@@ -255,7 +255,7 @@ def health():
 
 
 # ---------------------------------------------------------------------------
-# ML MODEL + CROP KNOWLEDGE BASE   (unchanged from original)
+# ML MODEL + CROP KNOWLEDGE BASE   (crops = Philippine crops, see data/make_ph_dataset.py)
 # ---------------------------------------------------------------------------
 FEATURES = ["N", "P", "K", "temperature", "humidity", "ph", "rainfall"]
 
@@ -277,52 +277,52 @@ for label, group in df.groupby("label"):
     }
 
 CROP_INFO = {
-    "rice":        dict(category="Grains",     emoji="\U0001F33E", harvest="110-150 days",
-                        desc="Rice thrives in warm, flooded paddies with high rainfall and slightly acidic, clay-rich soil."),
-    "maize":       dict(category="Grains",     emoji="\U0001F33D", harvest="90-120 days",
-                        desc="Maize (corn) wants fertile, well-drained soil, moderate rainfall, and steady warmth through the growing season."),
-    "chickpea":    dict(category="Legumes",    emoji="\U0001FADB", harvest="90-100 days",
-                        desc="Chickpea is a cool-season legume that tolerates dry spells and fixes nitrogen back into the soil."),
-    "kidneybeans": dict(category="Legumes",    emoji="\U0001FAD8", harvest="70-90 days",
-                        desc="Kidney beans need loose, well-drained soil and moderate rainfall; they dislike waterlogging."),
-    "pigeonpeas":  dict(category="Legumes",    emoji="\U0001FAD8", harvest="150-180 days",
-                        desc="Pigeon pea is a drought-hardy, deep-rooted legume that improves soil fertility for the crop that follows it."),
-    "mothbeans":   dict(category="Legumes",    emoji="\U0001FAD8", harvest="60-75 days",
-                        desc="Moth bean is one of the most drought-tolerant pulses, suited to hot, arid soils with light rainfall."),
-    "mungbean":    dict(category="Legumes",    emoji="\U0001F331", harvest="60-90 days",
-                        desc="Mung bean is a fast-cycling, drought-resistant legume that improves soil fertility as it grows."),
-    "blackgram":   dict(category="Legumes",    emoji="\U0001FAD8", harvest="70-90 days",
-                        desc="Black gram prefers warm, humid conditions and well-drained loam; a classic rotation crop after rice."),
-    "lentil":      dict(category="Legumes",    emoji="\U0001FADB", harvest="100-110 days",
-                        desc="Lentils grow best in cool climates with moderate rainfall and well-drained soil rich in organic matter."),
-    "pomegranate": dict(category="Fruits",     emoji="\U0001F534", harvest="5-7 months",
-                        desc="Pomegranate is a hardy, drought-tolerant shrub that fruits well in semi-arid climates with well-drained soil."),
-    "banana":      dict(category="Fruits",     emoji="\U0001F34C", harvest="9-12 months",
-                        desc="Banana needs rich, moisture-retentive soil, high humidity, and steady warmth all year round."),
-    "mango":       dict(category="Fruits",     emoji="\U0001F96D", harvest="Perennial (100-150 days post-flower)",
-                        desc="Mango trees prefer a distinct dry season for flowering, warm temperatures, and deep well-drained soil."),
-    "grapes":      dict(category="Fruits",     emoji="\U0001F347", harvest="100-150 days per season",
-                        desc="Grapes require a warm, dry climate with well-drained soil and controlled irrigation for good fruit quality."),
-    "watermelon":  dict(category="Fruits",     emoji="\U0001F349", harvest="80-90 days",
-                        desc="Watermelon wants hot weather, sandy well-drained soil, and steady but moderate watering."),
-    "muskmelon":   dict(category="Fruits",     emoji="\U0001F348", harvest="80-90 days",
-                        desc="Muskmelon likes warm, dry air, sandy loam soil, and full sun with moderate irrigation."),
-    "apple":       dict(category="Fruits",     emoji="\U0001F34E", harvest="Perennial (~150-180 days post-bloom)",
-                        desc="Apple trees need a cool climate with a winter chill period, high humidity, and well-drained fertile soil."),
-    "orange":      dict(category="Fruits",     emoji="\U0001F34A", harvest="Perennial (7-8 months)",
-                        desc="Orange trees like a subtropical climate, consistent moisture, and neutral to slightly acidic soil."),
-    "papaya":      dict(category="Fruits",     emoji="\U0001F95D", harvest="9-11 months",
-                        desc="Papaya grows fast in hot, humid climates with rich, well-drained soil and protection from strong wind."),
-    "coconut":     dict(category="Fruits",     emoji="\U0001F965", harvest="Perennial (long-term)",
-                        desc="Coconut palms love hot, humid coastal climates with sandy soil and abundant, well-distributed rainfall."),
-    "cotton":      dict(category="Cash Crops", emoji="\u2601\ufe0f", harvest="150-180 days",
-                        desc="Cotton needs a long warm growing season, moderate rainfall, and deep, well-drained black soil."),
-    "jute":        dict(category="Cash Crops", emoji="\U0001F33F", harvest="100-120 days",
-                        desc="Jute thrives in warm, humid climates with well-drained, fertile soil and abundant rainfall."),
-    "coffee":      dict(category="Cash Crops", emoji="\u2615",      harvest="Perennial (~8-9 months flower-to-cherry)",
-                        desc="Coffee prefers a cool tropical climate, partial shade, high humidity, and slightly acidic, well-drained soil."),
+    "rice":        dict(category="Grains", emoji="\U0001F33E", harvest="105-130 days",
+                        desc="Rice (palay) is the Philippines' staple: it thrives in warm, wet lowland paddies or irrigated fields with heavy rainfall and slightly acidic, clay-rich soil."),
+    "corn":        dict(category="Grains", emoji="\U0001F33D", harvest="90-115 days",
+                        desc="Corn (mais) is the country's second staple grain: it wants fertile, well-drained soil, steady warmth and moderate rainfall, and responds strongly to nitrogen."),
+    "cassava":     dict(category="Root Crops", emoji="\U0001F360", harvest="8-12 months",
+                        desc="Cassava (kamoteng kahoy) tolerates poor, sandy or sloping soil and dry spells, needs little nitrogen but plenty of potassium, and is a food, feed and starch crop."),
+    "sweetpotato": dict(category="Root Crops", emoji="\U0001F360", harvest="90-120 days",
+                        desc="Sweet potato (kamote) grows fast in loose, well-drained soil with moderate rainfall; too much nitrogen gives lots of leaves but small roots."),
+    "mungbean":    dict(category="Legumes", emoji="\U0001F331", harvest="60-70 days",
+                        desc="Mung bean (mongo) is a fast, drought-tolerant legume that fits after rice; it fixes its own nitrogen, so it needs very little added."),
+    "peanut":      dict(category="Legumes", emoji="\U0001F95C", harvest="100-120 days",
+                        desc="Peanut (mani) wants light, loose, well-drained sandy loam with moderate rainfall and enough potassium and calcium for the pods to fill."),
+    "sitaw":       dict(category="Legumes", emoji="\U0001FADB", harvest="55-70 days",
+                        desc="Sitaw (yardlong or string bean) climbs on trellises in warm, humid weather and well-drained loam, and is a quick-cycle vegetable legume."),
+    "tomato":      dict(category="Vegetables", emoji="\U0001F345", harvest="65-90 days",
+                        desc="Tomato likes well-drained, fertile loam, plenty of phosphorus and potassium, and relatively cool, drier weather; heavy rain brings disease."),
+    "eggplant":    dict(category="Vegetables", emoji="\U0001F346", harvest="75-110 days",
+                        desc="Eggplant (talong) is a hardy, warm-season vegetable that fruits for months in fertile, well-drained soil with steady moisture."),
+    "ampalaya":    dict(category="Vegetables", emoji="\U0001F952", harvest="60-90 days",
+                        desc="Ampalaya (bitter gourd) is a warm, humid-weather vine that needs a trellis, moderate fertility and soil that never waterlogs."),
+    "cabbage":     dict(category="Vegetables", emoji="\U0001F96C", harvest="70-90 days",
+                        desc="Cabbage is a highland crop (Benguet, Bukidnon): it needs cool weather, lots of nitrogen and fertile, moisture-holding loam."),
+    "onion":       dict(category="Vegetables", emoji="\U0001F9C5", harvest="100-120 days",
+                        desc="Onion (sibuyas) is a dry-season crop (Nueva Ecija, Ilocos) that needs fertile, well-drained loam, high potassium and little rain at bulbing."),
+    "banana":      dict(category="Fruits", emoji="\U0001F34C", harvest="9-12 months",
+                        desc="Banana (saging) needs rich, moisture-retentive soil, high humidity and steady warmth all year round."),
+    "mango":       dict(category="Fruits", emoji="\U0001F96D", harvest="Perennial (100-150 days post-flower)",
+                        desc="Mango (mangga) trees want a distinct dry season to flower, warm temperatures and deep, well-drained soil."),
+    "pineapple":   dict(category="Fruits", emoji="\U0001F34D", harvest="14-18 months",
+                        desc="Pineapple (pinya) is one of the few crops that likes acidic soil (pH 4.5-5.5); it needs good drainage and plenty of potassium."),
+    "papaya":      dict(category="Fruits", emoji="\U0001F348", harvest="9-11 months",
+                        desc="Papaya grows fast in hot, humid weather with rich, well-drained soil and protection from strong wind and standing water."),
+    "calamansi":   dict(category="Fruits", emoji="\U0001F34B", harvest="Perennial (fruits 2-3 years after planting)",
+                        desc="Calamansi is the Philippines' own citrus: it likes warm, humid weather, slightly acidic, well-drained loam and light but regular feeding."),
+    "coconut":     dict(category="Cash Crops", emoji="\U0001F965", harvest="Perennial (6-10 years to first nuts)",
+                        desc="Coconut (niyog) palms love hot, humid coastal climates with sandy or loamy soil and abundant, well-spread rainfall."),
+    "sugarcane":   dict(category="Cash Crops", emoji="\U0001F38D", harvest="10-14 months",
+                        desc="Sugarcane (tubo) is a heavy feeder: it needs deep fertile soil, lots of nitrogen and potassium, warm weather and good drainage."),
+    "coffee":      dict(category="Cash Crops", emoji="\U00002615", harvest="Perennial (~8-10 months flower-to-cherry)",
+                        desc="Coffee (kape) grows best in the cool uplands with partial shade, high humidity and slightly acidic, well-drained, fertile soil."),
+    "cacao":       dict(category="Cash Crops", emoji="\U0001F36B", harvest="Perennial (~5-6 months pod-to-harvest)",
+                        desc="Cacao grows under shade in warm, humid, sheltered sites (often under coconut), in deep, moist, well-drained, slightly acidic soil."),
+    "abaca":       dict(category="Cash Crops", emoji="\U0001F33F", harvest="Perennial (stalks cut every 3-4 months)",
+                        desc="Abaca (Manila hemp) is a banana relative grown for fibre: it needs rich, moist, well-drained volcanic or alluvial soil, high humidity and lots of potassium."),
 }
-CROP_CATEGORIES = ["Grains", "Legumes", "Fruits", "Cash Crops"]
+CROP_CATEGORIES = ["Grains", "Root Crops", "Legumes", "Vegetables", "Fruits", "Cash Crops"]
 
 
 def recommend_crop(N, P, K, temp, humidity, ph, rainfall):
@@ -688,7 +688,7 @@ AI_TOPICS = [
     {"id":"organic", "chip":"What is organic matter?",      "keywords":["organic","humus","compost"],
      "answer": lambda r: ("Organic matter is the decomposed plant and animal material in soil — it holds water, feeds soil microbes, and slowly releases nutrients. A healthy field usually sits around 3-6%.{context}").format(context=(f" Your estimate right now is about {estimate_organic_matter(r['N'],r['K'])}%." if r else ""))},
     {"id":"weather", "chip":"Why does rainfall matter?",    "keywords":["rain","weather","climate"],
-     "answer": lambda r: ("Rainfall (in millimetres over the growing period) tells the model how much natural irrigation a crop will get. Crops like rice or coconut want abundant rainfall, while crops like moth bean or chickpea are bred to cope with much less.{context}").format(context=(f" Your latest reading is {r['rainfall']} mm." if r else ""))},
+     "answer": lambda r: ("Rainfall (in millimetres over the growing period) tells the model how much natural irrigation a crop will get. Crops like rice or coconut want abundant rainfall, while crops like onion or mango do better with a drier spell.{context}").format(context=(f" Your latest reading is {r['rainfall']} mm." if r else ""))},
     {"id":"score",   "chip":"How is my health score calculated?", "keywords":["health score","grade","fertility","score"],
      "answer": lambda r: ("Your soil health score checks all seven readings — N, P, K, pH, temperature, moisture, and rainfall — against their optimal ranges. Each reading in range adds roughly 14 points, for a score out of 100. 85+ is Grade A, 65-84 is B, 45-64 is C, and below 45 is D.{context}").format(context=(f" You're currently at {r['fertility']}/100 (Grade {grade_for_score(r['fertility'])[0]})." if r else ""))},
     {"id":"crops",   "chip":"How does crop matching work?", "keywords":["crop","recommend","match","grow","plant"],
@@ -760,7 +760,7 @@ AI_TOPICS_TINYML = [
      "answer": lambda r: _why_crop(r)},
     {"id":"reliable","chip":"How reliable is the crop result?", "keywords":["reliable","confidence","accurate","accuracy","trust"],
      "answer": lambda r: ("The confidence number is how strongly the model favours its top crop. 85%+ is Excellent, 60-84% Good, below that Fair. "
-        "Two honest limits: the probe does not measure rainfall, so the device model leaves rainfall out; and the training data comes from a public crop dataset, "
+        "Two honest limits: the probe does not measure rainfall, so the device model leaves rainfall out; and the training data is a reference table of Philippine crops built from agronomic ranges, not measurements from your own plot, "
         "so treat the result as a guide to discuss with your adviser, not a guarantee." + _tinyml_context(r))},
     {"id":"offline", "chip":"What if there is no Wi-Fi?", "keywords":["offline","no wifi","no wi-fi","no internet","without wifi","without wi-fi","saved scan","sync","upload"],
      "answer": lambda r: ("If the scanner cannot find Wi-Fi it asks 'Continue offline?'. Say yes and Scan now still works: the reading and the TinyML crop are stored in the ESP32-S3's memory "

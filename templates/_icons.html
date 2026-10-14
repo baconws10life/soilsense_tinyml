@@ -58,9 +58,9 @@
 <svg class="ico {{ cls }}" xmlns="http://www.w3.org/2000/svg" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">{{ P.get(name, P['leaf'])|safe }}</svg>
 {%- endmacro %}
 
-{# Icon for a crop, chosen by its category (Grains / Legumes / Fruits / Cash Crops) #}
+{# Icon for a crop, chosen by its category (Grains / Root Crops / Legumes / Vegetables / Fruits / Cash Crops) #}
 {% macro crop_icon(category, size=24) -%}
-{%- set M = {'Grains': 'sprout', 'Legumes': 'leaf', 'Fruits': 'apple', 'Cash Crops': 'trending-up'} -%}
+{%- set M = {'Grains': 'sprout', 'Root Crops': 'layers', 'Legumes': 'leaf', 'Vegetables': 'leaf', 'Fruits': 'apple', 'Cash Crops': 'trending-up'} -%}
 {{ icon(M.get(category, 'sprout'), size) }}
 {%- endmacro %}
 

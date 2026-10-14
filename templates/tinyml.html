@@ -122,7 +122,7 @@
       <div class="tm-presets">
         {% if sample %}<button type="button" class="btn btn-ghost btn-sm" data-preset="mine">My latest scan</button>{% endif %}
         <button type="button" class="btn btn-ghost btn-sm" data-preset="rice">Typical rice field</button>
-        <button type="button" class="btn btn-ghost btn-sm" data-preset="chickpea">Typical chickpea field</button>
+        <button type="button" class="btn btn-ghost btn-sm" data-preset="cabbage">Typical cabbage field</button>
         <button type="button" class="btn btn-ghost btn-sm" data-preset="air">Probe in the air</button>
       </div>
     </div>
@@ -225,7 +225,7 @@
   <h2 class="tm-h">Honest limits</h2>
   <ul class="tm-limits">
     <li><b>Confidence is not correctness.</b> A network always answers. Try &ldquo;Probe in the air&rdquo;: it still names a crop, but the probe check flags the reading as odd. Trust the crop only when the probe check is happy.</li>
-    <li><b>It learned from a public dataset</b> of 2,200 samples, not from your own farm. Treat the result as a starting point to discuss, not a guarantee.</li>
+    <li><b>It learned from a reference dataset</b> of 2,200 samples of Philippine crops (built from agronomic ranges), not from measurements on your own farm. Treat the result as a starting point to discuss, not a guarantee.</li>
     <li><b>Rainfall is not measured</b> by the probe, so the networks ignore it. The website's separate KNN model on the Analyze page does use it.</li>
     <li><b>The probe check is strong on gross faults</b> (probe in air, random values) but weak on subtle ones: in testing it caught only about a quarter of readings stuck at pH 7 and 100% moisture. Re-scan if something looks wrong.</li>
     <li><b>The advisor is the rules in a smaller box.</b> It agrees with them about 99% of the time. Its benefit is working offline, not being smarter.</li>

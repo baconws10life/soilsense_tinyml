@@ -53,7 +53,7 @@ labels with a description, category, emoji, and harvest-window estimate for each
 
 ```
 app.py                     Flask app: routes, ML model, scoring, rule-based assistant
-Crop_recommendation.csv    training data (22 crops, 2200 rows)
+Crop_recommendation.csv    training data (22 Philippine crops, 2200 rows) - built by data/make_ph_dataset.py
 templates/                 Jinja templates (base.html holds the sidebar shell)
 static/css/style.css       design tokens + all page styles
 static/js/main.js          accordion, chat, filters, ring-gauge rendering
@@ -214,3 +214,34 @@ How it works (Vercel cannot push to the scanner, so the scanner asks):
 * Disconnecting, an admin disconnect, or the scanner being released cancels any waiting request.
 * Firmware: flash `firmware/soilsense_scan_button.ino` (v2.2). Tunable: `HEARTBEAT_CONNECTED_MS` (3000 ms; smaller = faster button,
   more traffic). Older firmware still works - it just ignores the website button.
+
+
+## Update: Philippine crop dataset
+
+`Crop_recommendation.csv` now holds **22 Philippine crops** instead of the original ones (apple, grapes, chickpea, lentil, cotton, ...).
+Same 8 columns, same 2,200 rows (100 per crop), same units and **same N-P-K scale**. Nothing about how the site reads NPK changed
+(soil health scoring, the scanner and the API are untouched); only the crops did.
+
+| Category | Crops |
+|---|---|
+| Grains | rice, corn |
+| Root Crops | cassava, sweetpotato (kamote) |
+| Legumes | mungbean (mongo), peanut, sitaw |
+| Vegetables | tomato, eggplant (talong), ampalaya, cabbage, onion |
+| Fruits | banana, mango, pineapple, papaya, calamansi |
+| Cash Crops | coconut, sugarcane, coffee, cacao, abaca |
+
+* Crops that were already in the original data and are grown here (rice, corn = old "maize", mungbean, banana, mango, papaya, coconut,
+  coffee, calamansi ~ old "orange") **keep their original N-P-K ranges**. New crops get N-P-K on the same scale from their general
+  nutrient demand (cabbage / sugarcane heavy N; cassava / abaca / pineapple potassium-hungry; legumes low N). Temperature, humidity, pH and
+  rainfall are set for Philippine conditions (lowland, highland, wet and dry-season crops).
+* **It is a synthetic reference table**, like the original: every row is drawn uniformly inside a range written in
+  `data/make_ph_dataset.py` (one line per crop). For the paper, check those ranges against BSWM / DA-BPI / PhilRice / PCAARRD references or
+  your own soil samples, edit them, and rebuild.
+* **To change a crop or range:** edit `PROFILES` in `data/make_ph_dataset.py`, run `python data/make_ph_dataset.py`, then
+  `python tinyml/train_tinyml.py` (rewrites `static/tinyml/soilsense_tinyml.json` and `tinyml/soilsense_tinyml.h`). If you add or remove a crop,
+  also add/remove it in `CROP_INFO` in `app.py` (description, category, emoji, harvest) and in the Supported Crops list in `admin_dashboard.html`.
+* The original dataset is kept as `data/Crop_recommendation_original.csv`.
+* TinyML was retrained on the new data (held-out top-1 97.5 %, top-3 100 %; website KNN on the same 6 inputs 93.9 %). New categories
+  *Root Crops* and *Vegetables* appear as filters on the Crop Picks page.
+* Existing saved records keep the crop name they were saved with (e.g. an old "apple"); they are not rewritten.

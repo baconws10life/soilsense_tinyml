@@ -14,8 +14,8 @@
     { key: 'ph',          label: 'pH',          unit: '',      min: 3,  max: 10,  step: 0.1 }
   ];
   var PRESETS = {
-    rice:     { N: 80, P: 48, K: 40, temperature: 23.7, humidity: 82, ph: 6.4 },
-    chickpea: { N: 40, P: 68, K: 80, temperature: 18.9, humidity: 17, ph: 7.3 },
+    rice:     { N: 80, P: 48, K: 40, temperature: 27.5, humidity: 82, ph: 6.0 },
+    cabbage:  { N: 125, P: 70, K: 85, temperature: 19.5, humidity: 82, ph: 6.5 },
     air:      { N: 0,  P: 0,  K: 0,  temperature: 25,   humidity: 0,  ph: 7.0 },
     mine:     cfg.sample
   };
