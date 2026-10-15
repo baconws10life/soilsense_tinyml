@@ -141,36 +141,24 @@ quote in the thesis.
 
 ---
 
-## Device discovery (replaces the 6-character code)
+## Linking the scanner: type the code shown on the LCD
 
-The LCD is now **one big "SCAN NOW" button**. Nothing is typed on the device.
+(The "Find device" scan/connect flow was removed; linking works with the 6-character code again.)
 
-**How the website "scans" for the scanner.** A browser cannot search a Wi-Fi network, and the site runs on Vercel, not on
-your LAN. So the scanner announces itself: every 8 s it posts a heartbeat to `/api/device/heartbeat`. **Find device**
-(Overview + the *Find Device* page) lists the scanners whose last heartbeat is under 25 s old, i.e. the ones online right now.
+1. Power on the scanner. Its LCD joins Wi-Fi and shows a **6-character code** (valid 10 minutes, a new one appears when it expires).
+2. On the website open **Device** (`/pair`), type the code and press **Link device**. From then on the LCD's **Scan now** button
+   saves each reading into that account and the new-scan popup appears.
+3. To hand the scanner to someone else: press **Unlink** on the Device page, or hold your finger on the "SoilSense" logo on the LCD for 1.5 s.
+   An admin can also **Unlink user** from *Admin > Scanners*; the scanner's next scan is rejected (`device_not_linked`) and its LCD goes back to the code screen.
 
-| Who | What they can do |
-|---|---|
-| Student | See free scanners, **Connect** to a free one, **Disconnect** from their own. A scanner in use shows *In use* (no name) and cannot be connected. |
-| Admin | Everything above, plus **Disconnect user** on any scanner (Admin > Scanners). The kicked user sees an "admin disconnected you" notice. Admins also see who is using each scanner. |
+Endpoints: `POST /api/device/pair` and `POST /api/device/unlink` (scanner), `GET/POST /pair`, `POST /pair/unlink` (website),
+`GET /api/devices` and `POST /api/devices/<id>/disconnect` (admin only). Removed: `/api/device/heartbeat`, `/api/devices/<id>/connect`,
+`/api/devices/<id>/scan`, `/api/devices/dismiss_notice`. Extra `devices` columns from the discovery version stay in the table and are ignored.
 
-States shown on the website: *Searching, Scanner found, Connected, In use, Not found, Connection lost* (you own a scanner that
-stopped responding), *Can't reach server*, and a warning when the scanner is online but its soil probe isn't answering.
-
-Rules enforced on the server (not just hidden buttons):
-* Connecting is one atomic `UPDATE ... WHERE owner IS NULL AND online`, so two people pressing Connect at once cannot both win.
-* Readings are only accepted from a scanner that has an owner; otherwise `/api/esp32` answers 403 and the LCD says NOT CONNECTED.
-* A scanner offline for 10 minutes is released automatically (no ghost connections).
-* Only the owner or an admin can disconnect.
-
-New endpoints: `POST /api/device/heartbeat` (scanner), `GET /api/devices`, `POST /api/devices/<id>/connect`,
-`POST /api/devices/<id>/disconnect`, `POST /api/devices/dismiss_notice` (website). Removed: `/api/device/pair`, `/api/device/unlink`.
-New columns on `devices` are added automatically on the first request after deploying.
-
-**Firmware:** `firmware/soilsense_scan_button.ino`. Edit `WIFI_SSID`, `WIFI_PASSWORD`, `SERVER_BASE` (and `API_KEY` if you set
-`ESP32_API_KEY`). The sketch prints `Device ID on the website: SoilSense Scanner XXXX` on the Serial Monitor, and shows `ID XXXX`
-in a corner of the LCD, so you can tell scanners apart in a classroom.
-
+**Firmware:** `firmware/soilsense_code_link/soilsense_code_link.ino` with `soilsense_tinyml.h` in the SAME folder. Edit `WIFI_SSID`,
+`WIFI_PASSWORD`, `SERVER_URL` (and `API_KEY` if you set `ESP32_API_KEY`). Its crop list, TinyML networks and soil thresholds are the
+same as the website's (see `tinyml/soilsense_tinyml.h`, `READING_RANGES` and `calculate_fertility` in `app.py`). If you retrain
+(`tinyml/train_tinyml.py`), copy the new header next to the sketch.
 
 ---
 
@@ -196,24 +184,9 @@ it does exactly what touching the screen does. `status` and `help` also work. Ev
   a look inside the network, one neuron worked out by hand, accuracy numbers and honest limits. Runs entirely in the browser.
 
 
-## Update: "Scan now" button on the website (firmware 2.2)
+## "Scan now" lives on the scanner
 
-Once you are **connected** to a scanner (Overview or the *Find Device* page), a big **Scan now** button appears under it.
-Pressing it does the same as touching the scanner's screen: one reading, saved to your account, and the usual new-scan popup.
-
-How it works (Vercel cannot push to the scanner, so the scanner asks):
-1. `POST /api/devices/<id>/scan` - only the person connected to that scanner. It stores `devices.scan_requested_at` and returns `baseline`
-   (the id of your newest scanner reading).
-2. The scanner's next check-in (`/api/device/heartbeat`, every **3 s while someone is connected**, 8 s otherwise) gets `"scan": true`
-   in the reply - once, then the request is cleared. A request nobody picks up is dropped after 30 s.
-3. The scanner reads the probe and posts to `/api/esp32` as usual. The page watches `GET /api/latest-scan?since=<baseline>` and shows
-   *Done*, or a specific message if nothing came back within 45 s (scanner offline / probe not answering / not picked up).
-
-* New column `devices.scan_requested_at` is added automatically on the next start. Nothing else in the database changes.
-* `GET /api/devices` now includes `scan_pending` for the scanner you are connected to.
-* Disconnecting, an admin disconnect, or the scanner being released cancels any waiting request.
-* Firmware: flash `firmware/soilsense_scan_button.ino` (v2.2). Tunable: `HEARTBEAT_CONNECTED_MS` (3000 ms; smaller = faster button,
-  more traffic). Older firmware still works - it just ignores the website button.
+The website no longer triggers scans remotely: press **Scan now** on the scanner's LCD (the website shows the new-scan popup).
 
 
 ## Update: Philippine crop dataset

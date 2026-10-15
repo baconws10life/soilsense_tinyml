@@ -22,14 +22,10 @@
     <header class="topbar">
       <div class="topbar-left">{% block topbar_left %}{% endblock %}</div>
       <div class="topbar-right">
-        {% if device_status is defined %}
-          {% if device_status.connected %}
-        <a href="{{ url_for('pair') }}" id="devChip" class="chip chip-live" title="Your scanner"><span class="dot"></span><span class="chip-txt">Device connected</span></a>
-          {% elif device_status.lost %}
-        <a href="{{ url_for('pair') }}" id="devChip" class="chip chip-err" title="Your scanner stopped responding"><span class="dot"></span><span class="chip-txt">Connection lost</span></a>
-          {% else %}
-        <a href="{{ url_for('pair') }}" id="devChip" class="chip chip-off" title="Find your scanner"><span class="dot"></span><span class="chip-txt">No device</span></a>
-          {% endif %}
+        {% if device_status is defined and device_status.connected %}
+        <a href="{{ url_for('pair') }}" class="chip chip-live" title="Manage linked devices"><span class="dot"></span><span class="chip-txt">Device connected</span></a>
+        {% elif device_status is defined %}
+        <a href="{{ url_for('pair') }}" class="chip chip-off" title="Link your scanner"><span class="dot"></span><span class="chip-txt">No device</span></a>
         {% endif %}
         <span class="chip chip-date">{{ today or '' }}</span>
       </div>
