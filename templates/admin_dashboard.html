@@ -253,7 +253,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
   <div class="nav-section">
     <div class="nav-label">App</div>
     <a class="nav-link-out" href="{{ url_for('overview') }}">{{ icon('dashboard',18) }} Overview</a>
-    <a class="nav-link-out" href="{{ url_for('pair') }}">{{ icon('cpu',18) }} Link Device</a>
+    <a class="nav-link-out" href="{{ url_for('pair') }}">{{ icon('cpu',18) }} Find Device</a>
     <a class="nav-link-out" href="{{ url_for('sensors') }}">{{ icon('activity',18) }} Sensors</a>
     <a class="nav-link-out" href="{{ url_for('crops') }}">{{ icon('sprout',18) }} Crops</a>
     <a class="nav-link-out" href="{{ url_for('ai_assistant') }}">{{ icon('sparkles',18) }} AI Assistant</a>
@@ -304,10 +304,11 @@ code{color:var(--green);font-family:'DM Mono',monospace}
         <button class="alert-close" onclick="this.parentElement.remove()">{{ icon('x',16) }}</button>
       </div>
 
-      <div class="alert-banner" style="border-color:{{ 'var(--green-dim)' if devices_in_use else 'var(--amber)' }};">
-        <span style="color:{{ 'var(--green)' if devices_in_use else 'var(--amber)' }};display:flex;">{{ icon('cpu',18) }}</span>
-        <span><strong>{{ devices_in_use }} scanner{{ '' if devices_in_use == 1 else 's' }} linked.</strong>
-          You can unlink any user from a scanner.</span>
+      {% set online_n = devices|selectattr('online')|list|length %}
+      <div class="alert-banner" style="border-color:{{ 'var(--green-dim)' if online_n else 'var(--amber)' }};">
+        <span style="color:{{ 'var(--green)' if online_n else 'var(--amber)' }};display:flex;">{{ icon('cpu',18) }}</span>
+        <span><strong>{{ online_n }} scanner{{ '' if online_n == 1 else 's' }} online:</strong>
+          {{ devices_in_use }} in use. You can disconnect any user from a scanner.</span>
         <a class="btn btn-ghost" style="margin-left:auto;" href="#devices" onclick="goTab('devices')">Manage scanners</a>
       </div>
 
@@ -513,9 +514,9 @@ code{color:var(--green);font-family:'DM Mono',monospace}
         </div>
       </div>
       <p class="note" style="margin:0 2px 18px">
-        A scanner is <b>linked</b> to the account whose owner typed the 6-character code from its screen.
-        <b>Unlink user</b> frees it: the scanner&rsquo;s next scan is rejected, its screen goes back to showing a new code,
-        and the next person can link it.
+        A scanner shows up here while it is powered on and on Wi-Fi. <b>Disconnect user</b> frees it immediately:
+        any scan the old user sends is rejected, they see a notice that an admin disconnected them, and the next
+        person can connect. A scanner that stays offline for 10 minutes is released automatically.
       </p>
     </div>
 
@@ -798,24 +799,25 @@ function loadDevices() {
     document.getElementById('devBadge').textContent = devs.filter(x => x.in_use).length + '/' + devs.length;
     if (!devs.length) {
       const li = document.createElement('li'); li.className = 'urow';
-      li.textContent = 'No scanner is linked or showing a code right now.'; list.appendChild(li); return;
+      li.textContent = 'No scanner has checked in yet. Power one on and it will appear here.'; list.appendChild(li); return;
     }
     devs.forEach(x => {
       const li = document.createElement('li'); li.className = 'urow' + (x.online ? '' : ' dv-off');
       const main = document.createElement('div'); main.className = 'urow-main';
       const id = document.createElement('div'); id.className = 'urow-id';
       const nm = document.createElement('div'); nm.className = 'urow-name';
-      const dot = document.createElement('span'); dot.className = 'dv-dot ' + (x.in_use ? 'use' : 'on');
+      const dot = document.createElement('span'); dot.className = 'dv-dot ' + (!x.online ? (x.in_use ? 'bad' : '') : (x.in_use ? 'use' : 'on'));
       nm.appendChild(dot); nm.appendChild(document.createTextNode(x.label)); id.appendChild(nm);
       const meta = document.createElement('div'); meta.className = 'urow-meta';
       const bits = [];
-      bits.push(x.in_use ? 'Linked to ' + (x.owner || 'someone') : 'Showing a code, waiting to be linked');
-      if (x.in_use && x.paired_at) bits.push('since ' + x.paired_at + ' UTC');
+      bits.push(!x.online ? (x.in_use ? 'Offline (connection lost)' : 'Offline') : (x.in_use ? 'In use by ' + (x.owner || 'someone') : 'Free'));
+      if (x.online && x.rssi != null) bits.push(x.rssi > -60 ? 'Strong signal' : x.rssi > -75 ? 'Good signal' : 'Weak signal');
+      if (x.online && x.sensor === 'fail') bits.push('Probe not answering');
       const m = document.createElement('span'); m.className = 'urow-count'; m.textContent = bits.join(' \u00b7 '); meta.appendChild(m);
       id.appendChild(meta); main.appendChild(id); li.appendChild(main);
       const act = document.createElement('div'); act.className = 'urow-actions';
       if (x.in_use) {
-        const b = document.createElement('button'); b.type = 'button'; b.className = 'act-btn danger solid'; b.textContent = 'Unlink user';
+        const b = document.createElement('button'); b.type = 'button'; b.className = 'act-btn danger solid'; b.textContent = 'Disconnect user';
         b.addEventListener('click', () => forceDisconnect(x, b)); act.appendChild(b);
       }
       li.appendChild(act); list.appendChild(li);
@@ -823,10 +825,10 @@ function loadDevices() {
   }).catch(() => {});
 }
 function forceDisconnect(x, b) {
-  if (!confirm('Unlink ' + (x.owner || 'this user') + ' from ' + x.label + '? The scanner will show a new code.')) return;
-  b.disabled = true; b.textContent = 'Unlinking\u2026';
+  if (!confirm('Disconnect ' + (x.owner || 'this user') + ' from ' + x.label + '? They will be told an admin did it.')) return;
+  b.disabled = true; b.textContent = 'Disconnecting\u2026';
   fetch('/api/devices/' + encodeURIComponent(x.id) + '/disconnect', {method:'POST', credentials:'same-origin'})
-    .then(r => r.json()).then(j => { if (!j.ok) alert(j.message || 'Could not unlink.'); loadDevices(); })
+    .then(r => r.json()).then(j => { if (!j.ok) alert(j.message || 'Could not disconnect.'); loadDevices(); })
     .catch(() => { alert('Could not reach the server.'); loadDevices(); });
 }
 loadDevices();
