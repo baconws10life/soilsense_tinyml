@@ -269,3 +269,21 @@ once (`migrate_records_to_current_dataset()` at the end of `app.py`):
   the crop is a recommendation recomputed from the saved readings, not a stored fact.
 
 TinyML was retrained on the 6-input data: held-out top-1 96.1 % (website KNN on the same inputs 94.8 %), top-3 100 %.
+
+
+## Update: 16x4 I2C LCD scanner (firmware 3.0)
+
+The ILI9341 colour touchscreen was replaced by a **16x4 character LCD on I2C** (4 wires: GND, VCC, SDA, SCL), so there is no touch.
+`firmware/soilsense_lcd1604.ino` (the old TFT sketches stay in `firmware/` for reference).
+
+* **Scan from the website.** Connect to the scanner on the website, press **Scan now**: the scanner reads the probe, sends the reading, and the LCD shows
+  the **same result as the website popup**, in 3 pages that repeat **4 times** (about 40 s; `RESULT_PAGE_MS`, `RESULT_REPEATS` at the top of the sketch):
+  1. NPK: Nitrogen, Phosphorus, Potassium (mg/kg) with a status each,
+  2. Soil: pH, temperature, moisture with a status each,
+  3. Best crop, match % and soil health score / grade.
+  Status words: `OK` = Optimal, `MON` = Watch/Monitor, `LOW`, `HIGH` - the same rule the website uses (the server sends it, see below).
+* Also: the board's **BOOT** button or `tap` in the Serial Monitor (115200) takes a reading; `again` replays the last result; `status`, `lcd`, `help`.
+* **No LCD library needed.** The sketch drives the PCF8574 backpack itself and finds its I2C address (0x20-0x27 / 0x38-0x3F). Set `LCD_SDA` / `LCD_SCL`
+  at the top; if nothing answers there it also tries 8/9, 3/6, 1/2 and 41/42 and prints where it found the LCD. Blank or blocks only? Turn the blue contrast screw on the backpack.
+* **Server:** `POST /api/esp32` now also returns `crop_conf`, `grade_text` and `lvl_N`, `lvl_P`, `lvl_K`, `lvl_ph`, `lvl_temp`, `lvl_humidity`
+  (optimal / watch / low / high). Older scanners ignore the extra keys.

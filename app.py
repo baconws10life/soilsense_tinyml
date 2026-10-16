@@ -1575,13 +1575,18 @@ def api_esp32():
     cur.close()
     conn.close()
 
-    return jsonify({
+    out = {
         "status":"ok","user":username,
-        "crop":crop_name,"crop_source":crop_source,
+        "crop":crop_name,"crop_source":crop_source,"crop_conf":tiny_conf,
         "description":CROP_INFO.get(crop_name, {}).get("desc", knn["desc"]),
-        "fertility_score":fertility,"grade":grade_for_score(fertility)[0],
+        "fertility_score":fertility,"grade":grade_for_score(fertility)[0],"grade_text":grade_for_score(fertility)[1],
         "inputs":{"N":N,"P":P,"K":K,"ph":ph,"temp":temp,"humidity":humidity},
-    }), 200
+    }
+    # Flat "lvl_*" keys (optimal / watch / low / high) = the colours the website popup shows.
+    # The scanner's LCD reads them: it has no way to judge the numbers itself.
+    for key, val in (("N", N), ("P", P), ("K", K), ("ph", ph), ("temp", temp), ("humidity", humidity)):
+        out["lvl_" + key] = reading_status(key, val)[0]
+    return jsonify(out), 200
 
 
 # --- website side of pairing (user is logged in) -----------------------------
