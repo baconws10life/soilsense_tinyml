@@ -1,11 +1,11 @@
 """
-SoilSense - train the on-device TinyML models and export them for the ESP32-S3.
+AgriSense - train the on-device TinyML models and export them for the ESP32-S3.
 
     python tinyml/train_tinyml.py
 
 Reads   ../Crop_recommendation.csv
-Writes  soilsense_tinyml.h   -> copy next to the .ino sketch in the Arduino IDE
-        ../static/tinyml/soilsense_tinyml.json -> the SAME trained networks for the website
+Writes  agrisense_tinyml.h   -> copy next to the .ino sketch in the Arduino IDE
+        ../static/tinyml/agrisense_tinyml.json -> the SAME trained networks for the website
                                   (read by the browser in static/js/tinyml.js and by tinyml_web.py)
 
 THREE tiny networks share the same 6 inputs (N, P, K, soil temp, soil moisture, pH):
@@ -16,7 +16,7 @@ THREE tiny networks share the same 6 inputs (N, P, K, soil temp, soil moisture, 
                        trained ONLY on the dataset rows; a scan it cannot reconstruct
                        (probe in air, loose contact, wrong units) is flagged.
   3. NUTRIENT ADVISOR  6-16-8    sigmoid  -> which problems to fix (low N, P, K, acidic,
-                       alkaline, dry, waterlogged, hot). Labels come from the SoilSense
+                       alkaline, dry, waterlogged, hot). Labels come from the AgriSense
                        threshold rules, so this net is those rules distilled into a tiny
                        model that runs offline. It agrees with the rules, it does not beat them.
 
@@ -31,7 +31,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSV  = os.path.join(HERE, "..", "Crop_recommendation.csv")
-OUT  = os.path.join(HERE, "soilsense_tinyml.h")
+OUT  = os.path.join(HERE, "agrisense_tinyml.h")
 
 df = pd.read_csv(CSV)
 F  = ["N", "P", "K", "temperature", "humidity", "ph"]
@@ -100,7 +100,7 @@ def arr(name, a):
 nin = 6; ncrop = len(classes); nadv = len(ADVICE)
 nums = sum(a.size for a in [*crop.coefs_, *crop.intercepts_, *ae.coefs_, *ae.intercepts_, *adv.coefs_, *adv.intercepts_])
 h = f'''// ============================================================
-// soilsense_tinyml.h  -  SoilSense TinyML models (generated file - do not edit)
+// agrisense_tinyml.h  -  AgriSense TinyML models (generated file - do not edit)
 //
 // Three tiny neural networks that run ON the ESP32-S3 with no Wi-Fi, no server and no library.
 // Inputs (all three): N, P, K, soil temperature, soil moisture, pH.
@@ -108,7 +108,7 @@ h = f'''// ============================================================
 //  1. crop recommender : 6 -> {nh} -> {ncrop}  top-3 crops with confidence
 //                        held-out top-1 {acc*100:.1f}%, top-3 {top3*100:.1f}%  (website KNN, same inputs: {knn*100:.1f}%)
 //  2. probe check      : autoencoder 6-8-3-8-6, flags readings that do not look like real soil
-//  3. nutrient advisor : 6 -> 16 -> {nadv}  which problems to fix (distilled from the SoilSense rules)
+//  3. nutrient advisor : 6 -> 16 -> {nadv}  which problems to fix (distilled from the AgriSense rules)
 //
 // total {nums*4/1024:.1f} KB of float32 weights.  Retrain with tinyml/train_tinyml.py.
 // Keep this file in the SAME folder as the .ino sketch.
@@ -217,7 +217,7 @@ web = {
 }
 WEB_DIR = os.path.join(HERE, "..", "static", "tinyml")
 os.makedirs(WEB_DIR, exist_ok=True)
-WEB_OUT = os.path.join(WEB_DIR, "soilsense_tinyml.json")
+WEB_OUT = os.path.join(WEB_DIR, "agrisense_tinyml.json")
 with open(WEB_OUT, "w") as f: json.dump(web, f, separators=(",", ":"))
 print("wrote", os.path.normpath(WEB_OUT), f"({os.path.getsize(WEB_OUT)//1024} KB)")
 print("\nRESULTS FOR THE THESIS")

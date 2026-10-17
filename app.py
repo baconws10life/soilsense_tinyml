@@ -1,5 +1,5 @@
 """
-SoilSense — TinyML Soil Intelligence Platform
+AgriSense — TinyML Soil Intelligence Platform
 ================================================
 Identical to the original app.py EXCEPT the database layer has been
 switched from SQLite to PostgreSQL (Neon) so it can run on Vercel.
@@ -46,10 +46,10 @@ try:
     import tinyml_web            # the TinyML networks, run with numpy (see tinyml_web.py)
 except Exception as _e:          # never take the whole site down because of the extra model
     tinyml_web = None
-    print(f"[SoilSense] TinyML on the website is disabled: {_e}")
+    print(f"[AgriSense] TinyML on the website is disabled: {_e}")
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("SOILSENSE_SECRET_KEY", "dev-secret-change-me")
+app.secret_key = os.environ.get("AGRISENSE_SECRET_KEY", "dev-secret-change-me")
 app.jinja_env.globals["zip"] = zip
 
 BASE_DIR     = os.path.dirname(__file__)
@@ -60,7 +60,7 @@ UPLOAD_FOLDER = os.path.join("/tmp", "uploads")
 try:
     os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 except OSError as _e:
-    print(f"[SoilSense] Could not create upload folder: {_e}")
+    print(f"[AgriSense] Could not create upload folder: {_e}")
 
 # Placeholder plot name / size were removed from the UI (they were invented data).
 DEVICE_NAME     = ""
@@ -231,7 +231,7 @@ def init_db():
 try:
     init_db()
 except Exception as _e:
-    print(f"[SoilSense] DB init warning (will retry on next request): {_e}")
+    print(f"[AgriSense] DB init warning (will retry on next request): {_e}")
 
 
 # ---------------------------------------------------------------------------
@@ -574,7 +574,7 @@ def web_tiny_json(N, P, K, temp, humidity, ph):
     try:
         return json.dumps(tinyml_web.analyze(N, P, K, temp, humidity, ph))
     except Exception as e:
-        print(f"[SoilSense] TinyML (web) failed: {e}")
+        print(f"[AgriSense] TinyML (web) failed: {e}")
         return None
 
 
@@ -760,12 +760,12 @@ AI_TOPICS_TINYML = [
             " Your latest scan passed the check.") if _tiny_of(r) and _tiny_of(r).get("odd") is not None else ""))},
     {"id":"advisor", "chip":"What does the TinyML advisor do?", "keywords":["advisor","what to fix","fertilizer","fertiliser","recommendation to fix"],
      "answer": lambda r: ("The advisor is a tiny network that reads the six probe values and names what to fix: low nitrogen, phosphorus or potassium, acidic or alkaline soil, soil too dry, waterlogged, or too hot. "
-        "It was trained on the SoilSense threshold rules, so it agrees with them about 99% of the time. Its benefit is that it works offline on the scanner, not that it is smarter than the rules."
+        "It was trained on the AgriSense threshold rules, so it agrees with them about 99% of the time. Its benefit is that it works offline on the scanner, not that it is smarter than the rules."
         + ((" For your latest scan it says: " + (", ".join(_tiny_of(r)["advice"]) if _tiny_of(r).get("advice") else "nothing to fix") + ".")
            if _tiny_of(r) and _tiny_of(r).get("advice") is not None else ""))},
     {"id":"tinyml",  "chip":"What is TinyML?", "keywords":["tinyml","tiny ml","on-device","microcontroller","edge ai","neural"],
      "answer": lambda r: ("TinyML means running small machine-learning models directly on a tiny chip instead of in the cloud. "
-        "The ESP32-S3 in SoilSense holds three tiny neural networks (about 4 KB of weights in total): a crop recommender that ranks the top 3 crops, "
+        "The ESP32-S3 in AgriSense holds three tiny neural networks (about 4 KB of weights in total): a crop recommender that ranks the top 3 crops, "
         "a probe check that flags readings that do not look like real soil, and a nutrient advisor that names what to fix. "
         "All three read the same six probe values (N, P, K, pH, soil temperature, soil moisture) and finish in milliseconds with no Wi-Fi and no server. "
         "On held-out data the crop model was right about 96% of the time for its first pick and 100% within its top 3. "
@@ -826,7 +826,7 @@ def device_status_for(username):
         status["lost"]      = bool(devs) and not status["connected"]
         status["last_scan"] = (last["created_at"] or "")[:16] if last else None
     except Exception as e:
-        print(f"[SoilSense] device status unavailable: {e}")
+        print(f"[AgriSense] device status unavailable: {e}")
     return status
 
 
@@ -861,7 +861,7 @@ def _db_role(username):
         cur.close(); conn.close()
         return (row["role"] or "").strip().lower() if row else None
     except Exception as e:
-        print(f"[SoilSense] role lookup failed: {e}")
+        print(f"[AgriSense] role lookup failed: {e}")
         return None
 
 
@@ -1085,7 +1085,7 @@ def _safe_image_save(image_file):
         os.makedirs(UPLOAD_FOLDER, exist_ok=True)
         image_file.save(os.path.join(UPLOAD_FOLDER, safe_name))
     except OSError as e:
-        print(f"[SoilSense] Image not saved: {e}")
+        print(f"[AgriSense] Image not saved: {e}")
     return safe_name
 
 
@@ -1243,7 +1243,7 @@ def _release_stale(cur):
 
 def _device_label(short_id, name=None):
     """Same text the scanner prints in the corner of its screen ("ID A1B2")."""
-    return f"SoilSense Scanner {(name or short_id[:4]).upper()}"
+    return f"AgriSense Scanner {(name or short_id[:4]).upper()}"
 
 
 def _device_view(row, viewer, is_admin):
@@ -1846,7 +1846,7 @@ def export_records():
                     d["temp"], d["humidity"], d.get("crop"), d.get("fertility"), d.get("source")])
     from flask import Response
     return Response(buf.getvalue(), mimetype="text/csv",
-                    headers={"Content-Disposition": "attachment; filename=soilsense_records.csv"})
+                    headers={"Content-Disposition": "attachment; filename=agrisense_records.csv"})
 
 
 # ---------------------------------------------------------------------------
@@ -1920,7 +1920,7 @@ def migrate_records_to_current_dataset():
         cur.execute("INSERT INTO app_meta (key, value) VALUES ('records_dataset', %s) "
                     "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (RECORDS_MIGRATION_VERSION,))
         conn.commit()
-        print(f"[SoilSense] Re-analysed {len(batch)} saved records with the Philippine crop dataset.")
+        print(f"[AgriSense] Re-analysed {len(batch)} saved records with the Philippine crop dataset.")
         return len(batch)
     except Exception:
         conn.rollback()
@@ -1932,7 +1932,7 @@ def migrate_records_to_current_dataset():
 try:
     migrate_records_to_current_dataset()
 except Exception as _e:
-    print(f"[SoilSense] Record update skipped (will retry on next start): {_e}")
+    print(f"[AgriSense] Record update skipped (will retry on next start): {_e}")
 
 
 if __name__ == "__main__":

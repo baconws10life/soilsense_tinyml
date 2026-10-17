@@ -1,4 +1,4 @@
-// SoilSense — shared client behaviour (no build step, no external deps)
+// AgriSense — shared client behaviour (no build step, no external deps)
 (function () {
   "use strict";
 

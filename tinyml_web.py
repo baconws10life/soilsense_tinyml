@@ -1,8 +1,8 @@
 """
-SoilSense TinyML on the website (server side).
+AgriSense TinyML on the website (server side).
 
 The three tiny networks trained by tinyml/train_tinyml.py are stored as plain numbers in
-static/tinyml/soilsense_tinyml.json. This file runs them with numpy only - no scikit-learn, no
+static/tinyml/agrisense_tinyml.json. This file runs them with numpy only - no scikit-learn, no
 TensorFlow - so it is fast and works on Vercel. The browser version (static/js/tinyml.js) does the
 very same arithmetic, and so did the ESP32 firmware header.
 
@@ -13,7 +13,7 @@ import os
 
 import numpy as np
 
-_PATH = os.path.join(os.path.dirname(__file__), "static", "tinyml", "soilsense_tinyml.json")
+_PATH = os.path.join(os.path.dirname(__file__), "static", "tinyml", "agrisense_tinyml.json")
 
 with open(_PATH) as _f:
     _M = json.load(_f)

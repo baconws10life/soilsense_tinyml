@@ -1,5 +1,5 @@
 """
-SoilSense - build the PHILIPPINE crop dataset  (../Crop_recommendation.csv)
+AgriSense - build the PHILIPPINE crop dataset  (../Crop_recommendation.csv)
 
     python data/make_ph_dataset.py
 

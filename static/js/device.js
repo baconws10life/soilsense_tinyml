@@ -1,4 +1,4 @@
-/* SoilSense - "Find device" panel.
+/* AgriSense - "Find device" panel.
  *
  * The scanner announces itself to the server every few seconds; this script asks the
  * server which scanners are online and lets the signed-in user Connect to a free one

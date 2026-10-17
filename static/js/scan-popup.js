@@ -1,4 +1,4 @@
-/* SoilSense - "new scan" popup
+/* AgriSense - "new scan" popup
  *
  * Vercel cannot keep a live connection open, so the page asks the server
  * "anything newer than the last scan I showed?" every few seconds (only
@@ -265,7 +265,7 @@
 
   var api = { decide: decide, show: show, poll: poll, dismiss: dismiss, timeLabel: timeLabel, _cfg: cfg, _key: KEY };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
-  window.SoilSenseScanPopup = api;
+  window.AgriSenseScanPopup = api;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

@@ -1,5 +1,5 @@
 /* ==========================================================================
-   SoilSense — theme layer
+   AgriSense — theme layer
    Re-skins the existing sidebar-shell pages (overview, sensors, crops,
    AI assistant, learning) with the Smart Agriculture design: DM Sans /
    Fraunces / DM Mono, #4caf6f green, dark + light themes, left sidebar.
@@ -10,7 +10,7 @@
   --green: #4caf6f; --green-dim: #2d7a4a; --green-glow: rgba(76,175,111,0.15);
   --surface: #141c16; --surface2: #1a241d; --muted: #6b8a72; --heading: #f0f7f2;
   --nav-bg: rgba(14,20,16,0.85);
-  /* remap of the original SoilSense tokens */
+  /* remap of the original AgriSense tokens */
   --bg: #0e1410; --bg-raised: #141c16;
   --panel: #141c16; --panel-strong: #1a241d;
   --border: rgba(76,175,111,0.30); --border-soft: #253028;

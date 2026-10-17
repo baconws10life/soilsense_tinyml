@@ -91,7 +91,7 @@
 <p class="page-subtitle">Small neural networks that read your six soil-probe values. They run right here in your browser, and they ran on the scanner's chip before.</p>
 
 {% if not enabled %}
-<div class="tm-off">The TinyML model file could not be loaded on the server, so this page is switched off. Check that <code>static/tinyml/soilsense_tinyml.json</code> was deployed.</div>
+<div class="tm-off">The TinyML model file could not be loaded on the server, so this page is switched off. Check that <code>static/tinyml/agrisense_tinyml.json</code> was deployed.</div>
 {% else %}
 
 {# ---------- WHAT IT IS ---------- #}
@@ -206,7 +206,7 @@
     <div class="tm-net"><h4>Probe check</h4><code>6 &rarr; 8 &rarr; 3 &rarr; 8 &rarr; 6</code>
       <p>An <b>autoencoder</b>: it squeezes the reading through a 3-number bottleneck and tries to rebuild it. It only ever saw real soil, so a reading it cannot rebuild (probe in air, loose contact) is flagged &ldquo;odd&rdquo;.</p></div>
     <div class="tm-net"><h4>Nutrient advisor</h4><code>6 &rarr; 16 &rarr; 8</code>
-      <p>Names what to fix: low N, P or K, acidic or alkaline, too dry, waterlogged, too hot. It copies the SoilSense threshold rules, so it matches them but does not beat them.</p></div>
+      <p>Names what to fix: low N, P or K, acidic or alkaline, too dry, waterlogged, too hot. It copies the AgriSense threshold rules, so it matches them but does not beat them.</p></div>
   </div>
 </section>
 
@@ -232,7 +232,7 @@
   </ul>
 </section>
 
-<script type="application/json" id="tm-cfg">{{ {"model": url_for('static', filename='tinyml/soilsense_tinyml.json'), "sample": sample, "emojis": emojis}|tojson }}</script>
+<script type="application/json" id="tm-cfg">{{ {"model": url_for('static', filename='tinyml/agrisense_tinyml.json'), "sample": sample, "emojis": emojis}|tojson }}</script>
 {% endif %}
 {% endblock %}
 
