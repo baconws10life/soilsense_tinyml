@@ -1,16 +1,34 @@
 {% from '_icons.html' import icon %}
 <!DOCTYPE html>
-<html lang="en" data-theme="light">
+<html lang="en" data-theme="dark">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#f3f7f4">
+<meta name="theme-color" content="#0e1410">
 <title>Admin Panel · AgriSense</title>
 <link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-<!-- The admin panel is always light. The saved user theme is deliberately NOT applied here and never changed, so switching back to user mode keeps whatever theme the user chose. -->
+<!-- Shares the same saved theme ('theme' in localStorage) as the user pages, so switching between admin and user view keeps the chosen mode. -->
+<script>try{var t=localStorage.getItem('theme');if(t==='light'||t==='dark')document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
 <style>
-:root {
+:root, [data-theme="dark"] {
+  color-scheme: dark;
+  --bg:         #0e1410;
+  --surface:    #141c16;
+  --surface2:   #1a241d;
+  --border:     rgba(76,175,111,0.30);
+  --border-soft:#253028;
+  --green:      #4caf6f;
+  --green-dim:  #2d7a4a;
+  --green-glow: rgba(76,175,111,0.15);
+  --amber:      #e8b84b;
+  --red:        #e05c5c;
+  --blue:       #5c9ee0;
+  --text:       #d4e8da;
+  --muted:      #6b8a72;
+  --heading:    #f0f7f2;
+}
+[data-theme="light"] {
   color-scheme: light;
   --bg:         #f3f7f4;
   --surface:    #ffffff;
@@ -196,6 +214,16 @@ code{color:var(--green);font-family:'DM Mono',monospace}
   .urow-actions form{display:contents}
   .urow-actions .prot-tag{grid-column:1/-1;justify-content:center;padding:10px}
 }
+
+/* ── theme toggle ── */
+.theme-btn .t-dark{display:inline-flex;align-items:center;gap:7px}
+.theme-btn .t-light{display:none;align-items:center;gap:7px}
+[data-theme="light"] .theme-btn .t-dark{display:none}
+[data-theme="light"] .theme-btn .t-light{display:inline-flex}
+.sidebar-footer .theme-btn{margin-top:10px;width:100%;justify-content:center;padding:8px;font-size:12px;font-weight:500}
+[data-theme="dark"] .data-table tr:hover td{background:rgba(76,175,111,.07)}
+[data-theme="dark"] .dlg::backdrop{background:rgba(0,0,0,.6)}
+[data-theme="dark"] .btn-primary:hover{background:#3d9a5d}
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
 </head>
@@ -275,6 +303,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
         <div class="admin-role">Administrator</div>
       </div>
     </div>
+    <button class="logout-btn theme-btn" type="button" onclick="toggleTheme()" title="Toggle light / dark mode"><span class="t-dark">{{ icon('sun',16) }} Light mode</span><span class="t-light">{{ icon('moon',16) }} Dark mode</span></button>
     <a href="{{ url_for('logout') }}" style="text-decoration:none">
       <button class="logout-btn">{{ icon('logout',16) }} Sign out</button>
     </a>
@@ -286,6 +315,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
   <div class="topbar">
     <div class="topbar-title" id="page-title">Dashboard Overview</div>
     <div class="topbar-actions">
+      <button class="btn btn-ghost theme-btn" type="button" onclick="toggleTheme()" title="Toggle light / dark mode"><span class="t-dark">{{ icon('sun',16) }} Light</span><span class="t-light">{{ icon('moon',16) }} Dark</span></button>
       <a class="btn btn-ghost" href="{{ url_for('dashboard') }}">Soil Analysis</a>
       <a class="btn btn-danger" href="{{ url_for('logout') }}">Logout</a>
     </div>
@@ -764,6 +794,22 @@ code{color:var(--green);font-family:'DM Mono',monospace}
 </div><!-- /main -->
 
 <script>
+/* ── THEME (shared with user pages via localStorage 'theme') ── */
+function toggleTheme(){
+  var html=document.documentElement;
+  var next=html.getAttribute('data-theme')==='dark'?'light':'dark';
+  html.setAttribute('data-theme',next);
+  try{localStorage.setItem('theme',next);}catch(e){}
+  var m=document.querySelector('meta[name="theme-color"]');
+  if(m)m.setAttribute('content',next==='dark'?'#0e1410':'#f3f7f4');
+}
+(function(){var m=document.querySelector('meta[name="theme-color"]');
+  if(m&&document.documentElement.getAttribute('data-theme')==='light')m.setAttribute('content','#f3f7f4');})();
+/* keep in sync if the theme is changed in another tab */
+window.addEventListener('storage',function(e){
+  if(e.key==='theme'&&(e.newValue==='light'||e.newValue==='dark'))document.documentElement.setAttribute('data-theme',e.newValue);
+});
+
 /* ── TAB SWITCHER ── */
 const titles = {
   overview:'Dashboard Overview', users:'User Management', devices:'Scanners',
