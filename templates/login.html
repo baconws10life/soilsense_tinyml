@@ -25,20 +25,64 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 .brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); position: relative; z-index: 2; }
 .brand img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--green); }
 .brand b { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; }
-.headline { position: relative; z-index: 2; font-size: clamp(36px, 4.2vw, 60px); line-height: 1.06; font-weight: 700; letter-spacing: -.02em; max-width: 7em; }
-.headline em { font-style: normal; color: var(--green); white-space: nowrap; }
-
-.stage { position: absolute; z-index: 1; right: 4%; top: 50%; transform: translateY(-50%); width: min(40%, 480px); aspect-ratio: 4 / 5; }
-.photo { position: absolute; inset: 0; border-radius: 30px; overflow: hidden;
-  box-shadow: 0 18px 50px rgba(20,50,30,.22), 0 0 0 1px rgba(0,0,0,.04); }
-.photo img { width: 100%; height: 100%; object-fit: cover; object-position: 38% 50%; display: block; transform: scale(1.12); transform-origin: 50% 0; }
+.left { justify-content: flex-start; }
+.stage { position: absolute; z-index: 1; left: 50%; top: 52%; width: min(74%, 660px); aspect-ratio: 600 / 350; transform: translate(-50%, -50%); --s: .9; }
 .chip { position: absolute; z-index: 3; display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px;
-  background: #fff; box-shadow: 0 8px 26px rgba(20,50,30,.18); font-size: 13px; font-weight: 600; white-space: nowrap; }
-.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--green); display: block; }
-.chip-a { left: -64px; top: 13%; }
-.chip-b { right: -26px; bottom: 15%; }
-.badge { position: absolute; z-index: 3; left: -44px; bottom: 5%; width: 92px; height: 92px; border-radius: 50%; border: 4px solid var(--green);
+  background: #fff; box-shadow: 0 8px 26px rgba(20,50,30,.2); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--green); display: block; animation: pulse 1.8s ease-in-out infinite; }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(45,157,92,.5); } 50% { box-shadow: 0 0 0 6px rgba(45,157,92,0); } }
+.chip-a { left: -26px; top: -36px; }
+.chip-b { right: -22px; bottom: -16px; }
+.badge { position: absolute; z-index: 3; left: -34px; bottom: 8%; width: 84px; height: 84px; border-radius: 50%; border: 4px solid var(--green);
   background: #fff url("{{ url_for('static', filename='images/ffhnas.jpg') }}") center/cover; box-shadow: 0 10px 30px rgba(20,50,30,.25); }
+
+/* ───── the website preview (a tiny auto-playing tour) ───── */
+.win { position: absolute; left: 0; top: 0; width: 600px; height: 350px; transform: scale(var(--s)); transform-origin: 0 0;
+  background: #0e1410; color: #d4e8da; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
+  box-shadow: 0 24px 60px rgba(20,50,30,.30), 0 0 0 1px rgba(0,0,0,.08); font-size: 12px; }
+.bar { height: 30px; flex: none; background: #141c16; border-bottom: 1px solid #253028; display: flex; align-items: center; gap: 6px; padding: 0 12px; }
+.bar b { width: 9px; height: 9px; border-radius: 50%; background: #2a3a2f; display: block; }
+.bar span { margin-left: 10px; padding: 3px 14px; border-radius: 99px; background: #0e1410; color: #6b8a72; font-size: 10.5px; }
+.app { flex: 1; display: flex; min-height: 0; }
+.side { width: 124px; flex: none; background: #141c16; border-right: 1px solid #253028; padding: 12px 8px; }
+.side .lg { display: flex; align-items: center; gap: 7px; padding: 2px 6px 12px; font-family: 'Fraunces', serif; font-weight: 700; font-size: 13px; color: #f0f7f2; }
+.side .lg img { width: 22px; height: 22px; border-radius: 6px; object-fit: cover; }
+.side div.n { display: flex; align-items: center; gap: 7px; padding: 7px 8px; margin-bottom: 2px; border-radius: 7px; color: #6b8a72; font-weight: 500; font-size: 11.5px; }
+.side div.n i { width: 8px; height: 8px; border-radius: 3px; background: currentColor; opacity: .55; display: block; }
+.main { position: relative; flex: 1; min-width: 0; }
+.slide { position: absolute; inset: 0; padding: 16px 18px; opacity: 0; animation: tour 12s infinite; }
+.slide.s2 { animation-delay: 4s; } .slide.s3 { animation-delay: 8s; }
+@keyframes tour { 0% { opacity: 0; transform: translateY(8px); } 4%, 30% { opacity: 1; transform: none; } 34%, 100% { opacity: 0; transform: none; } }
+.side .n.a1 { animation: nav 12s infinite; } .side .n.a2 { animation: nav 12s infinite 4s; } .side .n.a3 { animation: nav 12s infinite 8s; }
+@keyframes nav { 0%, 34%, 100% { background: transparent; color: #6b8a72; } 4%, 30% { background: rgba(76,175,111,.15); color: #4caf6f; } }
+.eb { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #4caf6f; margin-bottom: 3px; }
+.ttl { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: #f0f7f2; margin-bottom: 12px; }
+.ov { display: flex; align-items: center; gap: 16px; padding: 12px; border: 1px solid #253028; border-radius: 12px; background: #141c16; margin-bottom: 10px; }
+.ring { position: relative; width: 86px; height: 86px; flex: none; }
+.ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
+.ring circle { fill: none; stroke-width: 9; } .ring .trk { stroke: #253028; } .ring .val { stroke: #4caf6f; stroke-linecap: round; }
+.ring b { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 24px; color: #f0f7f2; line-height: 1; }
+.ring b small { font-size: 9px; color: #6b8a72; font-weight: 500; margin-top: 3px; }
+.gr { font-family: 'Fraunces', serif; font-size: 17px; font-weight: 700; color: #f0f7f2; }
+.ov p { color: #6b8a72; font-size: 11px; margin: 3px 0 8px; line-height: 1.4; }
+.mc span { display: inline-block; margin-right: 6px; padding: 4px 9px; border-radius: 99px; font-size: 10.5px; font-weight: 600; }
+.mc .w { background: rgba(224,168,76,.14); color: #e0a84c; } .mc .o { background: rgba(76,175,111,.15); color: #4caf6f; }
+.c4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; }
+.c4 > div { padding: 9px 10px; border: 1px solid #253028; border-radius: 10px; background: #141c16; }
+.c4 small { display: block; color: #6b8a72; font-size: 9.5px; margin-bottom: 3px; } .c4 b { font-size: 16px; color: #f0f7f2; }
+.c4 em { display: block; margin-top: 3px; font-style: normal; font-size: 9.5px; color: #4caf6f; } .c4 em.w { color: #e0a84c; }
+.rd { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.rd > div { padding: 9px 11px; border: 1px solid #253028; border-radius: 10px; background: #141c16; }
+.rd .t { display: flex; justify-content: space-between; margin-bottom: 7px; color: #6b8a72; font-size: 10.5px; } .rd .t b { color: #f0f7f2; font-size: 12px; }
+.rd .bg { height: 6px; border-radius: 9px; background: #253028; overflow: hidden; } .rd .bg i { display: block; height: 100%; border-radius: 9px; background: #4caf6f; }
+.rd .bg i.w { background: #e0a84c; }
+.cp { display: flex; align-items: center; gap: 12px; padding: 9px 12px; margin-bottom: 8px; border: 1px solid #253028; border-radius: 12px; background: #141c16; }
+.cp img { width: 54px; height: 40px; border-radius: 8px; object-fit: cover; flex: none; }
+.cp .nm { flex: 1; min-width: 0; font-weight: 600; font-size: 13px; color: #f0f7f2; }
+.cp .nm small { display: block; margin-top: 2px; color: #6b8a72; font-weight: 400; font-size: 10px; }
+.cp .pc { font-size: 17px; font-weight: 700; color: #4caf6f; }
+.cp .tg { padding: 3px 8px; border-radius: 99px; background: rgba(76,175,111,.15); color: #4caf6f; font-size: 9.5px; font-weight: 600; }
+@media (prefers-reduced-motion: reduce) { .slide { animation: none; } .slide.s1 { opacity: 1; } .side .n, .chip i { animation: none !important; } .side .n.a1 { background: rgba(76,175,111,.15); color: #4caf6f; } }
 
 /* ───── right: form ───── */
 .right { border-left: 1px solid var(--line); display: flex; align-items: center; justify-content: center; padding: 40px 36px; }
@@ -74,11 +118,9 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 /* ───── tablet / phone: picture on top, form below ───── */
 @media (max-width: 960px) {
   .split { grid-template-columns: 1fr; }
-  .left { padding: calc(22px + env(safe-area-inset-top)) 22px 8px; min-height: 0; gap: 18px; justify-content: flex-start; }
+  .left { padding: calc(22px + env(safe-area-inset-top)) 22px 8px; min-height: 0; gap: 18px; }
   .brand img { width: 44px; height: 44px; }
-  .stage { position: relative; right: auto; top: auto; transform: none; width: 100%; aspect-ratio: 16 / 10; order: 2; }
-  .photo { border-radius: 22px; }
-  .headline { order: 3; max-width: none; font-size: clamp(30px, 8vw, 44px); }
+  .stage { position: relative; left: auto; top: auto; transform: none; width: 100%; max-width: 560px; margin: 0 auto; }
   .chip, .badge { display: none; }
   .right { border-left: none; padding: 20px 22px 32px; }
   .gap { height: 30px; }
@@ -87,20 +129,64 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 </head>
 <body>
 <div class="split">
-  <section class="left" aria-label="AgriSense">
+  <section class="left" aria-label="AgriSense preview">
     <a class="brand" href="{{ url_for('login') }}">
       <img src="{{ url_for('static', filename='images/ffhnas.jpg') }}" alt="AgriSense logo"/>
       <b>AgriSense</b>
     </a>
 
-    <div class="stage">
-      <div class="photo"><img src="{{ url_for('static', filename='images/bgschool.jpg') }}" alt="Our school"/></div>
-      <div class="chip chip-a"><i></i> pH 6.4 &middot; Optimal</div>
-      <div class="chip chip-b"><i></i> Soil health 82 / 100</div>
-      <div class="badge" aria-hidden="true"></div>
+    <div class="stage" id="stage" aria-hidden="true">
+      <div class="win">
+        <div class="bar"><b></b><b></b><b></b><span>agrisense.app</span></div>
+        <div class="app">
+          <div class="side">
+            <div class="lg"><img src="{{ url_for('static', filename='images/ffhnas.jpg') }}" alt=""/>AgriSense</div>
+            <div class="n a1"><i></i>Overview</div>
+            <div class="n a2"><i></i>Sensors</div>
+            <div class="n a3"><i></i>Crops</div>
+            <div class="n"><i></i>TinyML</div>
+            <div class="n"><i></i>AI Assistant</div>
+            <div class="n"><i></i>Learn</div>
+          </div>
+          <div class="main">
+            <div class="slide s1">
+              <div class="eb">Good morning</div><div class="ttl">Your soil today</div>
+              <div class="ov">
+                <div class="ring"><svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42" stroke-dasharray="216 264"/></svg><b>82<small>/100</small></b></div>
+                <div><div class="gr">Grade A</div><p>Healthy, balanced soil &mdash; ready for most crops.</p>
+                  <div class="mc"><span class="w">2 need attention</span><span class="o">4 optimal</span></div></div>
+              </div>
+              <div class="c4">
+                <div><small>pH</small><b>6.4</b><em>Optimal</em></div>
+                <div><small>Moisture</small><b>72%</b><em>Optimal</em></div>
+                <div><small>Temp</small><b>24.5&deg;</b><em>Optimal</em></div>
+                <div><small>Nitrogen</small><b>82</b><em class="w">Watch</em></div>
+              </div>
+            </div>
+            <div class="slide s2">
+              <div class="eb">Live readings</div><div class="ttl">Sensors</div>
+              <div class="rd">
+                <div><div class="t">Nitrogen <b>82 mg/kg</b></div><div class="bg"><i class="w" style="width:78%"></i></div></div>
+                <div><div class="t">Phosphorus <b>42 mg/kg</b></div><div class="bg"><i style="width:60%"></i></div></div>
+                <div><div class="t">Potassium <b>43 mg/kg</b></div><div class="bg"><i style="width:55%"></i></div></div>
+                <div><div class="t">pH <b>6.4</b></div><div class="bg"><i style="width:68%"></i></div></div>
+                <div><div class="t">Temperature <b>24.5 &deg;C</b></div><div class="bg"><i style="width:50%"></i></div></div>
+                <div><div class="t">Moisture <b>72 %</b></div><div class="bg"><i style="width:72%"></i></div></div>
+              </div>
+            </div>
+            <div class="slide s3">
+              <div class="eb">Best for your soil</div><div class="ttl">Crop picks</div>
+              <div class="cp"><img src="{{ url_for('static', filename='images/rice.jpg') }}" alt=""/><div class="nm">Rice<small>Cereal &middot; 110&ndash;130 days</small></div><span class="tg">Excellent</span><span class="pc">94%</span></div>
+              <div class="cp"><img src="{{ url_for('static', filename='images/maize.jpg') }}" alt=""/><div class="nm">Maize<small>Cereal &middot; 90&ndash;110 days</small></div><span class="tg">Excellent</span><span class="pc">88%</span></div>
+              <div class="cp"><img src="{{ url_for('static', filename='images/mungbean.jpg') }}" alt=""/><div class="nm">Mung bean<small>Legume &middot; 60&ndash;70 days</small></div><span class="tg">Good</span><span class="pc">81%</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="chip chip-a"><i></i> Live from your scanner</div>
+      <div class="chip chip-b"><i></i> Best match: Rice 94%</div>
+      <div class="badge"></div>
     </div>
-
-    <h2 class="headline">Understand<br>your soil,<br><em>grow what<br>you love.</em></h2>
   </section>
 
   <section class="right">
@@ -133,6 +219,11 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 <footer class="foot">AgriSense &middot; Soil Monitoring Platform</footer>
 
 <script>
+(function () {
+  var st = document.getElementById('stage');
+  function fit() { if (st) st.style.setProperty('--s', st.clientWidth / 600); }
+  fit(); window.addEventListener('resize', fit);
+})();
 (function () {
   var form = document.getElementById('loginForm'), btn = document.getElementById('loginBtn');
   var pass = form.querySelector('input[name="password"]'), eye = document.getElementById('pwEye');
