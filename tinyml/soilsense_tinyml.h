@@ -1,5 +1,5 @@
 // ============================================================
-// soilsense_tinyml.h  -  SoilSense TinyML models (generated file - do not edit)
+// soilsense_tinyml.h  -  AgriSense TinyML models (generated file - do not edit)
 //
 // Three tiny neural networks that run ON the ESP32-S3 with no Wi-Fi, no server and no library.
 // Inputs (all three): N, P, K, soil temperature, soil moisture, pH.
@@ -7,7 +7,7 @@
 //  1. crop recommender : 6 -> 16 -> 22  top-3 crops with confidence
 //                        held-out top-1 96.1%, top-3 100.0%  (website KNN, same inputs: 94.8%)
 //  2. probe check      : autoencoder 6-8-3-8-6, flags readings that do not look like real soil
-//  3. nutrient advisor : 6 -> 16 -> 8  which problems to fix (distilled from the SoilSense rules)
+//  3. nutrient advisor : 6 -> 16 -> 8  which problems to fix (distilled from the AgriSense rules)
 //
 // total 3.5 KB of float32 weights.  Retrain with tinyml/train_tinyml.py.
 // Keep this file in the SAME folder as the .ino sketch.

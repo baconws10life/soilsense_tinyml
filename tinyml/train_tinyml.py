@@ -4,8 +4,8 @@ AgriSense - train the on-device TinyML models and export them for the ESP32-S3.
     python tinyml/train_tinyml.py
 
 Reads   ../Crop_recommendation.csv
-Writes  agrisense_tinyml.h   -> copy next to the .ino sketch in the Arduino IDE
-        ../static/tinyml/agrisense_tinyml.json -> the SAME trained networks for the website
+Writes  soilsense_tinyml.h   -> copy next to the .ino sketch in the Arduino IDE
+        ../static/tinyml/soilsense_tinyml.json -> the SAME trained networks for the website
                                   (read by the browser in static/js/tinyml.js and by tinyml_web.py)
 
 THREE tiny networks share the same 6 inputs (N, P, K, soil temp, soil moisture, pH):
@@ -31,7 +31,7 @@ from sklearn.neighbors import KNeighborsClassifier
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CSV  = os.path.join(HERE, "..", "Crop_recommendation.csv")
-OUT  = os.path.join(HERE, "agrisense_tinyml.h")
+OUT  = os.path.join(HERE, "soilsense_tinyml.h")
 
 df = pd.read_csv(CSV)
 F  = ["N", "P", "K", "temperature", "humidity", "ph"]
@@ -100,7 +100,7 @@ def arr(name, a):
 nin = 6; ncrop = len(classes); nadv = len(ADVICE)
 nums = sum(a.size for a in [*crop.coefs_, *crop.intercepts_, *ae.coefs_, *ae.intercepts_, *adv.coefs_, *adv.intercepts_])
 h = f'''// ============================================================
-// agrisense_tinyml.h  -  AgriSense TinyML models (generated file - do not edit)
+// soilsense_tinyml.h  -  AgriSense TinyML models (generated file - do not edit)
 //
 // Three tiny neural networks that run ON the ESP32-S3 with no Wi-Fi, no server and no library.
 // Inputs (all three): N, P, K, soil temperature, soil moisture, pH.
@@ -217,7 +217,7 @@ web = {
 }
 WEB_DIR = os.path.join(HERE, "..", "static", "tinyml")
 os.makedirs(WEB_DIR, exist_ok=True)
-WEB_OUT = os.path.join(WEB_DIR, "agrisense_tinyml.json")
+WEB_OUT = os.path.join(WEB_DIR, "soilsense_tinyml.json")
 with open(WEB_OUT, "w") as f: json.dump(web, f, separators=(",", ":"))
 print("wrote", os.path.normpath(WEB_OUT), f"({os.path.getsize(WEB_OUT)//1024} KB)")
 print("\nRESULTS FOR THE THESIS")

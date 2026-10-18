@@ -9,7 +9,7 @@
 #include <Preferences.h>
 
 // ============================================================
-// SOILSENSE SCANNER  -  ESP32-S3 + ILI9341 + FT6336 + RS485 7-IN-1 SOIL SENSOR
+// AGRISENSE SCANNER  -  ESP32-S3 + ILI9341 + FT6336 + RS485 7-IN-1 SOIL SENSOR
 //
 // THE WHOLE SCREEN IS ONE BUTTON:  "SCAN NOW".
 //
@@ -885,7 +885,7 @@ unsigned long serialLastChar = 0;
 void printHelp() {
 
   Serial.println();
-  Serial.println("---- SoilSense Serial Monitor commands ----");
+  Serial.println("---- AgriSense Serial Monitor commands ----");
   Serial.println("  tap | t | scan | s | 1   take one reading and send it (same as touching the screen)");
   Serial.println("  status | ?               show Wi-Fi / website / sensor state");
   Serial.println("  help | h                 show this list");
@@ -995,8 +995,8 @@ void setup() {
 
   Serial.println();
   Serial.println("================================");
-  Serial.println("SOILSENSE SCANNER - SCAN NOW");
-  Serial.printf("Device ID on the website: SoilSense Scanner %s\n", deviceTag);
+  Serial.println("AGRISENSE SCANNER - SCAN NOW");
+  Serial.printf("Device ID on the website: AgriSense Scanner %s\n", deviceTag);
   Serial.println("Serial Monitor: type  tap  to scan, or  help");
   Serial.println("================================");
 

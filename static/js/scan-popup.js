@@ -265,7 +265,7 @@
 
   var api = { decide: decide, show: show, poll: poll, dismiss: dismiss, timeLabel: timeLabel, _cfg: cfg, _key: KEY };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
-  window.AgriSenseScanPopup = api;
+  window.SoilSenseScanPopup = api;
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

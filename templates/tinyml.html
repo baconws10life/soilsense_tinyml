@@ -91,7 +91,7 @@
 <p class="page-subtitle">Small neural networks that read your six soil-probe values. They run right here in your browser, and they ran on the scanner's chip before.</p>
 
 {% if not enabled %}
-<div class="tm-off">The TinyML model file could not be loaded on the server, so this page is switched off. Check that <code>static/tinyml/agrisense_tinyml.json</code> was deployed.</div>
+<div class="tm-off">The TinyML model file could not be loaded on the server, so this page is switched off. Check that <code>static/tinyml/soilsense_tinyml.json</code> was deployed.</div>
 {% else %}
 
 {# ---------- WHAT IT IS ---------- #}
@@ -232,7 +232,7 @@
   </ul>
 </section>
 
-<script type="application/json" id="tm-cfg">{{ {"model": url_for('static', filename='tinyml/agrisense_tinyml.json'), "sample": sample, "emojis": emojis}|tojson }}</script>
+<script type="application/json" id="tm-cfg">{{ {"model": url_for('static', filename='tinyml/soilsense_tinyml.json'), "sample": sample, "emojis": emojis}|tojson }}</script>
 {% endif %}
 {% endblock %}
 

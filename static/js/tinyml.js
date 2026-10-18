@@ -1,7 +1,7 @@
 /* AgriSense TinyML in the browser.
-   Loads static/tinyml/agrisense_tinyml.json (the weights trained by tinyml/train_tinyml.py) and runs the
+   Loads static/tinyml/soilsense_tinyml.json (the weights trained by tinyml/train_tinyml.py) and runs the
    three tiny networks with plain JavaScript maths - no library. It does the same arithmetic as
-   tinyml_web.py on the server and as agrisense_tinyml.h did on the ESP32.
+   tinyml_web.py on the server and as soilsense_tinyml.h did on the ESP32.
 
      SoilTiny.load(url).then(function (model) {
        var r = model.run([N, P, K, tempC, moisture, pH]);

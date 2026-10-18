@@ -49,7 +49,7 @@ except Exception as _e:          # never take the whole site down because of the
     print(f"[AgriSense] TinyML on the website is disabled: {_e}")
 
 app = Flask(__name__)
-app.secret_key = os.environ.get("AGRISENSE_SECRET_KEY", "dev-secret-change-me")
+app.secret_key = os.environ.get("SOILSENSE_SECRET_KEY", "dev-secret-change-me")
 app.jinja_env.globals["zip"] = zip
 
 BASE_DIR     = os.path.dirname(__file__)
@@ -843,6 +843,14 @@ def inject_globals():
     return ctx
 
 
+
+@app.after_request
+def _no_cache_html(resp):
+    if resp.mimetype == "text/html":
+        resp.headers["Cache-Control"] = "no-store"
+    return resp
+
+
 def login_required(view):
     def wrapped(*args, **kwargs):
         if "user" not in session:
@@ -883,6 +891,9 @@ def admin_required(view):
 @app.route("/", methods=["GET","POST"])
 def login():
     error = None
+    if request.method == "GET" and "user" in session:
+        return redirect(url_for("admin_dashboard" if str(session.get("role","")).strip().lower() == "admin" else "overview"))
+    wants_json = request.headers.get("X-Requested-With") == "fetch"
     if request.method == "POST":
         user = request.form.get("username","").strip()
         pw   = request.form.get("password","")
@@ -897,11 +908,17 @@ def login():
             session["role"] = result["role"]
             nxt = session.pop("next_url", None)          # e.g. came from a device QR code
             if nxt and nxt.startswith("/pair"):
-                return redirect(nxt)
-            if result["role"].strip().lower() == "admin":
-                return redirect(url_for("admin_dashboard"))
-            return redirect(url_for("overview"))
+                target = nxt
+            elif result["role"].strip().lower() == "admin":
+                target = url_for("admin_dashboard")
+            else:
+                target = url_for("overview")
+            if wants_json:
+                return jsonify(ok=True, redirect=target)
+            return redirect(target)
         error = "Incorrect username or password. Please try again."
+        if wants_json:
+            return jsonify(ok=False, error=error), 401
     return render_template("login.html", error=error)
 
 
@@ -1002,7 +1019,7 @@ def crops():
     rec          = get_latest_record(session["user"])
     category     = request.args.get("category","All Crops")
     sort_by      = request.args.get("sort","match")
-    suitable_only = request.args.get("suitable","1") != "0"
+    suitable_only = request.args.get("suitable","0") == "1"
     matches      = crop_matches(rec["N"],rec["P"],rec["K"],rec["temp"],rec["humidity"],rec["ph"],
                                 category=category,suitable_only=suitable_only) if rec else []
     if sort_by == "name":

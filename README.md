@@ -114,7 +114,7 @@ script tag in `templates/base.html`.
 ## Update: TinyML + offline scanning + new Sensors page
 
 **TinyML (on the ESP32-S3).** `tinyml/train_tinyml.py` trains a small neural network (6 -> 24 -> 22) on
-`Crop_recommendation.csv` and writes `agrisense_tinyml.h`. Put that header in the same folder as the `.ino`.
+`Crop_recommendation.csv` and writes `soilsense_tinyml.h`. Put that header in the same folder as the `.ino`.
 The device now picks the crop itself on every scan, with no Wi-Fi, and sends `crop` + `crop_conf` with the reading.
 The website stores it (`records.crop_source = 'tinyml'`) and falls back to its own KNN model when an older
 firmware does not send a crop.
@@ -167,7 +167,7 @@ New endpoints: `POST /api/device/heartbeat` (scanner), `GET /api/devices`, `POST
 `POST /api/devices/<id>/disconnect`, `POST /api/devices/dismiss_notice` (website). Removed: `/api/device/pair`, `/api/device/unlink`.
 New columns on `devices` are added automatically on the first request after deploying.
 
-**Firmware:** `firmware/agrisense_scan_button.ino`. Edit `WIFI_SSID`, `WIFI_PASSWORD`, `SERVER_BASE` (and `API_KEY` if you set
+**Firmware:** `firmware/soilsense_scan_button.ino`. Edit `WIFI_SSID`, `WIFI_PASSWORD`, `SERVER_BASE` (and `API_KEY` if you set
 `ESP32_API_KEY`). The sketch prints `Device ID on the website: AgriSense Scanner XXXX` on the Serial Monitor, and shows `ID XXXX`
 in a corner of the LCD, so you can tell scanners apart in a classroom.
 
@@ -187,7 +187,7 @@ it does exactly what touching the screen does. `status` and `help` also work. Ev
 `[SCREEN] ...` lines, so a broken LCD no longer blocks testing. Any line-ending setting works.
 
 **TinyML on the website.** The same three networks the ESP32 used now also run on the website:
-* `static/tinyml/agrisense_tinyml.json` - the trained weights (made by `tinyml/train_tinyml.py`, which now writes both the
+* `static/tinyml/soilsense_tinyml.json` - the trained weights (made by `tinyml/train_tinyml.py`, which now writes both the
   Arduino header and this file).
 * `tinyml_web.py` - runs them with numpy on the server. A scan that arrives without on-device TinyML results is analysed here:
   the record gets `crop_source = 'tinyml-web'`, its top-3 crops, probe check and advisor flags. Older and manual records are
@@ -212,7 +212,7 @@ How it works (Vercel cannot push to the scanner, so the scanner asks):
 * New column `devices.scan_requested_at` is added automatically on the next start. Nothing else in the database changes.
 * `GET /api/devices` now includes `scan_pending` for the scanner you are connected to.
 * Disconnecting, an admin disconnect, or the scanner being released cancels any waiting request.
-* Firmware: flash `firmware/agrisense_scan_button.ino` (v2.2). Tunable: `HEARTBEAT_CONNECTED_MS` (3000 ms; smaller = faster button,
+* Firmware: flash `firmware/soilsense_scan_button.ino` (v2.2). Tunable: `HEARTBEAT_CONNECTED_MS` (3000 ms; smaller = faster button,
   more traffic). Older firmware still works - it just ignores the website button.
 
 
@@ -239,7 +239,7 @@ Same 2,200 rows (100 per crop), same units and **same N-P-K scale**; the `rainfa
   `data/make_ph_dataset.py` (one line per crop). For the paper, check those ranges against BSWM / DA-BPI / PhilRice / PCAARRD references or
   your own soil samples, edit them, and rebuild.
 * **To change a crop or range:** edit `PROFILES` in `data/make_ph_dataset.py`, run `python data/make_ph_dataset.py`, then
-  `python tinyml/train_tinyml.py` (rewrites `static/tinyml/agrisense_tinyml.json` and `tinyml/agrisense_tinyml.h`). If you add or remove a crop,
+  `python tinyml/train_tinyml.py` (rewrites `static/tinyml/soilsense_tinyml.json` and `tinyml/soilsense_tinyml.h`). If you add or remove a crop,
   also add/remove it in `CROP_INFO` in `app.py` (description, category, emoji, harvest) and in the Supported Crops list in `admin_dashboard.html`.
 * The original dataset is kept as `data/Crop_recommendation_original.csv`.
 * TinyML was retrained on the new data (held-out top-1 97.5 %, top-3 100 %; website KNN on the same 6 inputs 93.9 %). New categories
@@ -274,7 +274,7 @@ TinyML was retrained on the 6-input data: held-out top-1 96.1 % (website KNN on 
 ## Update: 16x4 I2C LCD scanner (firmware 3.0)
 
 The ILI9341 colour touchscreen was replaced by a **16x4 character LCD on I2C** (4 wires: GND, VCC, SDA, SCL), so there is no touch.
-`firmware/agrisense_lcd1604.ino` (the old TFT sketches stay in `firmware/` for reference).
+`firmware/soilsense_lcd1604.ino` (the old TFT sketches stay in `firmware/` for reference).
 
 * **Scan from the website.** Connect to the scanner on the website, press **Scan now**: the scanner reads the probe, sends the reading, and the LCD shows
   the **same result as the website popup**, in 3 pages that repeat **4 times** (about 40 s; `RESULT_PAGE_MS`, `RESULT_REPEATS` at the top of the sketch):

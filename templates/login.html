@@ -314,6 +314,19 @@ body::after {
 ::-webkit-scrollbar-track { background: var(--bg); }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
 
+.pw-wrap { position: relative; }
+.pw-wrap .form-input { padding-right: 46px; }
+.pw-eye {
+  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
+  width: 36px; height: 36px; border: none; background: transparent;
+  color: var(--muted); cursor: pointer; border-radius: 8px;
+  display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+.pw-eye:hover { color: var(--green); }
+.pw-eye .eye-off { display: none; }
+.pw-eye.on .eye-open { display: none; }
+.pw-eye.on .eye-off { display: block; }
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
 </head>
@@ -365,8 +378,13 @@ body::after {
 
     <div class="form-group">
       <label class="form-label">Password</label>
-      <input class="form-input" type="password" name="password" autocomplete="current-password" enterkeyhint="go"
-             placeholder="••••••••" required/>
+      <div class="pw-wrap">
+        <input class="form-input" type="password" name="password" autocomplete="current-password" enterkeyhint="go" placeholder="••••••••" required/>
+        <button type="button" class="pw-eye" id="pwEye" aria-label="Show password" title="Show password">
+          <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg class="eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
     </div>
 
     <button class="btn-login" type="submit">Sign In</button>
@@ -402,6 +420,39 @@ body::after {
   // Persist theme across page loads
   const saved = localStorage.getItem('theme');
   if (saved) document.documentElement.setAttribute('data-theme', saved);
+
+  (function(){
+    var b=document.getElementById('pwEye'); if(!b) return;
+    var i=document.querySelector('input[name="password"]');
+    b.addEventListener('click',function(){
+      var show=i.type==='password';
+      i.type=show?'text':'password';
+      b.classList.toggle('on',show);
+      var l=show?'Hide password':'Show password';
+      b.setAttribute('aria-label',l); b.title=l;
+      i.focus();
+    });
+  })();
+
+  // Sign in without leaving a login entry in history, so Back never returns here
+  (function(){
+    var form=document.querySelector('form[method="POST"]'); if(!form||!window.fetch) return;
+    form.addEventListener('submit',function(e){
+      e.preventDefault();
+      var btn=form.querySelector('.btn-login'); btn.disabled=true;
+      fetch(location.pathname,{method:'POST',body:new FormData(form),credentials:'same-origin',headers:{'X-Requested-With':'fetch'}})
+        .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
+        .then(function(x){
+          if(x.ok&&x.d.redirect){location.replace(x.d.redirect);return;}
+          var box=document.getElementById('loginErr');
+          if(!box){box=document.createElement('div');box.id='loginErr';
+            box.style.cssText="padding:10px 14px;margin-bottom:16px;border-radius:8px;background:rgba(224,92,92,0.08);border:1px solid rgba(224,92,92,0.35);font-family:'DM Mono',monospace;font-size:11px;color:#e05c5c;line-height:1.4;";
+            form.insertBefore(box,form.firstChild);}
+          box.textContent=x.d.error||'Sign in failed.'; btn.disabled=false;
+        })
+        .catch(function(){form.submit();});
+    });
+  })();
 </script>
 
 </body>

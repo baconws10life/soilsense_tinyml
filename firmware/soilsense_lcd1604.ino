@@ -1,5 +1,5 @@
 // ============================================================
-// SOILSENSE SCANNER  -  ESP32-S3 + 16x4 I2C LCD (HD44780 + PCF8574 backpack) + RS485 soil probe
+// AGRISENSE SCANNER  -  ESP32-S3 + 16x4 I2C LCD (HD44780 + PCF8574 backpack) + RS485 soil probe
 //
 // No touchscreen. Press SCAN NOW on the website (Dashboard > Find device > Connect first):
 // the scanner reads the probe, sends the reading, and the LCD shows the SAME result the website
@@ -270,9 +270,9 @@ void showMsg(const char* a, const char* b = "", const char* c = "", const char* 
 
 void headerLine(char* out, size_t n) {
 #if SHOW_DEVICE_ID
-  snprintf(out, n, "SoilSense   %s", deviceTag);
+  snprintf(out, n, "AgriSense   %s", deviceTag);
 #else
-  snprintf(out, n, "SoilSense");
+  snprintf(out, n, "AgriSense");
 #endif
 }
 
@@ -873,7 +873,7 @@ void doScan() {
 
 void printHelp() {
   Serial.println();
-  Serial.println("---- SoilSense commands ----");
+  Serial.println("---- AgriSense commands ----");
   Serial.println("tap | t | scan | s | 1 : take a reading");
   Serial.println("again | r              : show the last result again");
   Serial.println("status | ?             : status");
@@ -964,7 +964,7 @@ void setup() {
 
   // LCD first, so there is something to read from the first second
   lcdBegin();
-  showMsg("SoilSense", "Starting...", deviceTag, FW_VERSION);
+  showMsg("AgriSense", "Starting...", deviceTag, FW_VERSION);
 
   // RS485 soil probe
   Serial2.begin(4800, SERIAL_8N1, RX2_PIN, TX2_PIN);
@@ -981,8 +981,8 @@ void setup() {
 
   Serial.println();
   Serial.println("================================");
-  Serial.println("SOILSENSE SCANNER - 16x4 LCD");
-  Serial.printf("Device ID: SoilSense Scanner %s\n", deviceTag);
+  Serial.println("AGRISENSE SCANNER - 16x4 LCD");
+  Serial.printf("Device ID: AgriSense Scanner %s\n", deviceTag);
   Serial.println("Press Scan now on the website, or type  tap  here");
   Serial.println("================================");
 
