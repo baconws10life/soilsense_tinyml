@@ -94,9 +94,6 @@
 }
 .sb-btn:hover { color: var(--green); border-color: var(--green); background: var(--green-glow); }
 .sb-btn.danger:hover { color: #e05c5c; border-color: rgba(224,92,92,.5); background: rgba(224,92,92,.07); }
-.sb-lock-ico { margin-left: auto; display: inline-flex; opacity: .55; }
-.sb-signin { background: var(--green); border-color: var(--green); color: #fff; }
-.sb-signin:hover { color: #fff; filter: brightness(1.08); }
 .sb-actions { display: flex; gap: 8px; }
 .sb-actions .sb-btn { margin-bottom: 8px; padding: 10px 6px; white-space: nowrap; }
 .sb-btn span { align-items: center; gap: 8px; }
@@ -176,13 +173,13 @@ body > .page { padding-top: 36px !important; }
 
   <div class="sb-section">
     <a href="{{ url_for('overview') }}"     class="sb-item {{ 'active' if active=='overview' else '' }}">{{ icon('dashboard') }} Overview</a>
-    <a href="{{ url_for('dashboard') }}"    class="sb-item {{ 'active' if active in ('log','dashboard') else '' }}">{{ icon('flask') }} Analyze Soil{% if not _u %}<span class="sb-lock-ico" title="Sign in to use">{{ icon('lock', 13) }}</span>{% endif %}</a>
+    <a href="{{ url_for('dashboard') }}"    class="sb-item {{ 'active' if active in ('log','dashboard') else '' }}">{{ icon('flask') }} Analyze Soil</a>
     <a href="{{ url_for('sensors') }}"      class="sb-item {{ 'active' if active=='sensors' else '' }}">{{ icon('activity') }} Sensors</a>
     <a href="{{ url_for('crops') }}"        class="sb-item {{ 'active' if active=='crops' else '' }}">{{ icon('sprout') }} Crops</a>
     <a href="{{ url_for('tinyml_page') }}"  class="sb-item {{ 'active' if active=='tinyml' else '' }}">{{ icon('layers') }} TinyML</a>
-    <a href="{{ url_for('ai_assistant') }}" class="sb-item {{ 'active' if active=='ai' else '' }}">{{ icon('sparkles') }} AI Assistant{% if not _u %}<span class="sb-lock-ico" title="Sign in to use">{{ icon('lock', 13) }}</span>{% endif %}</a>
+    <a href="{{ url_for('ai_assistant') }}" class="sb-item {{ 'active' if active=='ai' else '' }}">{{ icon('sparkles') }} AI Assistant</a>
     <a href="{{ url_for('learning') }}"     class="sb-item {{ 'active' if active=='learning' else '' }}">{{ icon('book') }} Learn</a>
-    <a href="{{ url_for('pair') }}"         class="sb-item {{ 'active' if active=='pair' else '' }}">{{ icon('cpu') }} Find Device{% if not _u %}<span class="sb-lock-ico" title="Sign in to use">{{ icon('lock', 13) }}</span>{% endif %}{% if device_status is defined and device_status.connected %}<span class="sb-pip on" title="Device connected"></span>{% elif device_status is defined and device_status.lost %}<span class="sb-pip err" title="Connection lost"></span>{% elif device_status is defined %}<span class="sb-pip off" title="No device connected"></span>{% endif %}</a>
+    <a href="{{ url_for('pair') }}"         class="sb-item {{ 'active' if active=='pair' else '' }}">{{ icon('cpu') }} Find Device{% if device_status is defined and device_status.connected %}<span class="sb-pip on" title="Device connected"></span>{% elif device_status is defined and device_status.lost %}<span class="sb-pip err" title="Connection lost"></span>{% elif device_status is defined %}<span class="sb-pip off" title="No device connected"></span>{% endif %}</a>
   </div>
 
   {% if _role == 'admin' %}
@@ -198,31 +195,19 @@ body > .page { padding-top: 36px !important; }
   </div>
 
   <div class="sb-footer">
-    {% if _u %}
     <div class="sb-user">
-      <div class="sb-avatar">{{ _u[0] }}</div>
+      <div class="sb-avatar">{{ _u[0] if _u else '?' }}</div>
       <div class="sb-user-info">
         <div class="sb-user-name">{{ _u }}</div>
         <div class="sb-user-role">{{ 'Administrator' if _role == 'admin' else (_role or 'member') }}</div>
       </div>
     </div>
-    {% else %}
-    <div class="sb-user">
-      <div class="sb-avatar">G</div>
-      <div class="sb-user-info">
-        <div class="sb-user-name">Guest</div>
-        <div class="sb-user-role">Preview only</div>
-      </div>
-    </div>
-    <a href="{{ url_for('login', next=request.path) }}" data-signin class="sb-btn sb-signin">{{ icon('logout', 16) }} Sign in</a>
-    <a href="{{ url_for('register') }}" class="sb-btn">Create account</a>
-    {% endif %}
     <div class="sb-actions">
       <button class="sb-btn" type="button" onclick="toggleTheme()" title="Toggle theme">
         <span class="t-dark">{{ icon('sun', 16) }} Light</span>
         <span class="t-light">{{ icon('moon', 16) }} Dark</span>
       </button>
-      {% if _u %}<a href="{{ url_for('logout') }}" class="sb-btn danger">{{ icon('logout', 16) }} Sign out</a>{% endif %}
+      <a href="{{ url_for('logout') }}" class="sb-btn danger">{{ icon('logout', 16) }} Sign out</a>
     </div>
   </div>
 </aside>

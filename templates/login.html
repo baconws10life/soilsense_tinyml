@@ -1,460 +1,164 @@
 {% from '_icons.html' import icon %}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e1410">
+<meta name="theme-color" content="#ffffff">
 <title>Log in · AgriSense</title>
 <link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
-<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
 <style>
 :root {
-  --bg:         #0e1410;
-  --surface:    #141c16;
-  --surface2:   #1a241d;
-  --border:     #253028;
-  --green:      #4caf6f;
-  --green-dim:  #2d7a4a;
-  --green-glow: rgba(76,175,111,0.15);
-  --text:       #d4e8da;
-  --muted:      #6b8a72;
-  --heading:    #f0f7f2;
+  --green: #2d9d5c; --green-dark: #247f4a; --green-soft: rgba(45,157,92,.10);
+  --ink: #1c2b21; --muted: #5f7367; --line: #dbe3dd; --bg: #ffffff;
 }
-
-[data-theme="light"] {
-  --bg:         #f0f7f2;
-  --surface:    #ffffff;
-  --surface2:   #e8f5ec;
-  --border:     #c8e0cf;
-  --green:      #2d7a4a;
-  --green-dim:  #4caf6f;
-  --green-glow: rgba(45,122,74,0.1);
-  --text:       #1a3324;
-  --muted:      #5a7a62;
-  --heading:    #0e1410;
-}
-
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { height: 100%; }
+body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); background: var(--bg);
+  display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
 
-body {
-  font-family: 'DM Sans', sans-serif;
-  background: var(--bg);
-  color: var(--text);
-  min-height: 100vh;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-  transition: background 0.3s, color 0.3s;
+.split { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 34%); }
+
+/* ───── left: brand + picture ───── */
+.left { position: relative; padding: 48px 56px 56px; display: flex; flex-direction: column; justify-content: space-between; overflow: hidden; }
+.brand { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--ink); position: relative; z-index: 2; }
+.brand img { width: 52px; height: 52px; border-radius: 50%; object-fit: cover; box-shadow: 0 0 0 2px var(--green); }
+.brand b { font-family: 'Fraunces', serif; font-size: 22px; font-weight: 700; }
+.headline { position: relative; z-index: 2; font-size: clamp(36px, 4.2vw, 60px); line-height: 1.06; font-weight: 700; letter-spacing: -.02em; max-width: 7em; }
+.headline em { font-style: normal; color: var(--green); white-space: nowrap; }
+
+.stage { position: absolute; z-index: 1; right: 4%; top: 50%; transform: translateY(-50%); width: min(40%, 480px); aspect-ratio: 4 / 5; }
+.photo { position: absolute; inset: 0; border-radius: 30px; overflow: hidden;
+  box-shadow: 0 18px 50px rgba(20,50,30,.22), 0 0 0 1px rgba(0,0,0,.04); }
+.photo img { width: 100%; height: 100%; object-fit: cover; object-position: 38% 50%; display: block; transform: scale(1.12); transform-origin: 50% 0; }
+.chip { position: absolute; z-index: 3; display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px;
+  background: #fff; box-shadow: 0 8px 26px rgba(20,50,30,.18); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--green); display: block; }
+.chip-a { left: -64px; top: 13%; }
+.chip-b { right: -26px; bottom: 15%; }
+.badge { position: absolute; z-index: 3; left: -44px; bottom: 5%; width: 92px; height: 92px; border-radius: 50%; border: 4px solid var(--green);
+  background: #fff url("{{ url_for('static', filename='images/ffhnas.jpg') }}") center/cover; box-shadow: 0 10px 30px rgba(20,50,30,.25); }
+
+/* ───── right: form ───── */
+.right { border-left: 1px solid var(--line); display: flex; align-items: center; justify-content: center; padding: 40px 36px; }
+.form-wrap { width: 100%; max-width: 480px; }
+.form-wrap h1 { font-size: 19px; font-weight: 600; margin-bottom: 28px; }
+.err { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 11px 14px; border-radius: 12px;
+  font-size: 13px; line-height: 1.4; color: #c0392b; background: #fdecea; border: 1px solid #f5c2bc; }
+.field { margin-bottom: 14px; position: relative; }
+.field input { width: 100%; height: 58px; padding: 0 22px; font: inherit; font-size: 16px; color: var(--ink); background: #fff;
+  border: 1px solid #cfd8d2; border-radius: 18px; outline: none; transition: border-color .15s, box-shadow .15s; }
+.field input::placeholder { color: var(--muted); }
+.field input:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
+.field.pw input { padding-right: 56px; }
+.eye { position: absolute; top: 50%; right: 12px; transform: translateY(-50%); width: 38px; height: 38px; border: none; background: transparent;
+  color: var(--muted); border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
+.eye:hover { color: var(--green); background: var(--green-soft); }
+.eye .off { display: none; } .eye.on .open { display: none; } .eye.on .off { display: block; }
+.btn { display: flex; align-items: center; justify-content: center; width: 100%; height: 52px; border-radius: 999px; font: inherit; font-size: 16px; font-weight: 600;
+  cursor: pointer; text-decoration: none; transition: background .15s, transform .05s, border-color .15s; }
+.btn:active { transform: scale(.985); }
+.btn-primary { margin-top: 10px; border: none; background: var(--green); color: #fff; }
+.btn-primary:hover { background: var(--green-dark); }
+.btn-primary:disabled { opacity: .65; cursor: default; }
+.btn-ghost { border: 1.5px solid var(--green); background: transparent; color: var(--green-dark); }
+.btn-ghost:hover { background: var(--green-soft); }
+.gap { height: 64px; }
+.tagline { margin-top: 28px; text-align: center; font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; justify-content: center; gap: 8px; }
+.tagline img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
+
+/* ───── footer ───── */
+.foot { border-top: 3px solid #e9eeea; padding: 22px 24px calc(22px + env(safe-area-inset-bottom)); text-align: center; font-size: 13px; color: var(--muted); }
+
+/* ───── tablet / phone: picture on top, form below ───── */
+@media (max-width: 960px) {
+  .split { grid-template-columns: 1fr; }
+  .left { padding: calc(22px + env(safe-area-inset-top)) 22px 8px; min-height: 0; gap: 18px; justify-content: flex-start; }
+  .brand img { width: 44px; height: 44px; }
+  .stage { position: relative; right: auto; top: auto; transform: none; width: 100%; aspect-ratio: 16 / 10; order: 2; }
+  .photo { border-radius: 22px; }
+  .headline { order: 3; max-width: none; font-size: clamp(30px, 8vw, 44px); }
+  .chip, .badge { display: none; }
+  .right { border-left: none; padding: 20px 22px 32px; }
+  .gap { height: 30px; }
 }
-
-body::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  background-image:
-    linear-gradient(rgba(76,175,111,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(76,175,111,0.04) 1px, transparent 1px);
-  background-size: 40px 40px;
-  animation: gridDrift 20s linear infinite;
-  pointer-events: none;
-  z-index: 0;
-}
-
-@keyframes gridDrift {
-  from { background-position: 0 0; }
-  to   { background-position: 40px 40px; }
-}
-
-body::after {
-  content: '';
-  position: fixed;
-  width: 600px;
-  height: 600px;
-  border-radius: 50%;
-  background: radial-gradient(circle, rgba(76,175,111,0.08) 0%, transparent 70%);
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  pointer-events: none;
-  z-index: 0;
-  animation: pulse 6s ease-in-out infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: translate(-50%, -50%) scale(1);   opacity: 1; }
-  50%       { transform: translate(-50%, -50%) scale(1.1); opacity: 0.6; }
-}
-
-/* Theme toggle button */
-.theme-toggle {
-  position: fixed;
-  top: 16px;
-  right: 16px;
-  z-index: 100;
-  width: 40px;
-  height: 40px;
-  border-radius: 10px;
-  border: 1px solid var(--border);
-  background: var(--surface);
-  color: var(--text);
-  font-size: 18px;
-  cursor: pointer;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  transition: border-color 0.2s, background 0.3s, box-shadow 0.2s;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.2);
-}
-
-.theme-toggle:hover {
-  border-color: var(--green);
-  box-shadow: 0 2px 16px rgba(76,175,111,0.2);
-}
-
-.theme-toggle .icon-dark { display: block; }
-.theme-toggle .icon-light { display: none; }
-[data-theme="light"] .theme-toggle .icon-dark { display: none; }
-[data-theme="light"] .theme-toggle .icon-light { display: block; }
-
-.login-wrap {
-  position: relative;
-  z-index: 1;
-  width: 100%;
-  max-width: 420px;
-  padding: 20px;
-  animation: fadeUp 0.5s ease both;
-}
-
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(24px); }
-  to   { opacity: 1; transform: none; }
-}
-
-.login-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  overflow: hidden;
-  box-shadow: 0 24px 80px rgba(0,0,0,0.15), 0 0 0 1px rgba(76,175,111,0.05);
-  transition: background 0.3s, border-color 0.3s;
-}
-
-.card-header {
-  padding: 32px 32px 24px;
-  border-bottom: 1px solid var(--border);
-  text-align: center;
-  transition: border-color 0.3s;
-}
-
-.logo-mark {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 52px;
-  height: 52px;
-  border-radius: 14px;
-  margin-bottom: 16px;
-  overflow: hidden;
-  animation: leafGlow 3s ease-in-out infinite;
-}
-
-@keyframes leafGlow {
-  0%, 100% { filter: drop-shadow(0 0 8px  rgba(76,175,111,0.3)); }
-  50%       { filter: drop-shadow(0 0 20px rgba(76,175,111,0.6)); }
-}
-
-.card-title {
-  font-family: 'Fraunces', serif;
-  font-size: 22px;
-  font-weight: 700;
-  color: var(--heading);
-  margin-bottom: 4px;
-  transition: color 0.3s;
-}
-
-.card-subtitle {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.15em;
-  text-transform: uppercase;
-  color: var(--green);
-}
-
-.card-body {
-  padding: 28px 32px 32px;
-}
-
-.form-group { margin-bottom: 16px; }
-
-.form-label {
-  display: block;
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-bottom: 7px;
-}
-
-.form-input {
-  width: 100%;
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  padding: 11px 14px;
-  font-size: 14px;
-  color: var(--text);
-  font-family: 'DM Sans', sans-serif;
-  outline: none;
-  transition: border-color 0.2s, box-shadow 0.2s, background 0.3s, color 0.3s;
-}
-
-.form-input::placeholder { color: var(--muted); }
-
-.form-input:focus {
-  border-color: var(--green);
-  box-shadow: 0 0 0 3px rgba(76,175,111,0.1);
-}
-
-.btn-login {
-  width: 100%;
-  padding: 12px;
-  margin-top: 8px;
-  border-radius: 8px;
-  border: none;
-  background: var(--green);
-  color: #fff;
-  font-family: 'DM Sans', sans-serif;
-  font-size: 14px;
-  font-weight: 700;
-  cursor: pointer;
-  letter-spacing: 0.02em;
-  transition: background 0.15s, transform 0.1s, box-shadow 0.2s;
-  box-shadow: 0 4px 20px rgba(76,175,111,0.25);
-}
-
-.btn-login:hover {
-  background: var(--green-dim);
-  box-shadow: 0 6px 28px rgba(76,175,111,0.4);
-}
-
-.btn-login:active { transform: scale(0.98); }
-
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 20px 0;
-  font-size: 11px;
-  color: var(--muted);
-}
-
-.divider::before,
-.divider::after {
-  content: '';
-  flex: 1;
-  height: 1px;
-  background: var(--border);
-}
-
-.register-link {
-  text-align: center;
-  font-size: 13px;
-  color: var(--muted);
-}
-
-.register-link a {
-  color: var(--green);
-  text-decoration: none;
-  font-weight: 600;
-  transition: color 0.15s;
-}
-
-.register-link a:hover { color: var(--green-dim); }
-
-.status-bar {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  padding: 12px;
-  background: var(--surface2);
-  border-top: 1px solid var(--border);
-  transition: background 0.3s, border-color 0.3s;
-}
-
-.status-dot {
-  width: 6px; height: 6px;
-  border-radius: 50%;
-  background: var(--green);
-  animation: blink 2s ease-in-out infinite;
-}
-
-.status-dot:nth-child(2) { animation-delay: 0.3s; background: rgba(76,175,111,0.5); width: 4px; height: 4px; }
-.status-dot:nth-child(3) { animation-delay: 0.6s; background: rgba(76,175,111,0.3); width: 3px; height: 3px; }
-
-@keyframes blink {
-  0%, 100% { opacity: 1; }
-  50%       { opacity: 0.3; }
-}
-
-.status-text {
-  font-family: 'DM Mono', monospace;
-  font-size: 9px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--muted);
-  margin-left: 2px;
-}
-
-::-webkit-scrollbar { width: 6px; }
-::-webkit-scrollbar-track { background: var(--bg); }
-::-webkit-scrollbar-thumb { background: var(--border); border-radius: 6px; }
-
-.pw-wrap { position: relative; }
-.pw-wrap .form-input { padding-right: 46px; }
-.pw-eye {
-  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
-  width: 36px; height: 36px; border: none; background: transparent;
-  color: var(--muted); cursor: pointer; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
-.pw-eye:hover { color: var(--green); }
-.pw-eye .eye-off { display: none; }
-.pw-eye.on .eye-open { display: none; }
-.pw-eye.on .eye-off { display: block; }
 </style>
-<link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
 </head>
 <body>
+<div class="split">
+  <section class="left" aria-label="AgriSense">
+    <a class="brand" href="{{ url_for('login') }}">
+      <img src="{{ url_for('static', filename='images/ffhnas.jpg') }}" alt="AgriSense logo"/>
+      <b>AgriSense</b>
+    </a>
 
-<!-- Theme Toggle -->
-<button class="theme-toggle" onclick="toggleTheme()" title="Toggle theme">
-  <span class="icon-dark">{{ icon('moon',17) }}</span>
-  <span class="icon-light">{{ icon('sun',17) }}</span>
-</button>
+    <div class="stage">
+      <div class="photo"><img src="{{ url_for('static', filename='images/bgschool.jpg') }}" alt="Our school"/></div>
+      <div class="chip chip-a"><i></i> pH 6.4 &middot; Optimal</div>
+      <div class="chip chip-b"><i></i> Soil health 82 / 100</div>
+      <div class="badge" aria-hidden="true"></div>
+    </div>
 
-<div class="login-wrap">
-  <div class="login-card">
+    <h2 class="headline">Understand<br>your soil,<br><em>grow what<br>you love.</em></h2>
+  </section>
 
-    <div class="card-header">
-  <div class="logo-mark">
-    <img src="{{ url_for('static', filename='images/ffhnas.jpg') }}"
-         alt="AgriSense logo"
-         style="width:52px;height:52px;border-radius:12px;object-fit:cover;display:block;"/>
-  </div>
-  <div class="card-title">AgriSense</div>
-  <div class="card-subtitle">TinyML Soil Intelligence Platform</div>
+  <section class="right">
+    <div class="form-wrap">
+      <h1>Log into AgriSense</h1>
+      <form method="POST" id="loginForm">
+        {% if error %}
+        <div class="err" id="loginErr">{{ icon('alert',16) }} {{ error }}</div>
+        {% endif %}
+        <div class="field">
+          <input type="text" name="username" placeholder="Username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next" value="{{ request.form.get('username','') }}" required/>
+        </div>
+        <div class="field pw">
+          <input type="password" name="password" placeholder="Password" autocomplete="current-password" enterkeyhint="go" required/>
+          <button type="button" class="eye" id="pwEye" aria-label="Show password" title="Show password">
+            <svg class="open" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <svg class="off" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
+        <button class="btn btn-primary" type="submit" id="loginBtn">Log in</button>
+      </form>
+
+      <div class="gap"></div>
+      <a class="btn btn-ghost" href="{{ url_for('register') }}">Create new account</a>
+      <div class="tagline"><img src="{{ url_for('static', filename='images/ffhnas.jpg') }}" alt=""/> AgriSense</div>
+    </div>
+  </section>
 </div>
 
-  <div class="card-body">
-  <form method="POST">
-
-    {% if error %}
-    <div style="
-      display:flex;align-items:center;gap:8px;
-      padding:10px 14px;margin-bottom:16px;
-      border-radius:8px;
-      background:rgba(224,92,92,0.08);
-      border:1px solid rgba(224,92,92,0.35);
-      font-family:'DM Mono',monospace;
-      font-size:11px;color:#e05c5c;
-      line-height:1.4;">
-      {{ icon('alert',14) }} {{ error }}
-    </div>
-    {% endif %}
-
-    <div class="form-group">
-      <label class="form-label">Username</label>
-      <input class="form-input" type="text" name="username" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" enterkeyhint="next"
-             placeholder="Enter your username"
-             value="{{ request.form.get('username', '') }}"
-             required/>
-    </div>
-
-    <div class="form-group">
-      <label class="form-label">Password</label>
-      <div class="pw-wrap">
-        <input class="form-input" type="password" name="password" autocomplete="current-password" enterkeyhint="go" placeholder="••••••••" required/>
-        <button type="button" class="pw-eye" id="pwEye" aria-label="Show password" title="Show password">
-          <svg class="eye-open" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <svg class="eye-off" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        </button>
-      </div>
-    </div>
-
-    <button class="btn-login" type="submit">Sign In</button>
-
-  </form>
-
-  <div class="divider">or</div>
-
-  <p class="register-link">
-    Don't have an account? <a href="{{ url_for('register') }}">Register here</a><br>
-    <a href="{{ url_for('overview') }}">Continue as guest</a>
-  </p>
-</div>
-
-    <div class="status-bar">
-      <div class="status-dot"></div>
-      <div class="status-dot"></div>
-      <div class="status-dot"></div>
-      <span class="status-text">System Online</span>
-    </div>
-
-  </div>
-</div>
+<footer class="foot">AgriSense &middot; Soil Monitoring Platform</footer>
 
 <script>
-  function toggleTheme() {
-    const html = document.documentElement;
-    const current = html.getAttribute('data-theme');
-    const next = current === 'dark' ? 'light' : 'dark';
-    html.setAttribute('data-theme', next);
-    localStorage.setItem('theme', next);
-  }
+(function () {
+  var form = document.getElementById('loginForm'), btn = document.getElementById('loginBtn');
+  var pass = form.querySelector('input[name="password"]'), eye = document.getElementById('pwEye');
 
-  // Persist theme across page loads
-  const saved = localStorage.getItem('theme');
-  if (saved) document.documentElement.setAttribute('data-theme', saved);
+  // show / hide password
+  eye.addEventListener('click', function () {
+    var show = pass.type === 'password'; pass.type = show ? 'text' : 'password';
+    eye.classList.toggle('on', show);
+    var l = show ? 'Hide password' : 'Show password'; eye.setAttribute('aria-label', l); eye.title = l; pass.focus();
+  });
 
-  (function(){
-    var b=document.getElementById('pwEye'); if(!b) return;
-    var i=document.querySelector('input[name="password"]');
-    b.addEventListener('click',function(){
-      var show=i.type==='password';
-      i.type=show?'text':'password';
-      b.classList.toggle('on',show);
-      var l=show?'Hide password':'Show password';
-      b.setAttribute('aria-label',l); b.title=l;
-      i.focus();
-    });
-  })();
-
-  // Sign in without leaving a login entry in history, so Back never returns here
-  (function(){
-    var form=document.querySelector('form[method="POST"]'); if(!form||!window.fetch) return;
-    form.addEventListener('submit',function(e){
-      e.preventDefault();
-      var btn=form.querySelector('.btn-login'); btn.disabled=true;
-      fetch(location.pathname+location.search,{method:'POST',body:new FormData(form),credentials:'same-origin',headers:{'X-Requested-With':'fetch'}})
-        .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
-        .then(function(x){
-          if(x.ok&&x.d.redirect){location.replace(x.d.redirect);return;}
-          var box=document.getElementById('loginErr');
-          if(!box){box=document.createElement('div');box.id='loginErr';
-            box.style.cssText="padding:10px 14px;margin-bottom:16px;border-radius:8px;background:rgba(224,92,92,0.08);border:1px solid rgba(224,92,92,0.35);font-family:'DM Mono',monospace;font-size:11px;color:#e05c5c;line-height:1.4;";
-            form.insertBefore(box,form.firstChild);}
-          box.textContent=x.d.error||'Sign in failed.'; btn.disabled=false;
-        })
-        .catch(function(){form.submit();});
-    });
-  })();
+  // sign in without leaving a login entry in history, so Back never returns here
+  if (!window.fetch) return;
+  form.addEventListener('submit', function (e) {
+    e.preventDefault(); btn.disabled = true;
+    fetch(location.pathname, { method: 'POST', body: new FormData(form), credentials: 'same-origin', headers: { 'X-Requested-With': 'fetch' } })
+      .then(function (r) { return r.json().then(function (d) { return { ok: r.ok, d: d }; }); })
+      .then(function (x) {
+        if (x.ok && x.d.redirect) { location.replace(x.d.redirect); return; }
+        var box = document.getElementById('loginErr');
+        if (!box) { box = document.createElement('div'); box.id = 'loginErr'; box.className = 'err'; form.insertBefore(box, form.firstChild); }
+        box.textContent = x.d.error || 'Sign in failed.'; btn.disabled = false;
+      })
+      .catch(function () { form.submit(); });
+  });
+})();
 </script>
-
 </body>
 </html>

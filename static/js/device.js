@@ -166,7 +166,7 @@
 
   function getJson(url) {
     return fetch(url, { credentials: 'same-origin', cache: 'no-store' })
-      .then(function (r) { if (r.status === 401) { location.href = '/login'; throw new Error('signed out'); } return r.json(); });
+      .then(function (r) { if (r.status === 401) { location.href = '/'; throw new Error('signed out'); } return r.json(); });
   }
 
   function startScan(d) {
@@ -284,7 +284,7 @@
     }
     return fetch('/api/devices', { credentials: 'same-origin', cache: 'no-store' })
       .then(function (r) {
-        if (r.status === 401) { location.href = '/login'; throw new Error('signed out'); }
+        if (r.status === 401) { location.href = '/'; throw new Error('signed out'); }
         if (!r.ok) throw new Error('Server error ' + r.status);
         return r.json();
       })

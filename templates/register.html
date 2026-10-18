@@ -332,13 +332,7 @@ body::after {
 
 .pw-wrap { position: relative; }
 .pw-wrap .form-input { padding-right: 46px; }
-.pw-eye {
-  position: absolute; top: 50%; right: 6px; transform: translateY(-50%);
-  width: 36px; height: 36px; border: none; background: transparent;
-  color: var(--muted); cursor: pointer; border-radius: 8px;
-  display: flex; align-items: center; justify-content: center;
-  -webkit-tap-highlight-color: transparent;
-}
+.pw-eye { position: absolute; top: 50%; right: 6px; transform: translateY(-50%); width: 36px; height: 36px; border: none; background: transparent; color: var(--muted); cursor: pointer; border-radius: 8px; display: flex; align-items: center; justify-content: center; -webkit-tap-highlight-color: transparent; }
 .pw-eye:hover { color: var(--green); }
 .pw-eye .eye-off { display: none; }
 .pw-eye.on .eye-open { display: none; }
@@ -397,8 +391,7 @@ body::after {
       <div class="divider">or</div>
 
       <p class="login-link">
-        Already have an account? <a href="{{ url_for('login') }}">Sign in here</a><br>
-        <a href="{{ url_for('overview') }}">Continue as guest</a>
+        Already have an account? <a href="{{ url_for('login') }}">Sign in here</a>
       </p>
     </div>
 
@@ -427,12 +420,8 @@ body::after {
     var b=document.getElementById('pwEye'); if(!b) return;
     var i=document.querySelector('input[name="password"]');
     b.addEventListener('click',function(){
-      var show=i.type==='password';
-      i.type=show?'text':'password';
-      b.classList.toggle('on',show);
-      var l=show?'Hide password':'Show password';
-      b.setAttribute('aria-label',l); b.title=l;
-      i.focus();
+      var show=i.type==='password'; i.type=show?'text':'password'; b.classList.toggle('on',show);
+      var l=show?'Hide password':'Show password'; b.setAttribute('aria-label',l); b.title=l; i.focus();
     });
   })();
 </script>
