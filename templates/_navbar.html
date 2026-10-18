@@ -214,7 +214,7 @@ body > .page { padding-top: 36px !important; }
         <div class="sb-user-role">Preview only</div>
       </div>
     </div>
-    <a href="{{ url_for('login', next=request.path) }}" class="sb-btn sb-signin">{{ icon('logout', 16) }} Sign in</a>
+    <a href="{{ url_for('login', next=request.path) }}" data-signin class="sb-btn sb-signin">{{ icon('logout', 16) }} Sign in</a>
     <a href="{{ url_for('register') }}" class="sb-btn">Create account</a>
     {% endif %}
     <div class="sb-actions">

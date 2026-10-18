@@ -39,7 +39,7 @@
       <div class="guest-banner" role="note">
         <span class="gb-text"><b>Preview mode.</b> You&rsquo;re looking at sample data. Sign in to scan with your device, analyze your own soil and use the AI Assistant.</span>
         <span class="gb-actions">
-          <a class="btn btn-primary" href="{{ url_for('login', next=request.path) }}">Sign in</a>
+          <a class="btn btn-primary" data-signin href="{{ url_for('login', next=request.path) }}">Sign in</a>
           <a class="btn btn-ghost" href="{{ url_for('register') }}">Create account</a>
         </span>
       </div>
@@ -48,6 +48,7 @@
     </div>
   </main>
 </div>
+{% if is_guest %}{% from '_icons.html' import icon %}{% include '_signin_modal.html' %}{% endif %}
 <script src="{{ url_for('static', filename='js/main.js') }}"></script>
 {% if session.get('user') %}<script src="{{ url_for('static', filename='js/scan-popup.js') }}" data-api="{{ url_for('api_latest_scan') }}" data-dashboard="{{ url_for('overview') }}" data-user="{{ session['user'] }}" defer></script>{% endif %}
 {% block scripts %}{% endblock %}

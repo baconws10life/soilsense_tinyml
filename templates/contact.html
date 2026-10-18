@@ -277,5 +277,6 @@ body {
 </script>
 
 {% if session.get('user') %}<script src="{{ url_for('static', filename='js/scan-popup.js') }}" data-api="{{ url_for('api_latest_scan') }}" data-dashboard="{{ url_for('overview') }}" data-user="{{ session['user'] }}" defer></script>{% endif %}
+{% if is_guest %}{% include '_signin_modal.html' %}{% endif %}
 </body>
 </html>
