@@ -66,11 +66,21 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
 .side div.n { display: flex; align-items: center; gap: 7px; padding: 7px 8px; margin-bottom: 2px; border-radius: 7px; color: #6b8a72; font-weight: 500; font-size: 11.5px; }
 .side div.n i { width: 8px; height: 8px; border-radius: 3px; background: currentColor; opacity: .55; display: block; }
 .main { position: relative; flex: 1; min-width: 0; }
-.slide { position: absolute; inset: 0; padding: 16px 18px; opacity: 0; animation: tour 12s infinite; }
-.slide.s2 { animation-delay: 4s; } .slide.s3 { animation-delay: 8s; }
-@keyframes tour { 0% { opacity: 0; transform: translateY(8px); } 4%, 30% { opacity: 1; transform: none; } 34%, 100% { opacity: 0; transform: none; } }
-.side .n.a1 { animation: nav 12s infinite; } .side .n.a2 { animation: nav 12s infinite 4s; } .side .n.a3 { animation: nav 12s infinite 8s; }
-@keyframes nav { 0%, 34%, 100% { background: transparent; color: #6b8a72; } 4%, 30% { background: rgba(76,175,111,.15); color: #4caf6f; } }
+.slide { position: absolute; inset: 0; padding: 16px 18px; opacity: 0; visibility: hidden; transform: translateX(14px);
+  transition: opacity .6s ease, transform .6s ease, visibility 0s .6s; }
+.slide.on { opacity: 1; visibility: visible; transform: none; transition-delay: 0s; }
+.slide.out { transform: translateX(-14px); }
+.side .n { transition: background .4s, color .4s; }
+.side .n.on { background: rgba(76,175,111,.15); color: #4caf6f; }
+.dots { position: absolute; left: 0; right: 0; top: calc(100% + 16px); z-index: 3; display: flex; justify-content: center; align-items: center; gap: 8px; }
+.dots button { position: relative; width: 8px; height: 8px; padding: 0; border: none; border-radius: 99px; background: var(--line); cursor: pointer;
+  overflow: hidden; transition: width .35s ease, background .3s; -webkit-tap-highlight-color: transparent; }
+.dots button::after { content: ""; position: absolute; inset: 0; background: var(--green); transform: scaleX(0); transform-origin: left; }
+.dots button.on { width: 26px; }
+.dots button.on::after { transform: scaleX(1); animation: fill var(--dur, 5s) linear; }
+.paused .dots button.on::after { animation-play-state: paused; }
+.dots button:focus-visible { outline: 2px solid var(--green); outline-offset: 3px; }
+@keyframes fill { from { transform: scaleX(0); } to { transform: scaleX(1); } }
 .eb { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: #4caf6f; margin-bottom: 3px; }
 .ttl { font-family: 'Fraunces', serif; font-size: 20px; font-weight: 700; color: #f0f7f2; margin-bottom: 12px; }
 .ov { display: flex; align-items: center; gap: 16px; padding: 12px; border: 1px solid #253028; border-radius: 12px; background: #141c16; margin-bottom: 10px; }
@@ -98,7 +108,21 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
 .cp .nm small { display: block; margin-top: 2px; color: #6b8a72; font-weight: 400; font-size: 10px; }
 .cp .pc { font-size: 17px; font-weight: 700; color: #4caf6f; }
 .cp .tg { padding: 3px 8px; border-radius: 99px; background: rgba(76,175,111,.15); color: #4caf6f; font-size: 9.5px; font-weight: 600; }
-@media (prefers-reduced-motion: reduce) { .slide { animation: none; } .slide.s1 { opacity: 1; } .side .n, .chip i { animation: none !important; } .side .n.a1 { background: rgba(76,175,111,.15); color: #4caf6f; } }
+.tm { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-bottom: 10px; }
+.tm > div { padding: 10px; border: 1px solid #253028; border-radius: 10px; background: #141c16; }
+.tm small { display: block; color: #6b8a72; font-size: 9.5px; margin-bottom: 3px; } .tm b { font-size: 16px; color: #f0f7f2; }
+.mt { padding: 11px 12px; border: 1px solid #253028; border-radius: 12px; background: #141c16; }
+.mt .t { display: flex; justify-content: space-between; color: #6b8a72; font-size: 10.5px; margin-bottom: 8px; } .mt .t b { color: #4caf6f; font-size: 12px; }
+.mt .bg { height: 7px; border-radius: 9px; background: #253028; overflow: hidden; } .mt .bg i { display: block; height: 100%; width: 94%; border-radius: 9px; background: #4caf6f; }
+.chat { display: flex; flex-direction: column; gap: 8px; }
+.msg { max-width: 82%; padding: 8px 11px; border-radius: 12px; font-size: 11px; line-height: 1.45; }
+.msg.ai { align-self: flex-start; background: #141c16; border: 1px solid #253028; color: #d4e8da; }
+.msg.me { align-self: flex-end; background: rgba(76,175,111,.18); color: #e6f2ea; }
+.lc { display: flex; align-items: center; gap: 10px; padding: 9px 12px; margin-bottom: 8px; border: 1px solid #253028; border-radius: 12px; background: #141c16; }
+.lc i { width: 26px; height: 26px; border-radius: 8px; background: rgba(76,175,111,.15); flex: none; display: block; }
+.lc .nm { flex: 1; font-weight: 600; font-size: 12.5px; color: #f0f7f2; } .lc .nm small { display: block; margin-top: 2px; color: #6b8a72; font-weight: 400; font-size: 10px; }
+.lc .ar { color: #6b8a72; font-size: 14px; }
+@media (prefers-reduced-motion: reduce) { .slide { transition: opacity .2s; transform: none !important; } .chip i, .dots button.on::after { animation: none; } }
 
 /* ───── right: form ───── */
 .right { border-left: 1px solid var(--line); display: flex; align-items: center; justify-content: center; padding: 40px 36px; }
@@ -145,6 +169,7 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
   .brand img { width: 44px; height: 44px; }
   .stage { position: relative; left: auto; top: auto; transform: none; width: 100%; max-width: 560px; margin: 0 auto; }
   .chip, .badge { display: none; }
+  .stage { margin-bottom: 34px; }
   .right { border-left: none; padding: 20px 22px 32px; }
   .gap { height: 30px; }
 }
@@ -162,21 +187,21 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
       <b>AgriSense</b>
     </a>
 
-    <div class="stage" id="stage" aria-hidden="true">
-      <div class="win">
+    <div class="stage" id="stage">
+      <div class="win" aria-hidden="true">
         <div class="bar"><b></b><b></b><b></b><span>agrisense.app</span></div>
         <div class="app">
           <div class="side">
             <div class="lg"><img src="{{ url_for('static', filename='images/ffhnas.jpg') }}" alt=""/>AgriSense</div>
-            <div class="n a1"><i></i>Overview</div>
-            <div class="n a2"><i></i>Sensors</div>
-            <div class="n a3"><i></i>Crops</div>
+            <div class="n"><i></i>Overview</div>
+            <div class="n"><i></i>Sensors</div>
+            <div class="n"><i></i>Crops</div>
             <div class="n"><i></i>TinyML</div>
             <div class="n"><i></i>AI Assistant</div>
             <div class="n"><i></i>Learn</div>
           </div>
           <div class="main">
-            <div class="slide s1">
+            <div class="slide on">
               <div class="eb">Good morning</div><div class="ttl">Your soil today</div>
               <div class="ov">
                 <div class="ring"><svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42" stroke-dasharray="216 264"/></svg><b>82<small>/100</small></b></div>
@@ -190,7 +215,7 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
                 <div><small>Nitrogen</small><b>82</b><em class="w">Watch</em></div>
               </div>
             </div>
-            <div class="slide s2">
+            <div class="slide">
               <div class="eb">Live readings</div><div class="ttl">Sensors</div>
               <div class="rd">
                 <div><div class="t">Nitrogen <b>82 mg/kg</b></div><div class="bg"><i class="w" style="width:78%"></i></div></div>
@@ -201,15 +226,39 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
                 <div><div class="t">Moisture <b>72 %</b></div><div class="bg"><i style="width:72%"></i></div></div>
               </div>
             </div>
-            <div class="slide s3">
+            <div class="slide">
               <div class="eb">Best for your soil</div><div class="ttl">Crop picks</div>
               <div class="cp"><img src="{{ url_for('static', filename='images/rice.jpg') }}" alt=""/><div class="nm">Rice<small>Cereal &middot; 110&ndash;130 days</small></div><span class="tg">Excellent</span><span class="pc">94%</span></div>
               <div class="cp"><img src="{{ url_for('static', filename='images/maize.jpg') }}" alt=""/><div class="nm">Maize<small>Cereal &middot; 90&ndash;110 days</small></div><span class="tg">Excellent</span><span class="pc">88%</span></div>
               <div class="cp"><img src="{{ url_for('static', filename='images/mungbean.jpg') }}" alt=""/><div class="nm">Mung bean<small>Legume &middot; 60&ndash;70 days</small></div><span class="tg">Good</span><span class="pc">81%</span></div>
             </div>
+            <div class="slide">
+              <div class="eb">On-device model</div><div class="ttl">TinyML</div>
+              <div class="tm">
+                <div><small>Model size</small><b>8 KB</b></div>
+                <div><small>Inference</small><b>&lt; 5 ms</b></div>
+                <div><small>Inputs</small><b>7</b></div>
+              </div>
+              <div class="mt"><div class="t">Top prediction &middot; Rice <b>94%</b></div><div class="bg"><i></i></div></div>
+            </div>
+            <div class="slide">
+              <div class="eb">Soil AI Assistant</div><div class="ttl">Ask anything</div>
+              <div class="chat">
+                <div class="msg ai">Hello! Your latest readings are loaded: pH 6.4 &middot; Moisture 72% &middot; Temp 24.5&deg;C.</div>
+                <div class="msg me">Why is my nitrogen on watch?</div>
+                <div class="msg ai">At 82 mg/kg it is a little high. Too much nitrogen can delay flowering &mdash; ease off fertilizer.</div>
+              </div>
+            </div>
+            <div class="slide">
+              <div class="eb">Learning guide</div><div class="ttl">Soil science, simply</div>
+              <div class="lc"><i></i><div class="nm">What is soil testing?<small>Why it matters for students</small></div><span class="ar">&rsaquo;</span></div>
+              <div class="lc"><i></i><div class="nm">Understanding soil pH<small>Acidic, neutral, alkaline</small></div><span class="ar">&rsaquo;</span></div>
+              <div class="lc"><i></i><div class="nm">NPK nutrients explained<small>Nitrogen, phosphorus, potassium</small></div><span class="ar">&rsaquo;</span></div>
+            </div>
           </div>
         </div>
       </div>
+      <div class="dots" id="dots"></div>
       <div class="chip chip-a"><i></i> Live from your scanner</div>
       <div class="chip chip-b"><i></i> Best match: Rice 94%</div>
       <div class="badge"></div>
@@ -256,6 +305,37 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
     try { localStorage.setItem('theme', next); } catch (e) {}
     label();
   });
+})();
+(function () {
+  var stage = document.getElementById('stage'); if (!stage) return;
+  var slides = stage.querySelectorAll('.slide'), navs = stage.querySelectorAll('.side .n'), dotBox = document.getElementById('dots');
+  var DUR = 5000, cur = 0, timer = null, held = false, dots = [];
+  var reduce = window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches;
+  stage.style.setProperty('--dur', DUR + 'ms');
+  slides.forEach(function (_, i) {
+    var b = document.createElement('button'); b.type = 'button'; b.setAttribute('aria-label', 'Show preview ' + (i + 1));
+    b.addEventListener('click', function () { go(i); }); dotBox.appendChild(b); dots.push(b);
+  });
+  function show(i) {
+    slides.forEach(function (s, k) { s.classList.toggle('on', k === i); s.classList.toggle('out', k < i); });
+    navs.forEach(function (n, k) { n.classList.toggle('on', k === i); });
+    dots.forEach(function (d, k) { d.classList.remove('on'); if (k === i) { void d.offsetWidth; d.classList.add('on'); } });
+    cur = i;
+  }
+  function arm() { clearTimeout(timer); if (!held && !reduce && !document.hidden) timer = setTimeout(function () { go(cur + 1); }, DUR); }
+  function go(i) { show((i + slides.length) % slides.length); arm(); }
+  function hold(v) { held = v; stage.classList.toggle('paused', v); if (v) clearTimeout(timer); else go(cur); }
+  stage.addEventListener('mouseenter', function () { hold(true); });
+  stage.addEventListener('mouseleave', function () { hold(false); });
+  document.addEventListener('visibilitychange', function () { document.hidden ? clearTimeout(timer) : go(cur); });
+  // swipe
+  var x0 = null;
+  stage.addEventListener('touchstart', function (e) { x0 = e.touches[0].clientX; }, { passive: true });
+  stage.addEventListener('touchend', function (e) {
+    if (x0 === null) return; var dx = e.changedTouches[0].clientX - x0; x0 = null;
+    if (Math.abs(dx) > 40) go(cur + (dx < 0 ? 1 : -1));
+  });
+  show(0); arm();
 })();
 (function () {
   var st = document.getElementById('stage');
