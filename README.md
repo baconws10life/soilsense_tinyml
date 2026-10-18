@@ -2,7 +2,7 @@
 
 A Flask app that turns soil sensor readings (N, P, K, pH, temperature, humidity, rainfall) into
 a soil health score, a ranked crop-recommendation list, and plain-language explanations — redesigned
-to match the AgriSense dashboard (dark, growth-green theme with Overview / Sensor Readings / Crop
+to match the AgriSense dashboard (dark, growth-green theme with Home / Sensor Readings / Crop
 Picks / AI Assistant / Learning Guide).
 
 ## Run it
@@ -25,7 +25,7 @@ predictions were silently falling back to a generic sentence. `CROP_INFO` now co
 labels with a description, category, emoji, and harvest-window estimate for each.
 
 **New pages, one per sidebar item:**
-- **Overview** (`/overview`, alias `/home`) — greeting, health-score ring with letter grade,
+- **Home** (`/home`, also `/overview`) — greeting, health-score ring with letter grade,
   optimal/attention counts, at-a-glance sensor cards, and an NPK bar chart.
 - **Sensor Readings** (`/sensors`) — every reading (pH, moisture, temperature, N, P, K, rainfall,
   plus an estimated organic-matter figure) with its optimal band, a mini gauge, and plain-language
@@ -73,7 +73,7 @@ database.db                SQLite database (created at first run)
 
 ## Device status on the dashboard
 
-The **Overview** page has a "Your Device" card that reads *Device connected* (scanner ID + last scan
+The **Home** page has a "Your Device" card that reads *Device connected* (scanner ID + last scan
 time, **Manage device** button) or *Device not connected* (**Link device** button). The same status
 shows in the top bar and as a dot next to **Link Device** in the sidebar. The Link Device page
 (`/pair`) is manual: type the 6-character code from the scanner's LCD (no camera / QR scanner).
@@ -147,7 +147,7 @@ The LCD is now **one big "SCAN NOW" button**. Nothing is typed on the device.
 
 **How the website "scans" for the scanner.** A browser cannot search a Wi-Fi network, and the site runs on Vercel, not on
 your LAN. So the scanner announces itself: every 8 s it posts a heartbeat to `/api/device/heartbeat`. **Find device**
-(Overview + the *Find Device* page) lists the scanners whose last heartbeat is under 25 s old, i.e. the ones online right now.
+(Home + the *Find Device* page) lists the scanners whose last heartbeat is under 25 s old, i.e. the ones online right now.
 
 | Who | What they can do |
 |---|---|
@@ -198,7 +198,7 @@ it does exactly what touching the screen does. `status` and `help` also work. Ev
 
 ## Update: "Scan now" button on the website (firmware 2.2)
 
-Once you are **connected** to a scanner (Overview or the *Find Device* page), a big **Scan now** button appears under it.
+Once you are **connected** to a scanner (Home or the *Find Device* page), a big **Scan now** button appears under it.
 Pressing it does the same as touching the scanner's screen: one reading, saved to your account, and the usual new-scan popup.
 
 How it works (Vercel cannot push to the scanner, so the scanner asks):

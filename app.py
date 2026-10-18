@@ -171,6 +171,19 @@ def init_db():
         )
     """)
 
+    # Bug reports sent from the Contact page; admins read them in the Admin Panel.
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS bug_reports (
+            id         SERIAL PRIMARY KEY,
+            username   TEXT,
+            title      TEXT,
+            page       TEXT,
+            details    TEXT,
+            status     TEXT DEFAULT 'open',
+            created_at TEXT
+        )
+    """)
+
     # Devices (ESP32 scanners). A device is identified by a secret token that it
     # generates itself; only the SHA-256 hash is stored. `owner` is the website
     # account the device is currently linked to (NULL = waiting to be linked).
@@ -1694,6 +1707,12 @@ def admin_dashboard():
     cur.execute("SELECT * FROM records ORDER BY id DESC")
     records = cur.fetchall()
     devices = _list_devices_for(cur, session["user"], True)
+    try:
+        cur.execute("SELECT * FROM bug_reports ORDER BY (status='open') DESC, id DESC")
+        bug_reports = cur.fetchall()
+    except Exception:
+        conn.rollback()
+        bug_reports = []
     conn.commit()
     cur.close()
     conn.close()
@@ -1705,7 +1724,8 @@ def admin_dashboard():
     admin_count   = sum(1 for u in users if (u["role"] or "").strip().lower() == "admin")
 
     return render_template("admin_dashboard.html",
-        users=users, records=records, devices=devices,
+        users=users, records=records, devices=devices, bug_reports=bug_reports,
+        open_bugs=sum(1 for b in bug_reports if b['status'] == 'open'),
         devices_in_use=sum(1 for d in devices if d["in_use"]),
         chart_labels=list(crop_counts.keys()), chart_values=list(crop_counts.values()),
         user_counts=user_counts,
@@ -1875,10 +1895,56 @@ def about():
     return render_template("about.html", user=session["user"])
 
 
+CONTACT_EMAILS = [
+    "johnchrispagtalunan@gmail.com",
+    "carlmatthewreyes6@gmail.com",
+    "cortezeldrich@gmail.com",
+    "verkiel7@gmail.com",
+]
+
+
 @app.route("/contact")
 @login_required
 def contact():
-    return render_template("contact.html", user=session["user"])
+    return render_template("contact.html", user=session["user"], emails=CONTACT_EMAILS,
+                           bug_msg=session.pop("bug_msg", None))
+
+
+@app.route("/report-bug", methods=["POST"])
+@login_required
+def report_bug():
+    title   = (request.form.get("title") or "").strip()[:120]
+    page    = (request.form.get("page") or "").strip()[:80]
+    details = (request.form.get("details") or "").strip()[:3000]
+    if not title or not details:
+        session["bug_msg"] = {"kind": "err", "text": "Please add a short title and describe what went wrong."}
+        return redirect(url_for("contact") + "#report-bug")
+    try:
+        conn = get_db(); cur = conn.cursor()
+        cur.execute("INSERT INTO bug_reports (username, title, page, details, status, created_at) "
+                    "VALUES (%s,%s,%s,%s,'open',%s)",
+                    (session["user"], title, page, details, datetime.now().strftime("%Y-%m-%d %H:%M")))
+        conn.commit(); cur.close(); conn.close()
+        session["bug_msg"] = {"kind": "ok", "text": "Thanks! Your bug report was sent to the admins."}
+    except Exception as e:
+        print(f"[AgriSense] bug report failed: {e}")
+        session["bug_msg"] = {"kind": "err", "text": "Sorry, the report could not be saved. Please email the team instead."}
+    return redirect(url_for("contact") + "#report-bug")
+
+
+@app.route("/admin/bug/<int:bug_id>/<action>", methods=["POST"])
+@admin_required
+def admin_bug(bug_id, action):
+    if action not in ("resolve", "reopen", "delete"):
+        return _back("bugs")
+    conn = get_db(); cur = conn.cursor()
+    if action == "delete":
+        cur.execute("DELETE FROM bug_reports WHERE id=%s", (bug_id,))
+    else:
+        cur.execute("UPDATE bug_reports SET status=%s WHERE id=%s",
+                    ("resolved" if action == "resolve" else "open", bug_id))
+    conn.commit(); cur.close(); conn.close()
+    return _back("bugs")
 
 
 # ---------------------------------------------------------------------------

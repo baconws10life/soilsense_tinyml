@@ -1,29 +1,31 @@
 {% from '_icons.html' import icon %}
 <!DOCTYPE html>
-<html lang="en" data-theme="dark">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0e1410">
+<meta name="theme-color" content="#f3f7f4">
 <title>Admin Panel · AgriSense</title>
 <link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
-<script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
+<!-- The admin panel is always light. The saved user theme is deliberately NOT applied here and never changed, so switching back to user mode keeps whatever theme the user chose. -->
 <style>
 :root {
-  --bg:         #0e1410;
-  --surface:    #141c16;
-  --surface2:   #1a241d;
-  --border:     #253028;
-  --green:      #4caf6f;
-  --green-dim:  #2d7a4a;
-  --green-glow: rgba(76,175,111,0.15);
-  --amber:      #e8b84b;
-  --red:        #e05c5c;
-  --blue:       #5c9ee0;
-  --text:       #d4e8da;
-  --muted:      #6b8a72;
-  --heading:    #f0f7f2;
+  color-scheme: light;
+  --bg:         #f3f7f4;
+  --surface:    #ffffff;
+  --surface2:   #eef5f0;
+  --border:     #d3e2d8;
+  --border-soft:rgba(45,122,74,.14);
+  --green:      #2d7a4a;
+  --green-dim:  #4caf6f;
+  --green-glow: rgba(45,122,74,0.12);
+  --amber:      #b7791f;
+  --red:        #c53030;
+  --blue:       #2b6cb0;
+  --text:       #1a3324;
+  --muted:      #55725d;
+  --heading:    #0e1410;
 }
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;overflow-x:hidden}
@@ -38,7 +40,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .nav-item:hover{background:var(--border);color:var(--text)}
 .nav-item.active{background:var(--green-glow);color:var(--green);border-color:rgba(76,175,111,.2)}
 .nav-item .icon{display:flex;align-items:center;justify-content:center;width:20px}
-.nav-badge{margin-left:auto;background:var(--green);color:#0e1410;font-family:'DM Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px}
+.nav-badge{margin-left:auto;background:var(--green);color:#fff;font-family:'DM Mono',monospace;font-size:10px;font-weight:700;padding:1px 6px;border-radius:20px}
 .sidebar-footer{margin-top:auto;padding:16px 24px 0;border-top:1px solid var(--border)}
 .admin-badge{display:flex;align-items:center;gap:10px}
 .admin-avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--green-dim),var(--green));display:flex;align-items:center;justify-content:center;font-family:'Fraunces',serif;font-size:14px;font-weight:700;color:#fff;flex-shrink:0;text-transform:uppercase}
@@ -53,8 +55,8 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .topbar-title{font-family:'Fraunces',serif;font-size:18px;font-weight:600;color:var(--heading)}
 .topbar-actions{display:flex;align-items:center;gap:10px}
 .btn{gap:7px;padding:7px 16px;border-radius:7px;font-size:13px;font-weight:600;cursor:pointer;border:none;transition:all .15s;font-family:'DM Sans',sans-serif;text-decoration:none;display:inline-flex;align-items:center}
-.btn-primary{background:var(--green);color:#0e1410}
-.btn-primary:hover{background:#5bc87e}
+.btn-primary{background:var(--green);color:#fff}
+.btn-primary:hover{background:#246a3e}
 .btn-ghost{background:transparent;border:1px solid var(--border);color:var(--text)}
 .btn-ghost:hover{border-color:var(--green);color:var(--green)}
 .btn-danger{background:transparent;border:1px solid rgba(224,92,92,.4);color:var(--red)}
@@ -88,9 +90,9 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .panel-body{padding:20px 22px}
 .data-table{width:100%;border-collapse:collapse}
 .data-table th{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);padding:8px 12px;text-align:left;border-bottom:1px solid var(--border)}
-.data-table td{padding:11px 12px;font-size:13px;border-bottom:1px solid rgba(37,48,40,.5);vertical-align:middle}
+.data-table td{padding:11px 12px;font-size:13px;border-bottom:1px solid var(--border-soft);vertical-align:middle}
 .data-table tr:last-child td{border-bottom:none}
-.data-table tr:hover td{background:rgba(255,255,255,.02)}
+.data-table tr:hover td{background:rgba(45,122,74,.05)}
 .th-l,.td-l{padding-left:22px!important}
 .role-pill{display:inline-block;padding:2px 9px;border-radius:20px;font-family:'DM Mono',monospace;font-size:10px;font-weight:500}
 .role-pill.admin{background:rgba(76,175,111,.15);color:var(--green);border:1px solid rgba(76,175,111,.25)}
@@ -123,7 +125,7 @@ body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min
 .bar-tip{display:none;position:absolute;top:-30px;left:50%;transform:translateX(-50%);background:var(--surface2);border:1px solid var(--border);border-radius:5px;padding:2px 8px;font-family:'DM Mono',monospace;font-size:10px;white-space:nowrap;color:var(--text);z-index:10}
 .bar:hover .bar-tip{display:block}
 .bar-lbl{font-family:'DM Mono',monospace;font-size:9px;color:var(--muted);text-align:center;word-break:break-all;overflow:hidden;max-width:100%}
-.log-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid rgba(37,48,40,.5)}
+.log-item{display:flex;align-items:flex-start;gap:12px;padding:11px 0;border-bottom:1px solid var(--border-soft)}
 .log-item:last-child{border-bottom:none}
 .log-dot{width:8px;height:8px;border-radius:50%;margin-top:4px;flex-shrink:0}
 .log-dot.green{background:var(--green)}
@@ -156,7 +158,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
 .seg-btn span{font-family:'DM Mono',monospace;font-size:11px;margin-left:4px;opacity:.85}
 .seg-btn.active{background:var(--green-glow);border-color:rgba(76,175,111,.4);color:var(--green)}
 .ulist{list-style:none}
-.urow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 22px;border-bottom:1px solid rgba(37,48,40,.5);flex-wrap:wrap}
+.urow{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:14px 22px;border-bottom:1px solid var(--border-soft);flex-wrap:wrap}
 .urow:last-child{border-bottom:none}
 .urow[hidden]{display:none}
 .urow-main{display:flex;align-items:center;gap:12px;min-width:0}
@@ -176,7 +178,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
 .alert-banner.flash-ok{border-color:rgba(76,175,111,.35);background:rgba(76,175,111,.08)}
 .alert-banner.flash-err{border-color:rgba(224,92,92,.4);background:rgba(224,92,92,.08)}
 .dlg{border:1px solid var(--border);border-radius:14px;background:var(--surface);color:var(--text);padding:22px;width:min(380px,92vw);margin:auto}
-.dlg::backdrop{background:rgba(0,0,0,.6)}
+.dlg::backdrop{background:rgba(14,20,16,.45)}
 .dlg h3{color:var(--heading);font-family:'Fraunces',serif;font-size:18px}
 .dlg-actions{display:flex;justify-content:flex-end;gap:8px;margin-top:16px}
 .urow.dv-off{opacity:.6}
@@ -237,6 +239,10 @@ code{color:var(--green);font-family:'DM Mono',monospace}
     <a class="nav-item" onclick="switchTab('crops',this)">
       <span class="icon">{{ icon('sprout',18) }}</span> Crop Config
     </a>
+    <a class="nav-item" onclick="switchTab('bugs',this)">
+      <span class="icon">{{ icon('bug',18) }}</span> Bug Reports
+      {% if open_bugs %}<span class="nav-badge">{{ open_bugs }}</span>{% endif %}
+    </a>
     <a class="nav-item" onclick="switchTab('records',this)">
       <span class="icon">{{ icon('clipboard',18) }}</span> All Records
       <span class="nav-badge">{{ total_records }}</span>
@@ -252,7 +258,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
 
   <div class="nav-section">
     <div class="nav-label">App</div>
-    <a class="nav-link-out" href="{{ url_for('overview') }}">{{ icon('dashboard',18) }} Overview</a>
+    <a class="nav-link-out" href="{{ url_for('overview') }}">{{ icon('dashboard',18) }} Home</a>
     <a class="nav-link-out" href="{{ url_for('pair') }}">{{ icon('cpu',18) }} Find Device</a>
     <a class="nav-link-out" href="{{ url_for('sensors') }}">{{ icon('activity',18) }} Sensors</a>
     <a class="nav-link-out" href="{{ url_for('crops') }}">{{ icon('sprout',18) }} Crops</a>
@@ -578,6 +584,36 @@ code{color:var(--green);font-family:'DM Mono',monospace}
     </div><!-- /crops -->
 
 
+    <!-- ══════ BUG REPORTS ══════ -->
+    <div id="tab-bugs" class="tab-pane">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">{{ icon('bug',17) }} Bug Reports ({{ bug_reports|length }}, {{ open_bugs }} open)</div>
+        </div>
+        <div class="panel-body" style="padding:0">
+          {% for b in bug_reports %}
+          <div class="urow" style="align-items:flex-start">
+            <div style="flex:1;min-width:240px">
+              <div style="font-weight:600;color:var(--heading)">{{ b.title }}
+                <span class="role-pill {{ 'admin' if b.status == 'resolved' else 'student' }}" style="margin-left:8px">{{ b.status }}</span></div>
+              <div style="font-size:12px;color:var(--muted);margin:3px 0 8px;font-family:'DM Mono',monospace">
+                {{ b.username }} · {{ b.created_at }}{% if b.page %} · {{ b.page }}{% endif %}</div>
+              <div style="font-size:13px;white-space:pre-wrap;word-break:break-word">{{ b.details }}</div>
+            </div>
+            <div style="display:flex;gap:8px">
+              <form method="POST" action="{{ url_for('admin_bug', bug_id=b.id, action='reopen' if b.status == 'resolved' else 'resolve') }}">
+                <button class="btn btn-ghost btn-sm" type="submit">{{ 'Reopen' if b.status == 'resolved' else 'Mark resolved' }}</button></form>
+              <form method="POST" action="{{ url_for('admin_bug', bug_id=b.id, action='delete') }}" onsubmit="return confirm('Delete this report?')">
+                <button class="btn btn-danger btn-sm" type="submit">Delete</button></form>
+            </div>
+          </div>
+          {% else %}
+          <p class="note" style="padding:22px">No bug reports yet.</p>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+
     <!-- ══════ ALL RECORDS ══════ -->
     <div id="tab-records" class="tab-pane">
       <div class="panel">
@@ -731,7 +767,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
 /* ── TAB SWITCHER ── */
 const titles = {
   overview:'Dashboard Overview', users:'User Management', devices:'Scanners',
-  crops:'Crop Configuration',   records:'All Records',
+  crops:'Crop Configuration',   records:'All Records', bugs:'Bug Reports',
   settings:'System Settings'
 };
 function switchTab(name, el) {

@@ -172,7 +172,7 @@ body > .page { padding-top: 36px !important; }
   </div>
 
   <div class="sb-section">
-    <a href="{{ url_for('overview') }}"     class="sb-item {{ 'active' if active=='overview' else '' }}">{{ icon('dashboard') }} Overview</a>
+    <a href="{{ url_for('overview') }}"     class="sb-item {{ 'active' if active=='overview' else '' }}">{{ icon('home') }} Home</a>
     <a href="{{ url_for('dashboard') }}"    class="sb-item {{ 'active' if active in ('log','dashboard') else '' }}">{{ icon('flask') }} Analyze Soil</a>
     <a href="{{ url_for('sensors') }}"      class="sb-item {{ 'active' if active=='sensors' else '' }}">{{ icon('activity') }} Sensors</a>
     <a href="{{ url_for('crops') }}"        class="sb-item {{ 'active' if active=='crops' else '' }}">{{ icon('sprout') }} Crops</a>
@@ -192,6 +192,7 @@ body > .page { padding-top: 36px !important; }
   <div class="sb-section sb-more">
     <a href="{{ url_for('about') }}"   class="sb-item sb-item-sm {{ 'active' if active=='about' else '' }}">{{ icon('info',16) }} About</a>
     <a href="{{ url_for('contact') }}" class="sb-item sb-item-sm {{ 'active' if active=='contact' else '' }}">{{ icon('mail',16) }} Contact</a>
+    <a href="{{ url_for('contact') }}#report-bug" class="sb-item sb-item-sm">{{ icon('bug',16) }} Report a bug</a>
   </div>
 
   <div class="sb-footer">

@@ -222,6 +222,20 @@ body {
 .info-text a { color:var(--green); font-weight:600; text-decoration:none; }
 .info-text a:hover { text-decoration:underline; }
 @media (max-width:760px){ .info-grid { grid-template-columns:1fr; } }
+.mail-list { list-style:none; display:grid; gap:6px; margin-top:4px; }
+.mail-list a { display:block; font-family:'DM Mono',monospace; font-size:12.5px; word-break:break-all; }
+.bug-card { border-radius:14px; padding:24px 26px; margin-bottom:14px; position:relative; overflow:hidden; }
+.bug-card::before { content:''; position:absolute; top:0; left:0; right:0; height:3px; background:var(--red); }
+.bug-form { display:grid; gap:12px; margin-top:12px; }
+.bug-form label { font-family:'DM Mono',monospace; font-size:10px; letter-spacing:.1em; text-transform:uppercase; color:var(--muted); display:block; margin-bottom:5px; }
+.bug-form input, .bug-form textarea { width:100%; font:inherit; font-size:13px; color:var(--text); background:var(--surface2); border:1px solid var(--border); border-radius:9px; padding:10px 12px; }
+.bug-form textarea { min-height:110px; resize:vertical; }
+.bug-form input:focus, .bug-form textarea:focus { outline:none; border-color:var(--green); }
+.bug-btn { justify-self:start; font:inherit; font-size:13px; font-weight:600; padding:10px 20px; border-radius:9px; border:none; cursor:pointer; background:var(--green); color:#fff; }
+.bug-btn:hover { filter:brightness(1.1); }
+.bug-flash { padding:10px 14px; border-radius:9px; font-size:13px; margin-top:12px; border:1px solid var(--border); }
+.bug-flash.ok { color:var(--green); border-color:var(--green); }
+.bug-flash.err { color:var(--red); border-color:var(--red); }
 
 </style>
 <link rel="stylesheet" href="{{ url_for('static', filename='css/mobile.css') }}">
@@ -256,6 +270,31 @@ body {
       <div class="info-title">Questions about a reading</div>
       <p class="info-text">The fastest path is usually the <a href="{{ url_for('ai_assistant') }}">AI Assistant</a> — it already has your latest sensor data loaded.</p>
     </div>
+  </div>
+
+  <div class="info-card glass" style="margin-bottom:14px">
+    <div class="info-icon">{{ icon('mail',22) }}</div>
+    <div class="info-title">Email the team</div>
+    <p class="info-text">Prefer email? Reach any of us directly:</p>
+    <ul class="mail-list info-text">
+      {% for e in emails %}<li><a href="mailto:{{ e }}">{{ e }}</a></li>{% endfor %}
+    </ul>
+  </div>
+
+  <div class="bug-card glass" id="report-bug">
+    <div class="info-icon" style="color:var(--red)">{{ icon('bug',22) }}</div>
+    <div class="info-title">Report a bug</div>
+    <p class="info-text">Something not working as expected? Tell us what happened and the admins will take a look.</p>
+    {% if bug_msg %}<div class="bug-flash {{ bug_msg.kind }}">{{ bug_msg.text }}</div>{% endif %}
+    <form class="bug-form" method="POST" action="{{ url_for('report_bug') }}">
+      <div><label for="bugTitle">Short title</label>
+        <input id="bugTitle" name="title" maxlength="120" required placeholder="e.g. Scan button does nothing"></div>
+      <div><label for="bugPage">Where did it happen? (optional)</label>
+        <input id="bugPage" name="page" maxlength="80" placeholder="e.g. Sensors page, Find Device"></div>
+      <div><label for="bugDetails">What went wrong?</label>
+        <textarea id="bugDetails" name="details" maxlength="3000" required placeholder="What you did, what you expected, and what happened instead."></textarea></div>
+      <button class="bug-btn" type="submit">Send bug report</button>
+    </form>
   </div>
 
   <!-- FOOTER -->
