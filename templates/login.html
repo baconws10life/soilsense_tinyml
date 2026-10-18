@@ -394,7 +394,8 @@ body::after {
   <div class="divider">or</div>
 
   <p class="register-link">
-    Don't have an account? <a href="{{ url_for('register') }}">Register here</a>
+    Don't have an account? <a href="{{ url_for('register') }}">Register here</a><br>
+    <a href="{{ url_for('overview') }}">Continue as guest</a>
   </p>
 </div>
 
@@ -440,7 +441,7 @@ body::after {
     form.addEventListener('submit',function(e){
       e.preventDefault();
       var btn=form.querySelector('.btn-login'); btn.disabled=true;
-      fetch(location.pathname,{method:'POST',body:new FormData(form),credentials:'same-origin',headers:{'X-Requested-With':'fetch'}})
+      fetch(location.pathname+location.search,{method:'POST',body:new FormData(form),credentials:'same-origin',headers:{'X-Requested-With':'fetch'}})
         .then(function(r){return r.json().then(function(d){return {ok:r.ok,d:d};});})
         .then(function(x){
           if(x.ok&&x.d.redirect){location.replace(x.d.redirect);return;}

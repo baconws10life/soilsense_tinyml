@@ -837,6 +837,7 @@ def inject_globals():
         "device_name":     DEVICE_NAME,
         "device_subtitle": DEVICE_SUBTITLE,
     }
+    ctx["is_guest"] = "user" not in session
     if "user" in session:
         ctx["device_status"] = device_status_for(session["user"])
     ctx["admin_msg"] = session.pop("admin_msg", None) if request.path.startswith("/admin") else None
@@ -851,9 +852,40 @@ def _no_cache_html(resp):
     return resp
 
 
+# ---------------------------------------------------------------------------
+# GUEST PREVIEW: anyone can open the site and look around, but a guest only sees a SAMPLE
+# reading. Scanning, Analyze Soil, the AI Assistant and saved data need a signed-in account.
+# ---------------------------------------------------------------------------
+def ident():
+    return session.get("user")
+
+
+def display_user():
+    return session.get("user") or "Guest"
+
+
+def latest_or_demo():
+    """Signed-in: the user's latest real reading. Guest: a fixed sample so pages can be previewed."""
+    if "user" in session:
+        return get_latest_record(session["user"])
+    N, P, K, ph, temp, hum = 82.0, 42.0, 43.0, 6.4, 24.5, 72.0
+    crop = recommend_crop(N, P, K, temp, hum, ph)["name"]
+    return record_to_dict({"id": 0, "username": "demo", "N": N, "P": P, "K": K, "ph": ph,
+        "temp": temp, "humidity": hum, "crop": crop, "image": None, "source": "demo",
+        "fertility": None, "created_at": datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
+        "crop_source": None, "tinyml_conf": None, "offline": 0, "scan_uid": None, "tiny_json": None})
+
+
+def _safe_next(path):
+    return path if path and path.startswith("/") and not path.startswith("//") \
+        and not path.startswith("/login") and not path.startswith("/register") else None
+
+
 def login_required(view):
     def wrapped(*args, **kwargs):
         if "user" not in session:
+            if request.method == "GET":
+                session["next_url"] = request.full_path.rstrip("?")
             return redirect(url_for("login"))
         return view(*args, **kwargs)
     wrapped.__name__ = view.__name__
@@ -888,9 +920,18 @@ def admin_required(view):
     return wrapped
 
 
-@app.route("/", methods=["GET","POST"])
+@app.route("/")
+def root():
+    """The site opens straight on the Overview; no login wall."""
+    return overview()
+
+
+@app.route("/login", methods=["GET","POST"])
 def login():
     error = None
+    nxt_arg = _safe_next(request.args.get("next"))
+    if nxt_arg:
+        session["next_url"] = nxt_arg
     if request.method == "GET" and "user" in session:
         return redirect(url_for("admin_dashboard" if str(session.get("role","")).strip().lower() == "admin" else "overview"))
     wants_json = request.headers.get("X-Requested-With") == "fetch"
@@ -906,8 +947,8 @@ def login():
         if result:
             session["user"] = user
             session["role"] = result["role"]
-            nxt = session.pop("next_url", None)          # e.g. came from a device QR code
-            if nxt and nxt.startswith("/pair"):
+            nxt = _safe_next(session.pop("next_url", None))
+            if nxt:
                 target = nxt
             elif result["role"].strip().lower() == "admin":
                 target = url_for("admin_dashboard")
@@ -960,22 +1001,20 @@ def register():
 @app.route("/logout")
 def logout():
     session.clear()
-    return redirect(url_for("login"))
+    return redirect(url_for("overview"))
 
 
 # ---------------------------------------------------------------------------
 # CORE PAGES   (routes unchanged — only DB calls updated)
 # ---------------------------------------------------------------------------
 @app.route("/home")
-@login_required
 def home():
     return redirect(url_for("overview"))
 
 
 @app.route("/overview")
-@login_required
 def overview():
-    rec           = get_latest_record(session["user"])
+    rec           = latest_or_demo()
     readings      = build_readings(rec) if rec else []
     optimal_count = sum(1 for r in readings if r["status"] == "optimal")
     attention_count = len(readings) - optimal_count
@@ -991,7 +1030,7 @@ def overview():
                      key=lambda r: (-READING_SEVERITY[r["status"]], r["label"]))
     optimal = [r for r in readings if r["status"] == "optimal"]
     return render_template("overview.html",
-        user=session["user"], greeting=greeting_for_now(),
+        user=display_user(), greeting=greeting_for_now(),
         record=rec, readings=readings, npk_readings=npk_readings,
         glance=glance, optimal_count=optimal_count, attention_count=attention_count,
         issues=issues, optimal=optimal,
@@ -1001,22 +1040,20 @@ def overview():
 
 
 @app.route("/sensors")
-@login_required
 def sensors():
-    rec      = get_latest_record(session["user"])
+    rec      = latest_or_demo()
     readings = build_readings(rec) if rec else []
     grade, grade_copy = grade_for_score(rec["fertility"]) if rec else ("-","")
     return render_template("sensors.html",
-        user=session["user"], record=rec, readings=readings, grade=grade, grade_copy=grade_copy,
+        user=display_user(), record=rec, readings=readings, grade=grade, grade_copy=grade_copy,
         groups=group_readings(readings) if rec else [],
         summary=sensors_summary(rec, readings) if rec else None,
         device_name=DEVICE_NAME, device_subtitle=DEVICE_SUBTITLE)
 
 
 @app.route("/crops")
-@login_required
 def crops():
-    rec          = get_latest_record(session["user"])
+    rec          = latest_or_demo()
     category     = request.args.get("category","All Crops")
     sort_by      = request.args.get("sort","match")
     suitable_only = request.args.get("suitable","0") == "1"
@@ -1034,7 +1071,7 @@ def crops():
     top_emojis = [m["emoji"] for m in matches[:3]]
     grade, _   = grade_for_score(rec["fertility"]) if rec else ("-","")
     return render_template("crops.html",
-        user=session["user"], record=rec, matches=matches,
+        user=display_user(), record=rec, matches=matches,
         categories=["All Crops"]+CROP_CATEGORIES, active_category=category,
         sort_by=sort_by, suitable_only=suitable_only,
         excellent=excellent, good=good, top_emojis=top_emojis,
@@ -1042,15 +1079,14 @@ def crops():
 
 
 @app.route("/tinyml")
-@login_required
 def tinyml_page():
-    rec    = get_latest_record(session["user"])
+    rec    = latest_or_demo()
     grade, _ = grade_for_score(rec["fertility"]) if rec else ("-", "")
     sample = ({"N": rec["N"], "P": rec["P"], "K": rec["K"], "temperature": rec["temp"],
                "humidity": rec["humidity"], "ph": rec["ph"]} if rec else None)
     emojis = {k: v["emoji"] for k, v in CROP_INFO.items()}
     return render_template("tinyml.html",
-        user=session["user"], record=rec, sample=sample, emojis=emojis, grade=grade,
+        user=display_user(), record=rec, sample=sample, emojis=emojis, grade=grade,
         enabled=tinyml_web is not None,
         metrics=(tinyml_web.METRICS if tinyml_web else {}),
         n_params=(tinyml_web.N_PARAMS if tinyml_web else 0),
@@ -1078,12 +1114,11 @@ def api_ai_ask():
 
 
 @app.route("/learning")
-@login_required
 def learning():
-    rec    = get_latest_record(session["user"])
+    rec    = latest_or_demo()
     grade, _ = grade_for_score(rec["fertility"]) if rec else ("-","")
     return render_template("learning.html",
-        user=session["user"], grade=grade,
+        user=display_user(), grade=grade,
         device_name=DEVICE_NAME, device_subtitle=DEVICE_SUBTITLE)
 
 
@@ -1623,9 +1658,9 @@ SCAN_POPUP_ORDER = ["N", "P", "K", "ph", "temp", "humidity"]     # what the prob
 
 @app.route("/api/latest-scan")
 def api_latest_scan():
-    if "user" not in session:
+    username = ident()
+    if not username:
         return jsonify({"error": "login required"}), 401
-    username = session["user"]
     since    = request.args.get("since", type=int)
 
     conn = get_db()
@@ -1672,12 +1707,10 @@ def api_latest_scan():
 
 
 @app.route("/pair")
+@login_required
 def pair():
     """The 'Device' page: Find device -> Connect / Disconnect. The list itself is live
     (static/js/device.js polls /api/devices); this route only renders the shell."""
-    if "user" not in session:
-        session["next_url"] = request.full_path.rstrip("?")   # come back after login
-        return redirect(url_for("login"))
     return render_template("pair.html", user=session["user"])
 
 
@@ -1870,15 +1903,13 @@ def export_records():
 # STATIC PAGES
 # ---------------------------------------------------------------------------
 @app.route("/about")
-@login_required
 def about():
-    return render_template("about.html", user=session["user"])
+    return render_template("about.html", user=display_user())
 
 
 @app.route("/contact")
-@login_required
 def contact():
-    return render_template("contact.html", user=session["user"])
+    return render_template("contact.html", user=display_user())
 
 
 # ---------------------------------------------------------------------------

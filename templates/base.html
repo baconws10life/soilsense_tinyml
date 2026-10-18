@@ -35,6 +35,15 @@
       </div>
     </header>
     <div class="page">
+      {% if is_guest %}
+      <div class="guest-banner" role="note">
+        <span class="gb-text"><b>Preview mode.</b> You&rsquo;re looking at sample data. Sign in to scan with your device, analyze your own soil and use the AI Assistant.</span>
+        <span class="gb-actions">
+          <a class="btn btn-primary" href="{{ url_for('login', next=request.path) }}">Sign in</a>
+          <a class="btn btn-ghost" href="{{ url_for('register') }}">Create account</a>
+        </span>
+      </div>
+      {% endif %}
       {% block content %}{% endblock %}
     </div>
   </main>
