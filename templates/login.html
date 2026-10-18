@@ -1,21 +1,37 @@
 {% from '_icons.html' import icon %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="light">
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#ffffff">
+<meta name="theme-color" content="#ffffff" id="themeColor">
 <title>Log in · AgriSense</title>
 <link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
 <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Fraunces:wght@600;700&display=swap" rel="stylesheet"/>
+<script>
+try {
+  var t = localStorage.getItem('theme');
+  if (t !== 'dark' && t !== 'light') t = (window.matchMedia && matchMedia('(prefers-color-scheme: dark)').matches) ? 'dark' : 'light';
+  document.documentElement.setAttribute('data-theme', t);
+  var m = document.getElementById('themeColor'); if (m) m.setAttribute('content', t === 'dark' ? '#0e1410' : '#ffffff');
+} catch (e) {}
+</script>
 <style>
 :root {
   --green: #2d9d5c; --green-dark: #247f4a; --green-soft: rgba(45,157,92,.10);
   --ink: #1c2b21; --muted: #5f7367; --line: #dbe3dd; --bg: #ffffff;
+  --field: #ffffff; --field-line: #cfd8d2; --chip: #ffffff; --foot-line: #e9eeea; --ghost: #247f4a;
+  --err-fg: #c0392b; --err-bg: #fdecea; --err-line: #f5c2bc; --shadow: rgba(20,50,30,.22);
+}
+[data-theme="dark"] {
+  --green: #4caf6f; --green-dark: #3d9b5c; --green-soft: rgba(76,175,111,.14);
+  --ink: #e6f2ea; --muted: #8aa592; --line: #253028; --bg: #0e1410;
+  --field: #141c16; --field-line: #2d3b31; --chip: #1a241d; --foot-line: #1a241d; --ghost: #6fcf92;
+  --err-fg: #f08a80; --err-bg: rgba(224,92,92,.10); --err-line: rgba(224,92,92,.35); --shadow: rgba(0,0,0,.55);
 }
 *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
 html, body { height: 100%; }
-body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); background: var(--bg);
+body { transition: background .25s, color .25s; font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); background: var(--bg);
   display: flex; flex-direction: column; min-height: 100vh; min-height: 100dvh; }
 
 .split { flex: 1; display: grid; grid-template-columns: minmax(0, 1fr) minmax(360px, 34%); }
@@ -28,18 +44,18 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 .left { justify-content: flex-start; }
 .stage { position: absolute; z-index: 1; left: 50%; top: 52%; width: min(74%, 660px); aspect-ratio: 600 / 350; transform: translate(-50%, -50%); --s: .9; }
 .chip { position: absolute; z-index: 3; display: flex; align-items: center; gap: 8px; padding: 9px 14px; border-radius: 999px;
-  background: #fff; box-shadow: 0 8px 26px rgba(20,50,30,.2); font-size: 13px; font-weight: 600; white-space: nowrap; }
+  background: var(--chip); color: var(--ink); box-shadow: 0 8px 26px var(--shadow); font-size: 13px; font-weight: 600; white-space: nowrap; }
 .chip i { width: 9px; height: 9px; border-radius: 50%; background: var(--green); display: block; animation: pulse 1.8s ease-in-out infinite; }
 @keyframes pulse { 0%,100% { box-shadow: 0 0 0 0 rgba(45,157,92,.5); } 50% { box-shadow: 0 0 0 6px rgba(45,157,92,0); } }
 .chip-a { left: -26px; top: -36px; }
 .chip-b { right: -22px; bottom: -16px; }
 .badge { position: absolute; z-index: 3; left: -34px; bottom: 8%; width: 84px; height: 84px; border-radius: 50%; border: 4px solid var(--green);
-  background: #fff url("{{ url_for('static', filename='images/ffhnas.jpg') }}") center/cover; box-shadow: 0 10px 30px rgba(20,50,30,.25); }
+  background: var(--chip) url("{{ url_for('static', filename='images/ffhnas.jpg') }}") center/cover; box-shadow: 0 10px 30px rgba(20,50,30,.25); }
 
 /* ───── the website preview (a tiny auto-playing tour) ───── */
 .win { position: absolute; left: 0; top: 0; width: 600px; height: 350px; transform: scale(var(--s)); transform-origin: 0 0;
   background: #0e1410; color: #d4e8da; border-radius: 16px; overflow: hidden; display: flex; flex-direction: column;
-  box-shadow: 0 24px 60px rgba(20,50,30,.30), 0 0 0 1px rgba(0,0,0,.08); font-size: 12px; }
+  box-shadow: 0 24px 60px var(--shadow), 0 0 0 1px rgba(128,160,140,.25); font-size: 12px; }
 .bar { height: 30px; flex: none; background: #141c16; border-bottom: 1px solid #253028; display: flex; align-items: center; gap: 6px; padding: 0 12px; }
 .bar b { width: 9px; height: 9px; border-radius: 50%; background: #2a3a2f; display: block; }
 .bar span { margin-left: 10px; padding: 3px 14px; border-radius: 99px; background: #0e1410; color: #6b8a72; font-size: 10.5px; }
@@ -89,10 +105,10 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 .form-wrap { width: 100%; max-width: 480px; }
 .form-wrap h1 { font-size: 19px; font-weight: 600; margin-bottom: 28px; }
 .err { display: flex; align-items: center; gap: 8px; margin-bottom: 14px; padding: 11px 14px; border-radius: 12px;
-  font-size: 13px; line-height: 1.4; color: #c0392b; background: #fdecea; border: 1px solid #f5c2bc; }
+  font-size: 13px; line-height: 1.4; color: var(--err-fg); background: var(--err-bg); border: 1px solid var(--err-line); }
 .field { margin-bottom: 14px; position: relative; }
-.field input { width: 100%; height: 58px; padding: 0 22px; font: inherit; font-size: 16px; color: var(--ink); background: #fff;
-  border: 1px solid #cfd8d2; border-radius: 18px; outline: none; transition: border-color .15s, box-shadow .15s; }
+.field input { width: 100%; height: 58px; padding: 0 22px; font: inherit; font-size: 16px; color: var(--ink); background: var(--field);
+  border: 1px solid var(--field-line); border-radius: 18px; outline: none; transition: border-color .15s, box-shadow .15s; }
 .field input::placeholder { color: var(--muted); }
 .field input:focus { border-color: var(--green); box-shadow: 0 0 0 3px var(--green-soft); }
 .field.pw input { padding-right: 56px; }
@@ -106,14 +122,21 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 .btn-primary { margin-top: 10px; border: none; background: var(--green); color: #fff; }
 .btn-primary:hover { background: var(--green-dark); }
 .btn-primary:disabled { opacity: .65; cursor: default; }
-.btn-ghost { border: 1.5px solid var(--green); background: transparent; color: var(--green-dark); }
+.btn-ghost { border: 1.5px solid var(--green); background: transparent; color: var(--ghost); }
 .btn-ghost:hover { background: var(--green-soft); }
 .gap { height: 64px; }
 .tagline { margin-top: 28px; text-align: center; font-size: 14px; font-weight: 600; color: var(--ink); display: flex; align-items: center; justify-content: center; gap: 8px; }
 .tagline img { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; }
 
+/* ───── theme toggle ───── */
+.theme { position: fixed; z-index: 20; top: max(16px, env(safe-area-inset-top)); right: max(16px, env(safe-area-inset-right));
+  width: 44px; height: 44px; border-radius: 50%; border: 1px solid var(--field-line); background: var(--field); color: var(--ink);
+  display: flex; align-items: center; justify-content: center; cursor: pointer; box-shadow: 0 4px 14px var(--shadow); -webkit-tap-highlight-color: transparent; }
+.theme:hover { color: var(--green); border-color: var(--green); }
+.theme .sun { display: none; } [data-theme="dark"] .theme .sun { display: block; } [data-theme="dark"] .theme .moon { display: none; }
+
 /* ───── footer ───── */
-.foot { border-top: 3px solid #e9eeea; padding: 22px 24px calc(22px + env(safe-area-inset-bottom)); text-align: center; font-size: 13px; color: var(--muted); }
+.foot { border-top: 3px solid var(--foot-line); padding: 22px 24px calc(22px + env(safe-area-inset-bottom)); text-align: center; font-size: 13px; color: var(--muted); }
 
 /* ───── tablet / phone: picture on top, form below ───── */
 @media (max-width: 960px) {
@@ -128,6 +151,10 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 </style>
 </head>
 <body>
+<button type="button" class="theme" id="themeBtn" aria-label="Switch to dark mode" title="Dark / light mode">
+  <svg class="moon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"/></svg>
+  <svg class="sun" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.93 4.93l1.41 1.41M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+</button>
 <div class="split">
   <section class="left" aria-label="AgriSense preview">
     <a class="brand" href="{{ url_for('login') }}">
@@ -219,6 +246,17 @@ body { font-family: 'DM Sans', system-ui, sans-serif; color: var(--ink); backgro
 <footer class="foot">AgriSense &middot; Soil Monitoring Platform</footer>
 
 <script>
+(function () {
+  var btn = document.getElementById('themeBtn'), root = document.documentElement, meta = document.getElementById('themeColor');
+  function label() { var d = root.getAttribute('data-theme') === 'dark'; btn.setAttribute('aria-label', d ? 'Switch to light mode' : 'Switch to dark mode'); if (meta) meta.setAttribute('content', d ? '#0e1410' : '#ffffff'); }
+  label();
+  btn.addEventListener('click', function () {
+    var next = root.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+    root.setAttribute('data-theme', next);
+    try { localStorage.setItem('theme', next); } catch (e) {}
+    label();
+  });
+})();
 (function () {
   var st = document.getElementById('stage');
   function fit() { if (st) st.style.setProperty('--s', st.clientWidth / 600); }
