@@ -287,3 +287,7 @@ The ILI9341 colour touchscreen was replaced by a **16x4 character LCD on I2C** (
   at the top; if nothing answers there it also tries 8/9, 3/6, 1/2 and 41/42 and prints where it found the LCD. Blank or blocks only? Turn the blue contrast screw on the backpack.
 * **Server:** `POST /api/esp32` now also returns `crop_conf`, `grade_text` and `lvl_N`, `lvl_P`, `lvl_K`, `lvl_ph`, `lvl_temp`, `lvl_humidity`
   (optimal / watch / low / high). Older scanners ignore the extra keys.
+
+## Language option (English / Tagalog)
+
+A small EN/TL button sits in the top bar (top-right on login/register). The choice is saved in the browser. All translations live in `static/js/i18n.js`; to add or fix a phrase, add its exact English text as a key. AI Assistant chat replies and a few developer notes in the Admin panel stay in English.
