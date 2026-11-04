@@ -1,6 +1,6 @@
 {# Filter + bulk-delete toolbar for a records table.
-   Include with:  {% with rt_tbody='records-tbody', rt_crops=[...], rt_admin=True %}{% include '_records_tools.html' %}{% endwith %}
-   Rows in the table need: data-id, data-source, data-crop, data-date and a first cell holding
+   Include with:  {% with rt_tbody='records-tbody', rt_admin=True %}{% include '_records_tools.html' %}{% endwith %}
+   Rows in the table need: data-id, data-source, data-date and a first cell holding
    <input type="checkbox" class="rt-check">.  The header's first cell holds <input type="checkbox" data-rt="all">. #}
 <style>
 .rt { padding: 12px 20px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 10px; }
@@ -47,13 +47,6 @@ tr.rt-picked td { background: rgba(76,175,111,.07); }
         <option value="">All sources</option>
         <option value="esp32">Scanner</option>
         <option value="manual">Manual entry</option>
-      </select>
-    </div>
-    <div class="rt-f">
-      <label for="{{ rt_tbody }}-crop">Crop</label>
-      <select id="{{ rt_tbody }}-crop" data-rt="crop">
-        <option value="">All crops</option>
-        {% for c in rt_crops %}<option value="{{ c }}">{{ c|capitalize }}</option>{% endfor %}
       </select>
     </div>
     <div class="rt-f">

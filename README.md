@@ -1,6 +1,22 @@
+# AgriSense v21 - crop recommendation removed
+
+The website and the scanner now **only show the readings of the NPK probe** (N, P, K, pH, temperature, moisture) with their
+status, the soil health score and what to fix. Removed: the Crops page, the TinyML page, crop picks everywhere (Home, Sensors,
+Soil Analysis, popup, AI Assistant, Learn, About, Admin, records tables, CSV export) and the crop/TinyML screens on the scanner.
+
+* Scanner sketches (`firmware/agrisense_scan_button.ino`, `firmware/agrisense_lcd1604.ino`): no crop, no `agrisense_tinyml.h`
+  needed any more. 20x4 screen: N / P / K, Temp / pH / Moisture, then `Health 83/100 B`. 16x4 screen: NPK page, soil page, health page.
+* `/crops` and `/tinyml` still exist only as redirects to Sensors, so old bookmarks do not break.
+* The website no longer needs scikit-learn, pandas or numpy (`requirements.txt` is now Flask + psycopg2-binary): faster cold starts on Vercel.
+* Old records keep their saved crop text in the database (hidden, not deleted).
+* Archived, **not used by the app**: `tinyml/` (training script + Arduino header), `Crop_recommendation.csv`, and `data/` (preset generator and
+  the Sta. Maria surveys). The sections below describe them as they were in v20.
+
+---
+
 # AgriSense — TinyML Soil Intelligence Platform
 
-A Flask app that turns soil sensor readings (N, P, K, pH, temperature, humidity, rainfall) into
+A Flask app that turns soil sensor readings (N, P, K, pH, temperature, moisture, rainfall) into
 a soil health score, a ranked crop-recommendation list, and plain-language explanations — redesigned
 to match the AgriSense dashboard (dark, growth-green theme with Home / Sensor Readings / Crop
 Picks / AI Assistant / Learning Guide).
@@ -114,7 +130,7 @@ script tag in `templates/base.html`.
 ## Update: TinyML + offline scanning + new Sensors page
 
 **TinyML (on the ESP32-S3).** `tinyml/train_tinyml.py` trains a small neural network (6 -> 24 -> 22) on
-`Crop_recommendation.csv` and writes `soilsense_tinyml.h`. Put that header in the same folder as the `.ino`.
+`Crop_recommendation.csv` and writes `agrisense_tinyml.h`. Put that header in the same folder as the `.ino`.
 The device now picks the crop itself on every scan, with no Wi-Fi, and sends `crop` + `crop_conf` with the reading.
 The website stores it (`records.crop_source = 'tinyml'`) and falls back to its own KNN model when an older
 firmware does not send a crop.
@@ -167,7 +183,7 @@ New endpoints: `POST /api/device/heartbeat` (scanner), `GET /api/devices`, `POST
 `POST /api/devices/<id>/disconnect`, `POST /api/devices/dismiss_notice` (website). Removed: `/api/device/pair`, `/api/device/unlink`.
 New columns on `devices` are added automatically on the first request after deploying.
 
-**Firmware:** `firmware/soilsense_scan_button.ino`. Edit `WIFI_SSID`, `WIFI_PASSWORD`, `SERVER_BASE` (and `API_KEY` if you set
+**Firmware:** `firmware/agrisense_scan_button.ino`. Edit `WIFI_SSID`, `WIFI_PASSWORD`, `SERVER_BASE` (and `API_KEY` if you set
 `ESP32_API_KEY`). The sketch prints `Device ID on the website: AgriSense Scanner XXXX` on the Serial Monitor, and shows `ID XXXX`
 in a corner of the LCD, so you can tell scanners apart in a classroom.
 
@@ -187,7 +203,7 @@ it does exactly what touching the screen does. `status` and `help` also work. Ev
 `[SCREEN] ...` lines, so a broken LCD no longer blocks testing. Any line-ending setting works.
 
 **TinyML on the website.** The same three networks the ESP32 used now also run on the website:
-* `static/tinyml/soilsense_tinyml.json` - the trained weights (made by `tinyml/train_tinyml.py`, which now writes both the
+* `static/tinyml/agrisense_tinyml.json` - the trained weights (made by `tinyml/train_tinyml.py`, which now writes both the
   Arduino header and this file).
 * `tinyml_web.py` - runs them with numpy on the server. A scan that arrives without on-device TinyML results is analysed here:
   the record gets `crop_source = 'tinyml-web'`, its top-3 crops, probe check and advisor flags. Older and manual records are
@@ -212,7 +228,7 @@ How it works (Vercel cannot push to the scanner, so the scanner asks):
 * New column `devices.scan_requested_at` is added automatically on the next start. Nothing else in the database changes.
 * `GET /api/devices` now includes `scan_pending` for the scanner you are connected to.
 * Disconnecting, an admin disconnect, or the scanner being released cancels any waiting request.
-* Firmware: flash `firmware/soilsense_scan_button.ino` (v2.2). Tunable: `HEARTBEAT_CONNECTED_MS` (3000 ms; smaller = faster button,
+* Firmware: flash `firmware/agrisense_scan_button.ino` (v2.2). Tunable: `HEARTBEAT_CONNECTED_MS` (3000 ms; smaller = faster button,
   more traffic). Older firmware still works - it just ignores the website button.
 
 
@@ -239,10 +255,10 @@ Same 2,200 rows (100 per crop), same units and **same N-P-K scale**; the `rainfa
   `data/make_ph_dataset.py` (one line per crop). For the paper, check those ranges against BSWM / DA-BPI / PhilRice / PCAARRD references or
   your own soil samples, edit them, and rebuild.
 * **To change a crop or range:** edit `PROFILES` in `data/make_ph_dataset.py`, run `python data/make_ph_dataset.py`, then
-  `python tinyml/train_tinyml.py` (rewrites `static/tinyml/soilsense_tinyml.json` and `tinyml/soilsense_tinyml.h`). If you add or remove a crop,
+  `python data/localize_to_sta_maria.py` (see the Sta. Maria section below), then `python tinyml/train_tinyml.py` (rewrites `static/tinyml/agrisense_tinyml.json` and `tinyml/agrisense_tinyml.h`). If you add or remove a crop,
   also add/remove it in `CROP_INFO` in `app.py` (description, category, emoji, harvest) and in the Supported Crops list in `admin_dashboard.html`.
 * The original dataset is kept as `data/Crop_recommendation_original.csv`.
-* TinyML was retrained on the new data (held-out top-1 97.5 %, top-3 100 %; website KNN on the same 6 inputs 93.9 %). New categories
+* TinyML was retrained on the Sta. Maria-calibrated preset (held-out top-1 95.9 %, top-3 100 %; website KNN on the same 6 inputs 93.2 %). New categories
   *Root Crops* and *Vegetables* appear as filters on the Crop Picks page.
 * Existing saved records keep the crop name they were saved with (e.g. an old "apple"); they are not rewritten.
 
@@ -261,7 +277,7 @@ once (`migrate_records_to_current_dataset()` at the end of `app.py`):
 
 * `crop`, `crop_source`, `tinyml_conf` and `tiny_json` are recomputed with the current models (scanner rows: the TinyML networks, like a new scan;
   manual rows: the website KNN, like a typed-in reading), and `fertility` is recomputed with the 6-reading score.
-* Never changed: owner, date, source, N, P, K, pH, temperature, humidity, photo, scan id.
+* Never changed: owner, date, source, N, P, K, pH, temperature, moisture, photo, scan id.
 * It runs once. A marker row (`app_meta.records_dataset`) records that it is done; it is safe if two serverless instances start together (advisory lock).
   To run it again after changing the dataset or models, change `RECORDS_MIGRATION_VERSION` in `app.py` (or delete that row).
 * Check the Vercel log for `Re-analysed N saved records ...`.
@@ -274,7 +290,7 @@ TinyML was retrained on the 6-input data: held-out top-1 96.1 % (website KNN on 
 ## Update: 16x4 I2C LCD scanner (firmware 3.0)
 
 The ILI9341 colour touchscreen was replaced by a **16x4 character LCD on I2C** (4 wires: GND, VCC, SDA, SCL), so there is no touch.
-`firmware/soilsense_lcd1604.ino` (the old TFT sketches stay in `firmware/` for reference).
+`firmware/agrisense_lcd1604.ino` (the old TFT sketches stay in `firmware/` for reference).
 
 * **Scan from the website.** Connect to the scanner on the website, press **Scan now**: the scanner reads the probe, sends the reading, and the LCD shows
   the **same result as the website popup**, in 3 pages that repeat **4 times** (about 40 s; `RESULT_PAGE_MS`, `RESULT_REPEATS` at the top of the sketch):
@@ -291,3 +307,35 @@ The ILI9341 colour touchscreen was replaced by a **16x4 character LCD on I2C** (
 ## Language option (English / Tagalog)
 
 A small EN/TL button sits in the top bar (top-right on login/register). The choice is saved in the browser. All translations live in `static/js/i18n.js`; to add or fix a phrase, add its exact English text as a key. AI Assistant chat replies and a few developer notes in the Admin panel stay in English.
+
+
+## Update: crop preset calibrated to the Sta. Maria (Bulacan) soil survey
+
+`Crop_recommendation.csv` (the crop preset used by the website and by the TinyML networks) is now built in **two steps**:
+
+1. `python data/make_ph_dataset.py` writes `data/Crop_recommendation_agronomic_base.csv` - the textbook ranges per crop (unchanged).
+2. `python data/localize_to_sta_maria.py` re-expresses **N, P and K** on the scale of real Sta. Maria soils and writes `Crop_recommendation.csv`.
+   Then `python tinyml/train_tinyml.py` retrains the networks and rewrites `tinyml/agrisense_tinyml.h` + `static/tinyml/agrisense_tinyml.json`.
+
+Sources (kept in `data/sta_maria/`, cleaned copy in `data/Sta_Maria_local_soil_clean.csv`):
+
+| Survey | Samples | Gives |
+|---|---|---|
+| `Sta_Maria_STK.xlsx` (soil test kit) | 328 | pH, and N / P / K as Low / Medium / High |
+| `Sta_Maria_FM.xlsx` (laboratory) | 122 | pH, organic matter %, P (ppm), K (ppm) |
+
+Local soils are **92 % Low nitrogen**, **61 % Low phosphorus**, **82 % High potassium**. Each preset row keeps its rank among the 2,200 rows
+(a heavy-nitrogen crop stays heavier than a legume) but takes the N, P, K value found at that rank in the Sta. Maria soils. The share of Low / Medium / High comes
+from the STK survey, the spread inside a level from the FM lab values (rank-matched, log scale), and a level becomes numbers with the limits the website already uses
+(below 40 = low, 40-79 = medium, 80 and up = high). **pH, temperature and moisture are not changed:** pH is an absolute reading and the crop ranges already lie inside the
+local span (4.2-8.2); the surveys have no climate data.
+
+Limits to state in the paper: neither survey has a crop label, so the surveys do not say which crop grows where - crop-specific ranges are still agronomic.
+The two surveys are assumed to describe the same population (both Sta. Maria, overlapping barangays), and the Low/Medium/High to mg/kg mapping is an assumption tied to the
+website's own thresholds. The lab OM (0.3-2.3 %, mean 1.4 %) is far below the website's 3-6 % "optimal" band, so organic matter will read Low for most local soils.
+
+## Rename: SoilSense -> AgriSense
+
+`soilsense_tinyml.h/.json` -> `agrisense_tinyml.h/.json`, `soilsense_scan_button.ino` -> `agrisense_scan_button.ino` (now the 20x4 LCD sketch), `soilsense_lcd1604.ino` -> `agrisense_lcd1604.ino`.
+Kept on purpose: the `SERVER_BASE` URL (your deployed address), the `SOILSENSE_SECRET_KEY` environment variable (still read if `AGRISENSE_SECRET_KEY` is not set), and the
+scanner's saved device secret (the sketch copies it from the old storage name, so already-flashed scanners keep their identity).

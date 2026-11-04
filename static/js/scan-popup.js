@@ -20,7 +20,7 @@
     interval:  parseInt(ds.interval, 10) || 4000
   };
   var KEY = 'ss_last_scan_id:' + cfg.user;
-  var REFRESH_PATHS = ['/overview', '/sensors', '/crops'];   // pages that show the latest scan
+  var REFRESH_PATHS = ['/overview', '/sensors'];   // pages that show the latest scan
 
   /* ---------- what to do with a server answer (pure, unit-tested) ---------- */
   function decide(last, data) {
@@ -189,13 +189,9 @@
     });
 
     clear(u.summary);
-    var crop = el('div', 'ssp-sum');
-    crop.appendChild(el('span', 'ssp-label', 'Recommended crop'));
-    crop.appendChild(el('b', '', scan.crop || '-'));
     var health = el('div', 'ssp-sum');
     health.appendChild(el('span', 'ssp-label', 'Soil health'));
     health.appendChild(el('b', '', Math.round(scan.fertility) + ' / 100  \u00b7  Grade ' + (scan.grade || '-')));
-    u.summary.appendChild(crop);
     u.summary.appendChild(health);
 
     u.more.textContent = (newCount && newCount > 1)
@@ -265,7 +261,8 @@
 
   var api = { decide: decide, show: show, poll: poll, dismiss: dismiss, timeLabel: timeLabel, _cfg: cfg, _key: KEY };
   if (typeof module !== 'undefined' && module.exports) { module.exports = api; return; }
-  window.SoilSenseScanPopup = api;
+  window.AgriSenseScanPopup = api;
+  window.SoilSenseScanPopup = api;   // old name, kept so nothing that still uses it breaks
 
   if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', start);
   else start();

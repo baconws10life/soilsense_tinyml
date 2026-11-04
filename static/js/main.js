@@ -53,34 +53,6 @@
   const firstAcc = document.querySelector(".accordion");
   if (firstAcc) firstAcc.classList.add("open");
 
-  // ---- Crop Picks: category filter / sort / suitable-only toggle --------
-  const cropFilterForm = document.getElementById("cropFilters");
-  if (cropFilterForm) {
-    document.querySelectorAll("[data-category]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const url = new URL(window.location.href);
-        url.searchParams.set("category", btn.dataset.category);
-        window.location.replace(url.toString());
-      });
-    });
-    document.querySelectorAll("[data-sort]").forEach((btn) => {
-      btn.addEventListener("click", () => {
-        const url = new URL(window.location.href);
-        url.searchParams.set("sort", btn.dataset.sort);
-        window.location.replace(url.toString());
-      });
-    });
-    const toggle = document.getElementById("suitableToggle");
-    if (toggle) {
-      toggle.addEventListener("click", () => {
-        const url = new URL(window.location.href);
-        const isOn = toggle.dataset.on === "1";
-        url.searchParams.set("suitable", isOn ? "0" : "1");
-        window.location.replace(url.toString());
-      });
-    }
-  }
-
   // ---- AI Assistant chat --------------------------------------------------
   const chatLog = document.getElementById("chatLog");
   const chatForm = document.getElementById("chatForm");

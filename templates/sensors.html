@@ -49,78 +49,7 @@
     <p class="sx-muted">All {{ summary.total }} readings are in their optimal range. Nothing to fix right now.</p>
     {% endif %}
   </div>
-
-  {% if summary.crop %}
-  <div class="sx-crop">
-    <div class="sx-crop-main">
-      <span class="sx-crop-icon">{{ icon('cpu', 18) }}</span>
-      <div>
-        <div class="sx-crop-label">Suggested crop</div>
-        <div class="sx-crop-name">{{ summary.crop }}{% if summary.crop_conf is not none %} <small>{{ summary.crop_conf }}% confidence</small>{% endif %}</div>
-        <div class="sx-crop-by">Picked by {{ summary.crop_by }}</div>
-      </div>
-    </div>
-    <div class="sx-crop-links">
-      <a href="{{ url_for('crops') }}" class="btn btn-ghost btn-sm">See crop picks</a>
-      <a href="{{ url_for('ai_assistant') }}?ask={{ 'Why did my scan pick this crop?'|urlencode }}" class="btn btn-ghost btn-sm">{{ icon('bot',15) }} Why this crop?</a>
-    </div>
-  </div>
-  {% endif %}
 </section>
-
-{# ---------- 1b. TINYML ANALYSIS (computed on the ESP32 or, now, on the website) ---------- #}
-{% if summary.tiny %}
-<section class="card sx-tiny">
-  <div class="sx-tiny-head">
-    <span class="sx-crop-icon">{{ icon('cpu', 18) }}</span>
-    <div>
-      {% if summary.tiny_where == 'device' %}
-      <h2 class="sx-h" style="margin:0;">On-device TinyML analysis</h2>
-      <div class="sx-crop-by">Three tiny neural networks on the ESP32-S3, computed at scan time with no Wi-Fi</div>
-      {% else %}
-      <h2 class="sx-h" style="margin:0;">TinyML analysis</h2>
-      <div class="sx-crop-by">Three tiny neural networks running on the website, using the same six probe readings</div>
-      {% endif %}
-    </div>
-  </div>
-  <div class="sx-tiny-grid">
-    {% if summary.tiny.top3 %}
-    <div class="sx-tiny-box">
-      <h3>Top crops</h3>
-      {% for c in summary.tiny.top3 %}
-      <div class="sx-top">
-        <span class="sx-top-name">{{ loop.index }}. {{ c.emoji }} {{ c.label }}</span>
-        <span class="sx-top-bar"><i style="width: {{ c.conf or 0 }}%"></i></span>
-        <span class="sx-top-pct">{{ c.conf if c.conf is not none else '-' }}%</span>
-      </div>
-      {% endfor %}
-    </div>
-    {% endif %}
-    {% if summary.tiny.odd is not none %}
-    <div class="sx-tiny-box">
-      <h3>Probe check</h3>
-      {% if summary.tiny.odd %}
-      <p class="sx-probe sx-probe-bad"><b>Odd value.</b> This reading does not look like real soil. Push the probe in fully, wait a few seconds and scan again.</p>
-      {% else %}
-      <p class="sx-probe sx-probe-ok"><b>Looks like real soil.</b> The reading is consistent with normal soil data.</p>
-      {% endif %}
-    </div>
-    {% endif %}
-    {% if summary.tiny.advice is not none %}
-    <div class="sx-tiny-box">
-      <h3>Advisor</h3>
-      {% if summary.tiny.advice %}
-      <div class="sx-chips">{% for a in summary.tiny.advice %}<span class="badge badge-watch">{{ a }}</span>{% endfor %}</div>
-      {% else %}
-      <p class="sx-probe sx-probe-ok"><b>Nothing to fix.</b> No problem flagged.</p>
-      {% endif %}
-    </div>
-    {% endif %}
-  </div>
-  <a href="{{ url_for('tinyml_page') }}" class="btn btn-ghost btn-sm">{{ icon('layers',15) }} See how it works</a>
-  <a href="{{ url_for('ai_assistant') }}?ask={{ 'What is TinyML?'|urlencode }}" class="btn btn-ghost btn-sm">{{ icon('bot',15) }} Ask the assistant</a>
-</section>
-{% endif %}
 
 {# ---------- 2. FILTER BAR ---------- #}
 <div class="sx-toolbar">

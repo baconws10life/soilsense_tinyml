@@ -264,9 +264,6 @@ code{color:var(--green);font-family:'DM Mono',monospace}
       <span class="icon">{{ icon('cpu',18) }}</span> Scanners
       <span class="nav-badge" id="devBadge">{{ devices_in_use }}/{{ devices|length }}</span>
     </a>
-    <a class="nav-item" onclick="switchTab('crops',this)">
-      <span class="icon">{{ icon('sprout',18) }}</span> Crop Config
-    </a>
     <a class="nav-item" onclick="switchTab('bugs',this)">
       <span class="icon">{{ icon('bug',18) }}</span> Bug Reports
       {% if open_bugs %}<span class="nav-badge">{{ open_bugs }}</span>{% endif %}
@@ -289,7 +286,6 @@ code{color:var(--green);font-family:'DM Mono',monospace}
     <a class="nav-link-out" href="{{ url_for('overview') }}">{{ icon('dashboard',18) }} Home</a>
     <a class="nav-link-out" href="{{ url_for('pair') }}">{{ icon('cpu',18) }} Find Device</a>
     <a class="nav-link-out" href="{{ url_for('sensors') }}">{{ icon('activity',18) }} Sensors</a>
-    <a class="nav-link-out" href="{{ url_for('crops') }}">{{ icon('sprout',18) }} Crops</a>
     <a class="nav-link-out" href="{{ url_for('ai_assistant') }}">{{ icon('sparkles',18) }} AI Assistant</a>
     <a class="nav-link-out" href="{{ url_for('learning') }}">{{ icon('book',18) }} Learning</a>
     <a class="nav-link-out" href="{{ url_for('about') }}">{{ icon('info',18) }} About</a>
@@ -336,7 +332,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
 
       <div class="alert-banner">
         <span style="color:var(--amber);display:flex;">{{ icon('alert',18) }}</span>
-        <span><strong>Admin Panel:</strong> Use the sidebar to manage users, readings, and crop data.</span>
+        <span><strong>Admin Panel:</strong> Use the sidebar to manage users, scanners and readings.</span>
         <button class="alert-close" onclick="this.parentElement.remove()">{{ icon('x',16) }}</button>
       </div>
 
@@ -363,9 +359,9 @@ code{color:var(--green);font-family:'DM Mono',monospace}
         </div>
         <div class="stat-card blue">
           
-          <div class="stat-label">Unique Crops</div>
-          <div class="stat-value">{{ chart_labels | length }}</div>
-          <div class="stat-sub">distinct predictions</div>
+          <div class="stat-label">Users With Readings</div>
+          <div class="stat-value">{{ user_counts | length }}</div>
+          <div class="stat-sub">have submitted or scanned</div>
         </div>
         <div class="stat-card red">
           
@@ -378,14 +374,22 @@ code{color:var(--green);font-family:'DM Mono',monospace}
       <div class="two-col">
         <div class="panel">
           <div class="panel-header">
-            <div class="panel-title"> Crop Distribution (All Users)</div>
+            <div class="panel-title"> Readings per User</div>
           </div>
           <div class="panel-body">
-            <div class="chart-area" id="bar-chart">
-              {% if not chart_labels %}
-              <p style="color:var(--muted);font-size:13px;align-self:center;width:100%;text-align:center">No records yet.</p>
-              {% endif %}
+            {% if user_counts %}
+            {% set top = user_counts.most_common(8) %}
+            {% set peak = top[0][1] %}
+            {% for name, n in top %}
+            <div style="display:flex;align-items:center;gap:10px;margin:7px 0;font-size:13px">
+              <span style="width:110px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">{{ name }}</span>
+              <span style="flex:1;height:10px;border-radius:6px;background:var(--border-soft);overflow:hidden"><span style="display:block;height:100%;width:{{ (n / peak * 100)|round|int }}%;background:var(--green);border-radius:6px"></span></span>
+              <b style="width:34px;text-align:right">{{ n }}</b>
             </div>
+            {% endfor %}
+            {% else %}
+            <p style="color:var(--muted);font-size:13px;text-align:center">No records yet.</p>
+            {% endif %}
           </div>
         </div>
 
@@ -397,7 +401,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
             {% for r in records[:8] %}
             <div class="log-item">
               <div class="log-dot green"></div>
-              <div class="log-text"><strong>{{ r['username'] }}</strong> <span style="color:var(--muted);display:inline-flex;vertical-align:middle;">{{ icon('arrow-right',12) }}</span> <em>{{ r['crop'] }}</em></div>
+              <div class="log-text"><strong>{{ r['username'] }}</strong> <span style="color:var(--muted);display:inline-flex;vertical-align:middle;">{{ icon('arrow-right',12) }}</span> <em>N {{ r['N'] }} · P {{ r['P'] }} · K {{ r['K'] }} · pH {{ r['ph'] }}</em></div>
               <div class="log-time">pH {{ r['ph'] }}</div>
             </div>
             {% else %}
@@ -556,64 +560,6 @@ code{color:var(--green);font-family:'DM Mono',monospace}
       </p>
     </div>
 
-    <!-- ══════ CROP CONFIG ══════ -->
-    <div id="tab-crops" class="tab-pane">
-      <div class="two-col">
-
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">{{ icon('sprout',17) }} Crops in Database</div>
-          </div>
-          <div class="panel-body" style="padding:0">
-            <table class="data-table">
-              <thead><tr>
-                <th class="th-l">Crop</th>
-                <th>Records</th>
-                <th>% of Total</th>
-              </tr></thead>
-              <tbody>
-                {% for i in range(chart_labels | length) %}
-                <tr>
-                  <td class="td-l"><strong>{{ chart_labels[i] }}</strong></td>
-                  <td>{{ chart_values[i] }}</td>
-                  <td>
-                    {% if total_records > 0 %}
-                      {{ "%.1f" | format(chart_values[i] / total_records * 100) }}%
-                    {% else %}—{% endif %}
-                  </td>
-                </tr>
-                {% else %}
-                <tr><td class="td-l" colspan="3" style="color:var(--muted);padding:20px">No records yet.</td></tr>
-                {% endfor %}
-              </tbody>
-            </table>
-          </div>
-        </div>
-
-        <div class="panel">
-          <div class="panel-header">
-            <div class="panel-title">{{ icon('file-text',17) }} Supported Crops</div>
-          </div>
-          <div class="panel-body">
-            {% set crops = ['rice','corn','cassava','sweetpotato','mungbean','peanut','sitaw','tomato','eggplant','ampalaya','cabbage','onion','banana','mango','pineapple','papaya','calamansi','coconut','sugarcane','coffee','cacao','abaca'] %}
-            {% for c in crops %}
-            <div class="toggle-row">
-              <span style="display:inline-flex;align-items:center;gap:9px;"><span style="color:var(--green);display:flex;">{{ icon('leaf',16) }}</span> <span class="toggle-label">{{ c | capitalize }}</span></span>
-              <label class="toggle">
-                <input type="checkbox" checked/>
-                <div class="toggle-track"></div>
-                <div class="toggle-thumb"></div>
-              </label>
-            </div>
-            {% endfor %}
-            <p class="note"><span style="color:var(--amber);display:inline-flex;vertical-align:middle;">{{ icon('alert',13) }}</span> To truly remove a crop from predictions, delete its entry in the <code>CROP_INFO</code> dict in <code>app.py</code>.</p>
-          </div>
-        </div>
-
-      </div>
-    </div><!-- /crops -->
-
-
     <!-- ══════ BUG REPORTS ══════ -->
     <div id="tab-bugs" class="tab-pane">
       <div class="panel">
@@ -650,12 +596,11 @@ code{color:var(--green);font-family:'DM Mono',monospace}
         <div class="panel-header">
           <div class="panel-title">{{ icon('clipboard',17) }} All Records ({{ total_records }})</div>
           <div style="display:flex;gap:8px;flex-wrap:wrap;align-items:center">
-            <input class="form-input" id="recSearch" style="width:200px;padding:6px 10px" placeholder="Filter by user, crop…" oninput="filterTable('records-tbody',this.value)"/>
+            <input class="form-input" id="recSearch" style="width:200px;padding:6px 10px" placeholder="Filter by user…" oninput="filterTable('records-tbody',this.value)"/>
             <a class="btn btn-ghost btn-sm" href="{{ url_for('export_records') }}">{{ icon('download',14) }} Export CSV</a>
           </div>
         </div>
-        {% set rt_crops = records|map(attribute='crop')|select|map('lower')|unique|sort|list %}
-        {% with rt_tbody='records-tbody', rt_crops=rt_crops, rt_admin=True %}{% include '_records_tools.html' %}{% endwith %}
+        {% with rt_tbody='records-tbody', rt_admin=True %}{% include '_records_tools.html' %}{% endwith %}
         <div class="panel-body" style="padding:0;overflow-x:auto">
           <table class="data-table cards-sm">
             <thead><tr>
@@ -663,13 +608,13 @@ code{color:var(--green);font-family:'DM Mono',monospace}
               <th class="th-l">#</th>
               <th>User</th>
               <th>Date</th><th>N</th><th>P</th><th>K</th>
-              <th>pH</th><th>Temp</th><th>Humidity</th>
-              <th>Crop</th><th>Health</th>
+              <th>pH</th><th>Temp</th><th>Moisture</th>
+              <th>Health</th>
               <th>Del</th>
             </tr></thead>
             <tbody id="records-tbody">
               {% for r in records %}
-              <tr data-id="{{ r['id'] }}" data-source="{{ r['source'] or 'manual' }}" data-crop="{{ (r['crop'] or '')|lower }}" data-date="{{ (r['created_at'] or '')[:10] }}">
+              <tr data-id="{{ r['id'] }}" data-source="{{ r['source'] or 'manual' }}" data-date="{{ (r['created_at'] or '')[:10] }}">
                 <td class="rt-col" data-label="Select"><input type="checkbox" class="rt-check" aria-label="Select record {{ r['id'] }}"></td>
                 <td class="td-l td-id" data-label="Record" style="color:var(--muted);font-family:'DM Mono',monospace;font-size:11px">#{{ r['id'] }}</td>
                 <td class="td-user" data-label="User">
@@ -681,8 +626,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
                 <td class="td-date" data-label="Date">{{ r['created_at'] or '—' }}</td>
                 <td data-label="N">{{ r['N'] }}</td><td data-label="P">{{ r['P'] }}</td><td data-label="K">{{ r['K'] }}</td>
                 <td data-label="pH">{{ r['ph'] }}</td><td data-label="Temp">{{ r['temp'] }}</td>
-                <td data-label="Humidity">{{ r['humidity'] }}</td>
-                <td class="td-crop" data-label="Crop"><strong>{{ r['crop']|capitalize if r['crop'] else '—' }}</strong></td>
+                <td data-label="Moisture">{{ r['humidity'] }}</td>
                 <td class="td-health" data-label="Health">{{ r['fertility']|round(0,'floor')|int if r['fertility'] else '—' }}</td>
                 <td class="td-del">
                   <form action="/admin/delete_record/{{ r['id'] }}" method="POST"
@@ -724,29 +668,6 @@ code{color:var(--green);font-family:'DM Mono',monospace}
 
           <div class="panel">
             <div class="panel-header">
-              <div class="panel-title"> ML Model Info</div>
-            </div>
-            <div class="panel-body">
-              <div class="form-grid">
-                <div class="form-group">
-                  <label class="form-label">Algorithm</label>
-                  <input class="form-input" value="K-Nearest Neighbors" readonly style="opacity:.6"/>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">K Neighbors</label>
-                  <input class="form-input" value="5" readonly style="opacity:.6"/>
-                </div>
-                <div class="form-group full">
-                  <label class="form-label">Training Dataset</label>
-                  <input class="form-input" value="Crop_recommendation.csv" readonly style="opacity:.6"/>
-                </div>
-              </div>
-              <p class="note">To change the algorithm, edit <code>app.py</code> line: <code>KNeighborsClassifier(n_neighbors=5)</code></p>
-            </div>
-          </div>
-
-          <div class="panel">
-            <div class="panel-header">
               <div class="panel-title">{{ icon('lock',17) }} Security Info</div>
             </div>
             <div class="panel-body">
@@ -757,7 +678,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
                 </div>
                 <div class="form-group full">
                   <label class="form-label">Session Secret Key</label>
-                  <input class="form-input" value="set via the SOILSENSE_SECRET_KEY environment variable" readonly style="opacity:.6"/>
+                  <input class="form-input" value="set via the AGRISENSE_SECRET_KEY environment variable" readonly style="opacity:.6"/>
                 </div>
               </div>
               <p class="note">To disable open registration, remove or restrict the <code>/register</code> route in <code>app.py</code>.</p>
@@ -772,7 +693,7 @@ code{color:var(--green);font-family:'DM Mono',monospace}
             </div>
             <div class="panel-body">
               <p style="font-size:12px;color:var(--muted);margin-bottom:14px">Reference: columns shown in the Soil Analysis history table</p>
-              {% for col in ['Date','N (Nitrogen)','P (Phosphorus)','K (Potassium)','pH Value','Temperature','Humidity','Crop Result','Health','Source'] %}
+              {% for col in ['Date','N (Nitrogen)','P (Phosphorus)','K (Potassium)','pH Value','Temperature','Moisture','Health','Source'] %}
               <div class="toggle-row">
                 <span class="toggle-label">{{ col }}</span>
                 <label class="toggle">
@@ -813,7 +734,7 @@ window.addEventListener('storage',function(e){
 /* ── TAB SWITCHER ── */
 const titles = {
   overview:'Dashboard Overview', users:'User Management', devices:'Scanners',
-  crops:'Crop Configuration',   records:'All Records', bugs:'Bug Reports',
+  records:'All Records', bugs:'Bug Reports',
   settings:'System Settings'
 };
 function switchTab(name, el) {
@@ -850,28 +771,6 @@ admSb.addEventListener('touchend', e => {
   if (dx < -60 && Math.abs(dx) > Math.abs(dy) * 1.5) setAdmNav(false);
   _sx = _sy = null;
 }, { passive: true });
-
-/* ── BAR CHART ── */
-(function() {
-  const labels = {{ chart_labels | tojson }};
-  const values = {{ chart_values | tojson }};
-  if (!labels.length) return;
-  const maxVal = Math.max(...values, 1);
-  const el = document.getElementById('bar-chart');
-  labels.forEach((name, i) => {
-    const h = Math.max(Math.round((values[i] / maxVal) * 150), 4);
-    const wrap = document.createElement('div');
-    wrap.className = 'bar-wrap';
-    wrap.innerHTML = `
-      <div class="bar" style="height:${h}px">
-        <div class="bar-tip">${name}: ${values[i]}</div>
-      </div>
-      <div class="bar-lbl">${name}</div>`;
-    el.appendChild(wrap);
-  });
-})();
-
-
 
 /* ── SCANNERS (admin) ── */
 function loadDevices() {

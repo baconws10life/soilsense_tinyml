@@ -1,7 +1,9 @@
 """
-AgriSense - build the PHILIPPINE crop dataset  (../Crop_recommendation.csv)
+AgriSense - build the PHILIPPINE crop dataset, STEP 1 of 2  (data/Crop_recommendation_agronomic_base.csv)
 
     python data/make_ph_dataset.py
+    python data/localize_to_sta_maria.py     # step 2: calibrate N-P-K to the Sta. Maria soil survey -> ../Crop_recommendation.csv
+    python tinyml/train_tinyml.py            # step 3: retrain TinyML + export agrisense_tinyml.h / .json
 
 Same columns, same size and same units as the original dataset:
     N, P, K (mg/kg-style scale, 0-145 / 5-145 / 5-205), temperature (C), humidity (%), ph, label
@@ -23,7 +25,8 @@ import numpy as np
 import pandas as pd
 
 HERE = os.path.dirname(os.path.abspath(__file__))
-OUT  = os.path.join(HERE, "..", "Crop_recommendation.csv")
+OUT  = os.path.join(HERE, "Crop_recommendation_agronomic_base.csv")   # step 1 of 2: textbook ranges.
+# Step 2 (data/localize_to_sta_maria.py) re-expresses N, P, K on the Sta. Maria soil scale and writes ../Crop_recommendation.csv
 ROWS_PER_CROP = 100
 SEED = 2026
 

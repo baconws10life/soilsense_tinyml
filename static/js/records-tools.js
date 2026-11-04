@@ -9,7 +9,7 @@
     var isAdmin  = root.dataset.admin === '1';
     var q = function (k) { return root.querySelector('[data-rt="' + k + '"]'); };
     var el = {
-      source: q('source'), crop: q('crop'), from: q('from'), to: q('to'),
+      source: q('source'), from: q('from'), to: q('to'),
       reset: q('reset'), info: q('info'), msg: q('msg'),
       delSel: q('del-selected'), delShown: q('del-shown'), clearAll: q('clear-all')
     };
@@ -19,13 +19,12 @@
 
     function rows() { return Array.prototype.slice.call(tbody.querySelectorAll('tr[data-id]')); }
     function shown(r) { return !r.classList.contains('rt-hidden') && r.style.display !== 'none'; }
-    function filterActive() { return !!(el.source.value || el.crop.value || el.from.value || el.to.value); }
+    function filterActive() { return !!(el.source.value || el.from.value || el.to.value); }
 
     function applyFilter() {
-      var s = el.source.value, c = el.crop.value, f = el.from.value, t = el.to.value;
+      var s = el.source.value, f = el.from.value, t = el.to.value;
       rows().forEach(function (r) {
         var ok = (!s || r.dataset.source === s) &&
-                 (!c || r.dataset.crop === c) &&
                  (!f || (r.dataset.date && r.dataset.date >= f)) &&
                  (!t || (r.dataset.date && r.dataset.date <= t));
         r.classList.toggle('rt-hidden', !ok);
@@ -102,12 +101,12 @@
       send({ mode: 'all' }, function (d) { return 'Cleared ' + plural(d) + '.'; });
     });
 
-    ['source', 'crop', 'from', 'to'].forEach(function (k) {
+    ['source', 'from', 'to'].forEach(function (k) {
       el[k].addEventListener('input', applyFilter);
       el[k].addEventListener('change', applyFilter);
     });
     el.reset.addEventListener('click', function () {
-      el.source.value = el.crop.value = el.from.value = el.to.value = '';
+      el.source.value = el.from.value = el.to.value = '';
       applyFilter();
     });
     tbody.addEventListener('change', function (e) { if (e.target.classList.contains('rt-check')) refresh(); });

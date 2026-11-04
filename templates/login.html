@@ -195,8 +195,6 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
             <div class="lg"><img src="{{ url_for('static', filename='images/ffhnas.jpg') }}" alt=""/>AgriSense</div>
             <div class="n"><i></i>Home</div>
             <div class="n"><i></i>Sensors</div>
-            <div class="n"><i></i>Crops</div>
-            <div class="n"><i></i>TinyML</div>
             <div class="n"><i></i>AI Assistant</div>
             <div class="n"><i></i>Learn</div>
           </div>
@@ -205,7 +203,7 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
               <div class="eb">Good morning</div><div class="ttl">Your soil today</div>
               <div class="ov">
                 <div class="ring"><svg viewBox="0 0 100 100"><circle class="trk" cx="50" cy="50" r="42"/><circle class="val" cx="50" cy="50" r="42" stroke-dasharray="216 264"/></svg><b>82<small>/100</small></b></div>
-                <div><div class="gr">Grade A</div><p>Healthy, balanced soil &mdash; ready for most crops.</p>
+                <div><div class="gr">Grade A</div><p>Healthy, balanced soil &mdash; ready for most plants.</p>
                   <div class="mc"><span class="w">2 need attention</span><span class="o">4 optimal</span></div></div>
               </div>
               <div class="c4">
@@ -225,21 +223,6 @@ body { transition: background .25s, color .25s; font-family: 'DM Sans', system-u
                 <div><div class="t">Temperature <b>24.5 &deg;C</b></div><div class="bg"><i style="width:50%"></i></div></div>
                 <div><div class="t">Moisture <b>72 %</b></div><div class="bg"><i style="width:72%"></i></div></div>
               </div>
-            </div>
-            <div class="slide">
-              <div class="eb">Best for your soil</div><div class="ttl">Crop picks</div>
-              <div class="cp"><img src="{{ url_for('static', filename='images/rice.jpg') }}" alt=""/><div class="nm">Rice<small>Cereal &middot; 110&ndash;130 days</small></div><span class="tg">Excellent</span><span class="pc">94%</span></div>
-              <div class="cp"><img src="{{ url_for('static', filename='images/maize.jpg') }}" alt=""/><div class="nm">Maize<small>Cereal &middot; 90&ndash;110 days</small></div><span class="tg">Excellent</span><span class="pc">88%</span></div>
-              <div class="cp"><img src="{{ url_for('static', filename='images/mungbean.jpg') }}" alt=""/><div class="nm">Mung bean<small>Legume &middot; 60&ndash;70 days</small></div><span class="tg">Good</span><span class="pc">81%</span></div>
-            </div>
-            <div class="slide">
-              <div class="eb">On-device model</div><div class="ttl">TinyML</div>
-              <div class="tm">
-                <div><small>Model size</small><b>8 KB</b></div>
-                <div><small>Inference</small><b>&lt; 5 ms</b></div>
-                <div><small>Inputs</small><b>7</b></div>
-              </div>
-              <div class="mt"><div class="t">Top prediction &middot; Rice <b>94%</b></div><div class="bg"><i></i></div></div>
             </div>
             <div class="slide">
               <div class="eb">Soil AI Assistant</div><div class="ttl">Ask anything</div>

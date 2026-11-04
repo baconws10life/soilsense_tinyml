@@ -100,20 +100,14 @@ a, button, input, select, textarea, label, summary, [role="button"] { touch-acti
 
   /* ---- Soil Analysis (dashboard.html) ---------------------------------- */
   .main-grid { grid-template-columns: minmax(0, 1fr); gap: 14px; margin-bottom: 14px; }
-  .mid-col { display: contents !important; }                  /* let chart + fertility reorder with the other panels */
+  .mid-col { display: contents !important; }                  /* let the fertility panel reorder with the form */
   .main-grid > .p-form,
-  .main-grid .p-result,
-  .main-grid .p-fert,
-  .main-grid .p-chart { min-width: 0; }
-  .p-form   { order: 1; }
-  .p-result { order: 2; }
-  .p-fert   { order: 3; }
-  .p-chart  { order: 4; }
+  .main-grid .p-fert { min-width: 0; }
+  .p-form { order: 1; }
+  .p-fert { order: 2; }
   /* after you press Analyze, show the answer first — not 900px of form */
-  .main-grid.has-result .p-result { order: 1; }
-  .main-grid.has-result .p-fert   { order: 2; }
-  .main-grid.has-result .p-form   { order: 3; }
-  .main-grid.has-result .p-chart  { order: 4; }
+  .main-grid.has-result .p-fert { order: 1; }
+  .main-grid.has-result .p-form { order: 2; }
   .panel-header { padding: 12px 16px; }
   .panel-header > span:empty { display: none; }
   .panel-body { padding: 16px; }

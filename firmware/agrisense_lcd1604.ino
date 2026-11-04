@@ -4,7 +4,7 @@
 // No touchscreen. Press SCAN NOW on the website (Dashboard > Find device > Connect first):
 // the scanner reads the probe, sends the reading, and the LCD shows the SAME result the website
 // popup shows: N, P, K, pH, temperature, moisture (each with Optimal / Watch / Low / High),
-// the recommended crop and the soil health score. The result pages repeat RESULT_REPEATS times
+// and the soil health score. The result pages repeat RESULT_REPEATS times
 // so you have time to read them.
 //
 // Also: the board's BOOT button, or typing  tap  in the Serial Monitor, takes a reading.
@@ -26,7 +26,7 @@
 const char* WIFI_SSID     = "akoaypogi";        // 2.4 GHz network only
 const char* WIFI_PASSWORD = "12345678";
 
-const char* SERVER_BASE   = "https://agrisense-amber.vercel.app";
+const char* SERVER_BASE   = "https://soilsense-amber.vercel.app";
 const char* API_KEY       = "";                 // leave "" unless ESP32_API_KEY is set on Vercel
 
 // LCD I2C pins. If nothing is found here the sketch also tries 8/9, 3/6, 1/2 and 41/42.
@@ -38,7 +38,7 @@ const char* API_KEY       = "";                 // leave "" unless ESP32_API_KEY
 const unsigned long HEARTBEAT_MS           = 8000;   // how often we tell the website "I'm here"
 const unsigned long HEARTBEAT_CONNECTED_MS = 3000;   // faster while someone is connected (website button reacts quicker)
 
-#define RESULT_PAGES        3        // NPK page, soil page, crop + health page
+#define RESULT_PAGES        3        // NPK page, soil page, health page
 #define RESULT_PAGE_MS      3500     // how long each page stays on the LCD
 #define RESULT_REPEATS      4        // how many times the pages are shown (3 pages x 3.5 s x 4 = ~42 s)
 
@@ -235,14 +235,12 @@ void lcdRepaintAll() {            // after noise on the wires: rewrite every lin
 
 struct ScanResult {
   bool  have;
-  char  crop[24];
-  int   conf;                 // -1 = not available
   float health;               // soil health 0-100
   char  grade[4];
   char  level[6][10];         // optimal / watch / low / high   for N, P, K, pH, temp, moisture
   float v[6];                 // N, P, K, pH, temp, moisture as measured
 };
-ScanResult res = { false, "", -1, 0, "", { "", "", "", "", "", "" }, { 0, 0, 0, 0, 0, 0 } };
+ScanResult res = { false, 0, "", { "", "", "", "", "", "" }, { 0, 0, 0, 0, 0, 0 } };
 
 bool          resultsActive = false;
 unsigned long resultsStart = 0;
@@ -309,19 +307,12 @@ void drawResultPage(int page) {
     else                    snprintf(val, sizeof(val), "%.1f%%", res.v[5]);
     rowFmt(l[3], 24, "Moist", val, res.level[5]);
   }
-  else {                                             // crop + health
-    snprintf(l[0], 24, "-- BEST CROP --");
-
-    char name[24];
-    snprintf(name, sizeof(name), "%.16s", res.crop[0] ? res.crop : "-");
-    for (char* p = name; *p; p++) if (*p >= 'a' && *p <= 'z') *p -= 32;
-    int pad = (LCD_COLS - (int)strlen(name)) / 2;
-    if (pad < 0) pad = 0;
-    memset(l[1], ' ', pad);
-    snprintf(l[1] + pad, 24 - pad, "%s", name);
-
-    if (res.conf >= 0) snprintf(l[2], 24, "Match: %d%%", res.conf);
-    if (res.health >= 0) snprintf(l[3], 24, "Health %d/100 %s", (int)(res.health + 0.5f), res.grade);
+  else {                                             // soil health
+    snprintf(l[0], 24, "- SOIL HEALTH -");
+    if (res.health >= 0) {
+      snprintf(l[1], 24, "Score: %d/100", (int)(res.health + 0.5f));
+      snprintf(l[2], 24, "Grade: %s", res.grade);
+    }
   }
 
   lcdShow(l[0], l[1], l[2], l[3]);
@@ -523,6 +514,19 @@ void loadOrCreateToken() {
   prefs.begin("agrisense", false);
 
   deviceToken = prefs.getString("token", "");
+
+  if (deviceToken.length() != 32) {
+    // Scanner was flashed with the old SoilSense sketch: keep its identity instead of registering as a new device.
+    Preferences old;
+    old.begin("soilsense", true);
+    String oldToken = old.getString("token", "");
+    old.end();
+    if (oldToken.length() == 32) {
+      deviceToken = oldToken;
+      prefs.putString("token", deviceToken);
+      Serial.println("[ID] Kept the device secret from the old SoilSense sketch");
+    }
+  }
 
   if (deviceToken.length() != 32) {
     char buf[33];
@@ -777,13 +781,8 @@ int sendReading(String &reply) {
 void parseResult(const String &reply) {
   res.have = false;
 
-  String crop = jsonGet(reply, "crop");
-  if (crop.length() == 0) return;                // e.g. a re-sent scan: the website answered without details
-
-  snprintf(res.crop, sizeof(res.crop), "%s", crop.c_str());
-
-  String conf = jsonGet(reply, "crop_conf");
-  res.conf = (conf.length() && conf != "null") ? (int)(conf.toFloat() + 0.5f) : -1;
+  String hs0 = jsonGet(reply, "fertility_score");
+  if (hs0.length() == 0) return;                 // e.g. a re-sent scan: the website answered without details
 
   String hs = jsonGet(reply, "fertility_score");
   res.health = hs.length() ? hs.toFloat() : -1;

@@ -1,325 +1,448 @@
-#include <SPI.h>
+// ============================================================
+// AGRISENSE SCANNER  -  ESP32-S3 + 20x4 I2C LCD (HD44780 + PCF8574 backpack) + RS485 soil probe
+//
+// No touchscreen, no buttons. Everything is done from the website:
+//   1. The scanner joins Wi-Fi and checks in with the website every few seconds, so the website
+//      FINDS it:  Dashboard > Find device > Connect.
+//   2. Press SCAN NOW on the website. The scanner reads the probe and sends the reading.
+//   3. The website saves it and answers with the SAME numbers the website popup shows (levels for
+//      N, P, K, pH, temperature, moisture, the soil health score and grade).
+//      The LCD shows exactly that answer, so the LCD and the website always agree.
+//   The result stays on the LCD for 1 minute (RESULT_SHOW_MS), then the LCD goes back to "Scan now".
+//
+// OFFLINE MODE (no Wi-Fi needed):
+//   If Wi-Fi is not connected for OFFLINE_WIFI_WAIT_MS the scanner switches to offline mode by itself.
+//   You then have OFFLINE_WINDOW_MS (1 minute) to push the probe into the soil; if you don't, offline mode
+//   times out ("OFFLINE TIMEOUT"). Press the board's BOOT button to start the 1-minute window again.
+//   It keeps reading the probe. While N, P, K and moisture all read 0 the probe is NOT in soil.
+//   The moment any of them becomes non-zero the probe is in the soil: the sketch waits OFFLINE_SETTLE_MS
+//   for the numbers to settle, reads again, and works everything out ON the ESP32 (levels and the soil health
+//   score) and shows the result on the LCD (see below).
+//   Pull the probe out of the soil to scan the next spot.
+//
+// RESULT SCREEN (online and offline): full names, 2 readings per page, pages change every RESULT_PAGE_MS.
+//   The whole result stays on the LCD for 1 minute, then the LCD goes back to "Scan now".
+//   Page 1: Nitrogen (N)      Page 2: Potassium (K)     Page 3: pH            Page 4: Soil Health Score
+//           Phosphorus (P)            Temperature               Moisture
+//   Offline mode switches itself off as soon as Wi-Fi connects. Offline results are NOT saved to the website.
+//
+// Serial Monitor is output only: it prints what happens.
+//
+// PINS (ESP32-S3)
+//   LCD  SDA -> GPIO 8     LCD  SCL -> GPIO 9    LCD VCC -> 5V, GND -> GND
+//   RS485 module RO -> GPIO 16 (ESP RX)   DI -> GPIO 17 (ESP TX)   DE+RE (tied together) -> GPIO 4
+//   RS485 module VCC/GND -> 3V3/GND   A/B -> probe A/B   probe power wires -> 12-24 V supply (common GND)
+//
+// LCD wiring (4 wires):  GND -> GND,  VCC -> 5V (most backpacks) or 3V3,  SDA -> LCD_SDA,  SCL -> LCD_SCL.
+// No LCD library needed: the sketch drives the backpack itself, and finds its I2C address (0x27, 0x3F...).
+// If the LCD lights up but shows only blocks or nothing, turn the small blue contrast screw on the backpack.
+// ============================================================
+
 #include <Wire.h>
-#include <Adafruit_GFX.h>
-#include <Adafruit_ILI9341.h>
 #include <WiFi.h>
 #include <WiFiClientSecure.h>
 #include <HTTPClient.h>
 #include <esp_system.h>
 #include <Preferences.h>
 
-// ============================================================
-// AGRISENSE SCANNER  -  ESP32-S3 + ILI9341 + FT6336 + RS485 7-IN-1 SOIL SENSOR
-//
-// THE WHOLE SCREEN IS ONE BUTTON:  "SCAN NOW".
-//
-//  * The scanner joins Wi-Fi and "checks in" with the website every few seconds.
-//    That is how the website FINDS it: Dashboard > Find device > Connect.
-//    No codes, nothing to type on the device.
-//  * Only ONE person can be connected at a time. The website refuses a second
-//    person while the scanner is in use. The person (or an admin) disconnects
-//    from the website to free it.
-//  * Touch anywhere = take one reading and send it to whoever is connected.
-//    If nobody is connected the screen says so instead of sending.
-//  * WEBSITE "SCAN NOW" BUTTON: the person connected on the website can also press
-//    Scan now there. The scanner hears about it on its next check-in (every
-//    HEARTBEAT_CONNECTED_MS while someone is connected) and does exactly what a touch does.
-//  * SERIAL MONITOR TAP: with the LCD/touch broken (or just for testing) open the Serial
-//    Monitor at 115200 baud and send  tap  (or  t  /  scan  /  s)  - it does exactly what
-//    touching the screen does. Type  help  for the list. Everything the screen would show
-//    is also printed as a  [SCREEN] ...  line.
-//
-// Screen colours:
-//   green        connected, ready          grey   not connected yet
-//   blue         scanning / sending        amber  needs your attention
-//   red          error (no sensor, no Wi-Fi, server)
-// ============================================================
-
-
 // ---- EDIT THESE ------------------------------------------------------------
 
 const char* WIFI_SSID     = "akoaypogi";        // 2.4 GHz network only
 const char* WIFI_PASSWORD = "12345678";
 
-// Your website's address (must start with https://)
-const char* SERVER_BASE   = "https://agrisense-amber.vercel.app";
+const char* SERVER_BASE   = "https://soilsense-amber.vercel.app";
+const char* API_KEY       = "";                 // leave "" unless ESP32_API_KEY is set on Vercel
 
-// Leave "" unless you set ESP32_API_KEY on Vercel (then use the same value)
-const char* API_KEY       = "";
+// LCD I2C pins. If nothing is found here the sketch also tries 8/9, 3/6, 1/2 and 41/42.
+#define LCD_SDA   3
+#define LCD_SCL   9
 
 // ---- OPTIONAL TUNING -------------------------------------------------------
 
-const unsigned long HEARTBEAT_MS = 8000;   // how often we tell the website "I'm here"
-                                           // (website treats us as offline after 25 s)
-const unsigned long HEARTBEAT_CONNECTED_MS = 3000;  // check in faster while somebody is connected, so the
-                                           // website's Scan now button reacts quickly. Raise it if
-                                           // the touch screen feels sluggish
-#define SHOW_DEVICE_ID 1                   // tiny "ID A1B2" in the corner so you can tell
-                                           // scanners apart on the website. 0 = hide
-const unsigned long LCD_BLIND_REFRESH_MS = 60000;  // see "LCD" notes below. 0 = off
-const uint32_t      TFT_SPI_HZ  = 10000000;        // slower SPI = fewer glitches on jumper wires
-const wifi_power_t  WIFI_TX_POWER = WIFI_POWER_11dBm;  // smaller current bursts. Raise to
-                                                       // WIFI_POWER_15dBm only if Wi-Fi won't connect
+const unsigned long HEARTBEAT_MS           = 8000;   // how often we tell the website "I'm here"
+const unsigned long HEARTBEAT_CONNECTED_MS = 3000;   // faster while someone is connected (website button reacts quicker)
 
-#define FW_VERSION "2.3"
+#define RESULT_SHOW_MS      60000    // the result stays on the LCD this long (1 minute), then the screen goes back to "Scan now"
+#define RESULT_PAGES        4        // Nitrogen+Phosphorus, Potassium+Temperature, pH+Moisture, Soil Health Score
+#define RESULT_PAGE_MS      3500     // how long each result page stays on the LCD
 
-// ============================================================
-// PINS
-// ============================================================
-// TFT:   CS 10, RST 9, DC 8, MOSI 11, SCK 12, MISO 13, LED 7
-// TOUCH: SDA 3, SCL 6, RST 5, INT 2
-// RS485: RX 16, TX 17, DE/RE 4
+// ---- OFFLINE MODE ----
+#define OFFLINE_ENABLED     1
+const unsigned long OFFLINE_WIFI_WAIT_MS = 15000;   // Wi-Fi missing this long -> switch to offline mode
+const unsigned long OFFLINE_WINDOW_MS    = 60000;   // 1 minute to push the probe into the soil, then offline mode times out
+const unsigned long OFFLINE_SETTLE_MS    = 3000;    // soil first seen -> wait this long, then take the real reading
+const unsigned long OFFLINE_POLL_MS      = 700;     // how often the probe is checked while waiting
 
-#define RX2_PIN    16
+#define USE_BOOT_BUTTON     1        // 1 = the board's BOOT button (GPIO0) restarts the 1-minute offline window
+#define BOOT_BUTTON_PIN     0
+#define SHOW_DEVICE_ID      1
+
+#define FW_VERSION "3.6"
+
+const wifi_power_t WIFI_TX_POWER = WIFI_POWER_11dBm;   // gentler Wi-Fi power bursts (raise to WIFI_POWER_15dBm only if Wi-Fi will not connect)
+
+// ---- PINS --------------------------------------------------------------------
+// RS485 probe: RX 16, TX 17, DE/RE 4   (if your probe is wired to GPIO 15, change RX2_PIN to 15)
+#define RX2_PIN    15
+
 #define TX2_PIN    17
 #define RE_DE_PIN  4
 
-#define TFT_CS     10
-#define TFT_RST    9
-#define TFT_DC     8
-#define TFT_MOSI   11
-#define TFT_SCK    12
-#define TFT_MISO   13
-#define TFT_LED    7
-
-#define CTP_SDA    3
-#define CTP_SCL    6
-#define CTP_RST    5
-#define CTP_INT    2
-#define FT6336_ADDR 0x38
-
-#define SCREEN_W 320
-#define SCREEN_H 240
-
-Adafruit_ILI9341 tft(TFT_CS, TFT_DC, TFT_RST);
-
+#define LCD_COLS   20
+#define LCD_ROWS   4
 
 // ============================================================
-// COLOURS  (RGB565)
+// SENSOR DATA
 // ============================================================
 
-#define C565(r, g, b) ((uint16_t)((((r) & 0xF8) << 8) | (((g) & 0xFC) << 3) | ((b) >> 3)))
+float soilMoisture = 0;          // soil moisture %
+float soilTemperature = 0;
+float soilPH = 0;
 
-const uint16_t COL_WHITE     = C565(255, 255, 255);
-const uint16_t BG_READY      = C565( 24, 140,  72);   // connected, ready
-const uint16_t BG_NOCONN     = C565( 62,  72,  66);   // not connected yet
-const uint16_t BG_BUSY       = C565( 30,  90, 170);   // scanning / sending
-const uint16_t BG_OK         = C565( 18, 168,  88);   // sent
-const uint16_t BG_WARN       = C565(196, 118,  18);   // needs attention
-const uint16_t BG_ERROR      = C565(176,  44,  44);   // error
+uint16_t soilConductivity = 0;
+uint16_t nitrogen = 0;
+uint16_t phosphorus = 0;
+uint16_t potassium = 0;
 
+bool sensorOK = false;
+byte response[32];
+
+const byte query[] = {
+  0x01, 0x03, 0x00, 0x00,
+  0x00, 0x07, 0x04, 0x08
+};
 
 // ============================================================
 // STATE
 // ============================================================
 
-float    soilHumidity = 0, soilTemperature = 0, soilPH = 0;
-uint16_t soilConductivity = 0, nitrogen = 0, phosphorus = 0, potassium = 0;
-bool     sensorOK = false;
-byte     response[32];
+int  connState = -1;          // -1 unknown, 0 nobody connected, 1 somebody connected
+bool serverOK = true;
 
-const byte query[] = { 0x01, 0x03, 0x00, 0x00, 0x00, 0x07, 0x04, 0x08 };
-
-// What the website last told us about this scanner
-//   -1 = unknown yet, 0 = nobody connected, 1 = somebody is connected
-int  connState   = -1;
-bool serverOK    = true;           // did the last website call work?
-String sensorState = "unknown";    // "ok" | "fail" | "unknown"  (reported to the website)
-
+String sensorState = "unknown";
 String deviceToken = "";
-char   deviceTag[8] = "----";      // short ID shown in the corner and on the website
+char deviceTag[8] = "----";
 
-// Screen
-enum UiMode { UI_IDLE, UI_SCANNING, UI_SENDING, UI_SENT, UI_NOT_CONNECTED, UI_NO_SENSOR, UI_NO_WIFI, UI_FAILED, UI_BAD_KEY };
-UiMode        uiMode      = UI_IDLE;
-unsigned long uiResetAt   = 0;     // when a temporary message goes back to the idle button
-String        uiKey       = "";    // what is drawn now, so we only redraw on change
-
-// Timers / touch
 unsigned long lastHeartbeat = 0;
 unsigned long lastWifiRetry = 0;
-unsigned long lastBlindRefresh = 0;
-bool          wifiWasUp = false;
-bool          previousTouch = false;
+bool wifiWasUp = false;
+
+bool webScan = false;         // website "Scan now" arrived with a check-in
+
+// offline mode state
+enum OffState : uint8_t { OFF_NONE, OFF_WAIT, OFF_SETTLE, OFF_REMOVE };
+OffState      offState = OFF_NONE;       // NONE = online behaviour
+bool          offDeclined = false;       // the 1-minute window ran out
+unsigned long offDeadline = 0, offSettleStart = 0, offNextPoll = 0, wifiDownSince = 0;
 unsigned long lastTapMs = 0;
-int           touchX = 0, touchY = 0;
+int           offPolls = 0;
+bool          sensorQuiet = false;       // true = readSensor() prints nothing (used while polling)
 
-// A tap that happens while we are busy talking to the website would be missed
-// (the screen is not polled during a network call). The touch chip's INT pin
-// tells us it happened.
-#define USE_TOUCH_INT 1
-volatile bool inNetwork = false;
-volatile bool tapDuringNetwork = false;
-void IRAM_ATTR onTouchInt() { if (inNetwork) tapDuringNetwork = true; }
-
-bool webScan  = false;       // set when the website's Scan now button was pressed (arrives with a check-in)
-bool serialTap = false;       // set by the Serial Monitor "tap" command, handled like a touch
+volatile bool inNetwork = false;   // (kept so the HTTP helper below is unchanged)
 
 void redrawUi();
 
 
 // ============================================================
-// DRAWING  -  one big button
+// 20x4 I2C LCD  (HD44780 controller behind a PCF8574 "backpack")  -  tiny built-in driver
+// Backpack bits: P0=RS  P1=RW  P2=EN  P3=backlight  P4..P7 = D4..D7
 // ============================================================
 
-void printCentered(int16_t cx, int16_t y, const String &text, uint8_t size, uint16_t color) {
+int     lcdAddr = 0;
+bool    lcdOK = false;
+uint8_t lcdBL = 0x08;                          // backlight on
+char    lcdShadow[LCD_ROWS][LCD_COLS + 1];     // what is on the glass now: only changed lines are rewritten
 
-  tft.setTextSize(size);
-
-  int16_t x1, y1;
-  uint16_t w, h;
-
-  tft.getTextBounds(text.c_str(), 0, 0, &x1, &y1, &w, &h);
-
-  tft.setTextColor(color);
-  tft.setCursor(cx - (int)w / 2, y);
-  tft.print(text);
+void lcdExp(uint8_t v) {
+  Wire.beginTransmission(lcdAddr);
+  Wire.write(v | lcdBL);
+  Wire.endTransmission();
 }
 
-
-// Split `s` into at most two lines of at most `maxChars` characters
-void wrap2(const String &s, int maxChars, String &a, String &b) {
-
-  if ((int)s.length() <= maxChars) { a = s; b = ""; return; }
-
-  int cut = s.lastIndexOf(' ', maxChars);
-
-  if (cut <= 0) cut = maxChars;
-
-  a = s.substring(0, cut);
-  b = s.substring(cut + 1);
-
-  if ((int)b.length() > maxChars) b = b.substring(0, maxChars);
+void lcdSend4(uint8_t hiNibble, uint8_t rs) {
+  uint8_t v = (hiNibble & 0xF0) | rs;
+  lcdExp(v | 0x04);                            // EN high
+  delayMicroseconds(2);
+  lcdExp(v & ~0x04);                           // EN low -> latch
+  delayMicroseconds(60);
 }
 
-
-void drawButton(uint16_t bg, const String &big, const String &small) {
-
-  String key = String(bg) + "|" + big + "|" + small;
-
-  if (key == uiKey) return;            // nothing changed -> no SPI traffic
-
-  uiKey = key;
-
-  // mirror the screen to the Serial Monitor (useful when the LCD is broken)
-  static String lastShown = "";
-  String shown = big + " - " + small;
-
-  if (shown != lastShown) {            // a repaint of the same text stays quiet
-    lastShown = shown;
-    Serial.print("[SCREEN] ");
-    Serial.print(big);
-    if (small.length() > 0) { Serial.print(" - "); Serial.print(small); }
-    Serial.println();
-  }
-
-  tft.fillScreen(bg);
-
-  // a lighter frame makes it read as one big button
-  tft.drawRoundRect(6, 6, SCREEN_W - 12, SCREEN_H - 12, 18, COL_WHITE);
-  tft.drawRoundRect(7, 7, SCREEN_W - 14, SCREEN_H - 14, 17, COL_WHITE);
-
-  int bigSize = (big.length() <= 8) ? 5 : (big.length() <= 11 ? 4 : 3);
-
-  int bigH   = 8 * bigSize;
-  int bigY   = (small.length() > 0) ? 78 : (SCREEN_H - bigH) / 2;
-
-  printCentered(SCREEN_W / 2, bigY, big, bigSize, COL_WHITE);
-
-  if (small.length() > 0) {
-
-    String l1, l2;
-
-    wrap2(small, 22, l1, l2);
-
-    printCentered(SCREEN_W / 2, 150, l1, 2, COL_WHITE);
-
-    if (l2.length() > 0) printCentered(SCREEN_W / 2, 172, l2, 2, COL_WHITE);
-  }
-
-#if SHOW_DEVICE_ID
-  tft.setTextSize(1);
-  tft.setTextColor(COL_WHITE);
-  tft.setCursor(SCREEN_W - 60, SCREEN_H - 22);
-  tft.print("ID ");
-  tft.print(deviceTag);
-#endif
+void lcdSend(uint8_t value, uint8_t rs) {
+  lcdSend4(value & 0xF0, rs);
+  lcdSend4((uint8_t)(value << 4), rs);
 }
 
-
-// The idle button: its colour + small line tell you the connection state
-void drawIdle() {
-
-  bool wifiUp = (WiFi.status() == WL_CONNECTED);
-
-  if (!wifiUp) {
-    drawButton(BG_NOCONN, "SCAN NOW", "Connecting to Wi-Fi...");
-  }
-  else if (!serverOK) {
-    drawButton(BG_WARN, "SCAN NOW", "Can't reach the website");
-  }
-  else if (connState == 1) {
-    drawButton(BG_READY, "SCAN NOW", "Connected - tap to scan");
-  }
-  else if (connState == 0) {
-    drawButton(BG_NOCONN, "SCAN NOW", "Not connected. Use the website.");
-  }
-  else {
-    drawButton(BG_NOCONN, "SCAN NOW", "Tap to scan");
-  }
+void lcdCmd(uint8_t c) {
+  lcdSend(c, 0);
+  if (c == 0x01 || c == 0x02) delay(3);        // clear / home are slow
 }
 
+void lcdSetCursor(uint8_t col, uint8_t row) {
+  // 16x4 modules: lines start at 0x00, 0x40, 0x10, 0x50 (20x4: 0x00, 0x40, 0x14, 0x54) = 0x00/0x40 + COLS
+  static const uint8_t rowOff[4] = { 0x00, 0x40, (uint8_t)(0x00 + LCD_COLS), (uint8_t)(0x40 + LCD_COLS) };
+  lcdCmd(0x80 | (rowOff[row & 3] + col));
+}
 
-void redrawUi() {
+int lcdFindAddress() {
+  for (int a = 0x20; a <= 0x3F; a++) {
+    if (a > 0x27 && a < 0x38) continue;          // PCF8574 = 0x20-0x27, PCF8574A = 0x38-0x3F
+    Wire.beginTransmission(a);
+    if (Wire.endTransmission() == 0) return a;
+  }
+  return 0;
+}
 
-  uiKey = "";      // force a real redraw
+void lcdInitChip() {
+  delay(60);
+  lcdSend4(0x30, 0); delay(5);
+  lcdSend4(0x30, 0); delay(5);
+  lcdSend4(0x30, 0); delay(1);
+  lcdSend4(0x20, 0); delay(1);                   // switch to 4-bit mode
+  lcdCmd(0x28);                                  // 4-bit, 2-line mode (also drives 4-line panels), 5x8 font
+  lcdCmd(0x0C);                                  // display on, no cursor
+  lcdCmd(0x06);                                  // cursor moves right
+  lcdCmd(0x01);                                  // clear
+  memset(lcdShadow, 0, sizeof(lcdShadow));
+}
 
-  switch (uiMode) {
+bool lcdBegin() {
+  const int8_t tries[][2] = { { LCD_SDA, LCD_SCL }, { 8, 9 }, { 3, 6 }, { 1, 2 }, { 41, 42 } };
 
-    case UI_SCANNING:       drawButton(BG_BUSY,  "SCANNING", "Keep the probe in the soil"); break;
-    case UI_SENDING:        drawButton(BG_BUSY,  "SENDING",  "Please wait..."); break;
-    case UI_SENT:           drawButton(BG_OK,    "SENT",     "Look at the website"); break;
-    case UI_NOT_CONNECTED:  drawButton(BG_WARN,  "NOT CONNECTED", "Website > Find Device > Connect"); break;
-    case UI_NO_SENSOR:      drawButton(BG_ERROR, "NO SENSOR", "Check the probe cable"); break;
-    case UI_NO_WIFI:        drawButton(BG_ERROR, "NO WI-FI", "Check the network"); break;
-    case UI_FAILED:         drawButton(BG_ERROR, "SEND FAILED", "Tap to try again"); break;
-    case UI_BAD_KEY:        drawButton(BG_ERROR, "BAD API KEY", "Check API_KEY in the sketch"); break;
-    default:                drawIdle(); break;
+  for (unsigned i = 0; i < sizeof(tries) / sizeof(tries[0]); i++) {
+    int sda = tries[i][0], scl = tries[i][1];
+
+    bool dup = false;
+    for (unsigned j = 0; j < i; j++) if (tries[j][0] == sda && tries[j][1] == scl) dup = true;
+    if (dup) continue;
+
+    Wire.end();
+    Wire.begin(sda, scl);
+    Wire.setClock(100000);
+
+    int a = lcdFindAddress();
+    if (a) {
+      lcdAddr = a;
+      lcdInitChip();
+      lcdOK = true;
+      Serial.printf("[LCD] found at I2C address 0x%02X on SDA=%d SCL=%d\n", a, sda, scl);
+      return true;
+    }
+  }
+
+  lcdOK = false;
+  Serial.println("[LCD] NOT FOUND. Check the 4 wires (GND, VCC, SDA, SCL) and LCD_SDA / LCD_SCL at the top of the sketch.");
+  return false;
+}
+
+// Show 4 lines of up to 20 characters. Only lines that changed are rewritten (no flicker).
+void lcdShow(const char* l0, const char* l1, const char* l2, const char* l3) {
+  const char* in[LCD_ROWS] = { l0, l1, l2, l3 };
+  bool changed = false;
+
+  for (int r = 0; r < LCD_ROWS; r++) {
+    char line[LCD_COLS + 1];
+    int n = in[r] ? (int)strlen(in[r]) : 0;
+    for (int c = 0; c < LCD_COLS; c++) line[c] = (c < n) ? in[r][c] : ' ';
+    line[LCD_COLS] = 0;
+
+    if (memcmp(line, lcdShadow[r], LCD_COLS + 1) != 0) {
+      changed = true;
+      memcpy(lcdShadow[r], line, LCD_COLS + 1);
+      if (lcdOK) {
+        lcdSetCursor(0, r);
+        for (int c = 0; c < LCD_COLS; c++) lcdSend((uint8_t)line[c], 1);
+      }
+    }
+  }
+
+  if (changed) {      // mirror to the Serial Monitor
+    Serial.printf("[LCD] |%s|%s|%s|%s|\n", lcdShadow[0], lcdShadow[1], lcdShadow[2], lcdShadow[3]);
   }
 }
 
-
-// Show a temporary message, then fall back to the idle button
-void showFor(UiMode m, unsigned long ms) {
-
-  uiMode    = m;
-  uiResetAt = (ms > 0) ? millis() + ms : 0;
-
+void lcdRepaintAll() {            // after noise on the wires: rewrite every line without clearing
+  memset(lcdShadow, 0, sizeof(lcdShadow));
   redrawUi();
 }
 
+// ============================================================
+// WHAT THE LCD SHOWS
+// ============================================================
 
-void uiTick() {
+struct ScanResult {
+  bool  have;
+  float health;               // soil health 0-100
+  char  grade[4];
+  char  level[6][10];         // optimal / watch / low / high   for N, P, K, pH, temp, moisture
+  float v[6];                 // N, P, K, pH, temp, moisture as measured
+};
+ScanResult res = { false, 0, "", { "", "", "", "", "", "" }, { 0, 0, 0, 0, 0, 0 } };
 
-  if (uiResetAt != 0 && millis() > uiResetAt) {
+bool          resultsActive = false;
+unsigned long resultsStart = 0;
 
-    uiResetAt = 0;
-    uiMode    = UI_IDLE;
-  }
+unsigned long msgUntil = 0;                // a temporary message is on screen until this time
+char          msgLine[4][24];
 
-  if (uiMode == UI_IDLE) redrawUi();     // cheap: draws only if the text/colour changed
+const char* statusWord(const char* lvl) {  // same meaning as the website popup (Optimal / Watch / Low / High), shortened to fit
+  if (!strcmp(lvl, "optimal")) return "OK";
+  if (!strcmp(lvl, "watch"))   return "MON";      // "Monitor" (the website popup says Watch)
+  if (!strcmp(lvl, "low"))     return "LOW";
+  if (!strcmp(lvl, "high"))    return "HIGH";
+  return "";
 }
 
+void showMsg(const char* a, const char* b = "", const char* c = "", const char* d = "", unsigned long ms = 0) {
+  resultsActive = false;
+  snprintf(msgLine[0], sizeof(msgLine[0]), "%s", a);
+  snprintf(msgLine[1], sizeof(msgLine[1]), "%s", b);
+  snprintf(msgLine[2], sizeof(msgLine[2]), "%s", c);
+  snprintf(msgLine[3], sizeof(msgLine[3]), "%s", d);
+  msgUntil = ms ? millis() + ms : 0xFFFFFFFFUL;      // 0 = stay until something else is shown
+  lcdShow(msgLine[0], msgLine[1], msgLine[2], msgLine[3]);
+}
+
+void headerLine(char* out, size_t n) {
+#if SHOW_DEVICE_ID
+  snprintf(out, n, "AgriSense   %s", deviceTag);
+#else
+  snprintf(out, n, "AgriSense");
+#endif
+}
+
+#if OFFLINE_ENABLED
+void drawOffline() {
+  const char* probeLine = (offPolls > 0 && !sensorOK) ? "Check RS485 wire" : "Push probe in soil";
+
+  if (offState == OFF_WAIT) {
+    long left = ((long)(offDeadline - millis()) + 999) / 1000;
+    if (left < 0) left = 0;
+    char l3[24];
+    snprintf(l3, sizeof(l3), "Time left: %lds", left);
+    lcdShow("OFFLINE MODE", "No Wi-Fi", probeLine, l3);
+  }
+  else if (offState == OFF_SETTLE) lcdShow("SOIL DETECTED", "Hold the probe", "still...", "");
+  else                             lcdShow("OFFLINE MODE", "Scan done.", "Remove probe", "to scan again");
+}
+#endif
+
+void drawIdle() {
+  char head[24];
+  headerLine(head, sizeof(head));
+
+#if OFFLINE_ENABLED
+  if (offState != OFF_NONE) { drawOffline(); return; }
+  if (offDeclined && WiFi.status() != WL_CONNECTED) { lcdShow(head, "Wi-Fi not found", "Press BOOT for", "offline mode"); return; }
+#endif
+
+  if (WiFi.status() != WL_CONNECTED)  lcdShow(head, "Connecting to", "Wi-Fi...", WIFI_SSID);
+  else if (!serverOK)                 lcdShow(head, "Can't reach the", "website.", "Retrying...");
+  else if (connState == 1)            lcdShow(head, "CONNECTED", "Press SCAN NOW", "on the website");
+  else if (connState == 0)            lcdShow(head, "NOT CONNECTED", "Website: Find", "Device > Connect");
+  else                                lcdShow(head, "Starting...", "", "");
+}
+
+// Result screen (20x4). Full names, 2 readings per page (name on one line, value on the next):
+//   Nitrogen (N)        Potassium (K)       pH                  Soil Health Score
+//     120 mg/kg           90 mg/kg            6.5                 83 / 100
+//   Phosphorus (P)      Temperature         Moisture              Grade B
+//     60 mg/kg            25.5 C              60.0 %
+void putReading(char l[4][24], int row, const char* name, const char* value) {
+  snprintf(l[row],     24, "%s", name);
+  snprintf(l[row + 1], 24, "  %s", value);
+}
+
+void drawResultPage() {
+  char l[4][24] = { "", "", "", "" };
+  char v[16];
+  int page = (int)(((millis() - resultsStart) / RESULT_PAGE_MS) % RESULT_PAGES);
+
+  if (page == 0) {
+    snprintf(v, sizeof(v), "%.0f mg/kg", res.v[0]); putReading(l, 0, "Nitrogen (N)", v);
+    snprintf(v, sizeof(v), "%.0f mg/kg", res.v[1]); putReading(l, 2, "Phosphorus (P)", v);
+  }
+  else if (page == 1) {
+    snprintf(v, sizeof(v), "%.0f mg/kg", res.v[2]); putReading(l, 0, "Potassium (K)", v);
+    snprintf(v, sizeof(v), "%.1f C", res.v[4]);     putReading(l, 2, "Temperature", v);
+  }
+  else if (page == 2) {
+    snprintf(v, sizeof(v), "%.1f", res.v[3]);       putReading(l, 0, "pH", v);
+    if (res.v[5] >= 99.95f) snprintf(v, sizeof(v), "%.0f %%", res.v[5]);
+    else                    snprintf(v, sizeof(v), "%.1f %%", res.v[5]);
+    putReading(l, 2, "Moisture", v);
+  }
+  else {
+    snprintf(l[0], 24, "Soil Health Score");
+    if (res.health >= 0) {
+      snprintf(l[1], 24, "  %d / 100", (int)(res.health + 0.5f));
+      if (res.grade[0]) snprintf(l[2], 24, "  Grade %s", res.grade);
+    }
+  }
+
+  lcdShow(l[0], l[1], l[2], l[3]);
+}
+
+void startResults() {
+  resultsActive = true;
+  msgUntil = 0;
+  resultsStart = millis();
+}
+
+void redrawUi() {
+  if (resultsActive) {
+    drawResultPage();
+  }
+  else if (msgUntil != 0) lcdShow(msgLine[0], msgLine[1], msgLine[2], msgLine[3]);
+  else                    drawIdle();
+}
+
+void uiTick() {
+  static unsigned long lastRepaint = 0;
+
+  if (resultsActive) {
+    if (millis() - resultsStart >= RESULT_SHOW_MS) {               // 1 minute is over: back to the "Scan now" screen
+      resultsActive = false;
+      lastRepaint = millis();
+      return;
+    }
+
+    drawResultPage();
+    return;
+  }
+
+  if (msgUntil != 0 && msgUntil != 0xFFFFFFFFUL && millis() > msgUntil) msgUntil = 0;
+
+  if (msgUntil == 0) drawIdle();                         // only writes lines that changed
+
+  if (millis() - lastRepaint > 20000) {                  // heal any glitch from electrical noise
+    lastRepaint = millis();
+    lcdRepaintAll();
+  }
+}
 
 // ============================================================
 // RS485 / NPK SENSOR
 // ============================================================
 
+// Modbus RTU CRC-16 (polynomial 0xA001; transmitted low byte first).
+uint16_t modbusCRC16(const uint8_t* data, size_t len) {
+  uint16_t crc = 0xFFFF;
+  for (size_t i = 0; i < len; i++) {
+    crc ^= data[i];
+    for (uint8_t bit = 0; bit < 8; bit++) {
+      if (crc & 1) crc = (crc >> 1) ^ 0xA001;
+      else         crc >>= 1;
+    }
+  }
+  return crc;
+}
+
 void readSensor() {
+  while (Serial2.available()) {
+    Serial2.read();
+  }
 
-  while (Serial2.available()) Serial2.read();
-
-  Serial.println("[SENSOR] Sending request...");
+  if (!sensorQuiet) Serial.println("[SENSOR] Sending request...");
 
   digitalWrite(RE_DE_PIN, HIGH);
   delay(5);
@@ -333,140 +456,287 @@ void readSensor() {
   int bytesRead = 0;
   unsigned long start = millis();
 
+  unsigned long lastByte = 0;
+
   while (millis() - start < 1500) {
-
     if (Serial2.available()) {
-
-      if (bytesRead < (int)sizeof(response)) response[bytesRead++] = Serial2.read();
-      else                                   Serial2.read();
+      lastByte = millis();
+      if (bytesRead < (int)sizeof(response)) {
+        response[bytesRead++] = Serial2.read();
+      } else {
+        Serial2.read();
+      }
     }
+    else if (bytesRead >= 19 && millis() - lastByte > 30) break;   // full frame arrived, no need to wait the full 1.5 s
   }
 
-  Serial.print("[SENSOR] Bytes read: ");
-  Serial.println(bytesRead);
+  if (!sensorQuiet) Serial.print("[SENSOR] Bytes read: ");
+  if (!sensorQuiet) Serial.println(bytesRead);
 
   int startIndex = -1;
+  bool sawException = false;
+  bool sawBadCRC = false;
 
-  for (int i = 0; i < bytesRead - 2; i++) {
+  // Find a response for slave 1. Normal response: 01 03 0E + 14 data bytes + CRC.
+  // Exception response: 01 83 <exception-code> + CRC.
+  for (int i = 0; i + 4 < bytesRead; i++) {
+    if (response[i] != 0x01) continue;
 
-    if (response[i] == 0x01 && response[i + 1] == 0x03 && response[i + 2] == 0x0E) {
-      startIndex = i;
-      break;
+    if (response[i + 1] == 0x83) {
+      if (i + 5 <= bytesRead) {
+        uint16_t expected = modbusCRC16(&response[i], 3);
+        uint16_t received = (uint16_t)response[i + 3] |
+                            ((uint16_t)response[i + 4] << 8);
+        if (expected == received) sawException = true;
+      }
+      continue;
     }
+
+    if (response[i + 1] != 0x03 || response[i + 2] != 0x0E) continue;
+    if (i + 19 > bytesRead) continue;
+
+    uint16_t expected = modbusCRC16(&response[i], 17); // address through last data byte
+    uint16_t received = (uint16_t)response[i + 17] |
+                        ((uint16_t)response[i + 18] << 8);
+
+    if (expected != received) {
+      sawBadCRC = true;
+      continue;
+    }
+
+    startIndex = i;
+    break;
   }
 
-  if (startIndex >= 0 && bytesRead - startIndex >= 19) {
+  if (startIndex >= 0) {
+    uint16_t moistureRaw =
+      ((uint16_t)response[startIndex + 3] << 8) |
+      response[startIndex + 4];
 
-    uint16_t humidityRaw    = ((uint16_t)response[startIndex + 3]  << 8) | response[startIndex + 4];
-    uint16_t temperatureRaw = ((uint16_t)response[startIndex + 5]  << 8) | response[startIndex + 6];
-    soilConductivity        = ((uint16_t)response[startIndex + 7]  << 8) | response[startIndex + 8];
-    uint16_t phRaw          = ((uint16_t)response[startIndex + 9]  << 8) | response[startIndex + 10];
-    nitrogen                = ((uint16_t)response[startIndex + 11] << 8) | response[startIndex + 12];
-    phosphorus              = ((uint16_t)response[startIndex + 13] << 8) | response[startIndex + 14];
-    potassium               = ((uint16_t)response[startIndex + 15] << 8) | response[startIndex + 16];
+    uint16_t temperatureRaw =
+      ((uint16_t)response[startIndex + 5] << 8) |
+      response[startIndex + 6];
 
-    soilHumidity    = humidityRaw / 10.0;
-    soilTemperature = temperatureRaw / 10.0;
-    soilPH          = phRaw / 10.0;
+    soilConductivity =
+      ((uint16_t)response[startIndex + 7] << 8) |
+      response[startIndex + 8];
 
-    sensorOK    = true;
+    uint16_t phRaw =
+      ((uint16_t)response[startIndex + 9] << 8) |
+      response[startIndex + 10];
+
+    nitrogen =
+      ((uint16_t)response[startIndex + 11] << 8) |
+      response[startIndex + 12];
+
+    phosphorus =
+      ((uint16_t)response[startIndex + 13] << 8) |
+      response[startIndex + 14];
+
+    potassium =
+      ((uint16_t)response[startIndex + 15] << 8) |
+      response[startIndex + 16];
+
+    soilMoisture = moistureRaw / 10.0f;
+    soilTemperature = (int16_t)temperatureRaw / 10.0f;
+    soilPH = phRaw / 10.0f;
+
+    sensorOK = true;
     sensorState = "ok";
 
-    Serial.printf("[SENSOR] OK  N=%u P=%u K=%u pH=%.1f T=%.1f H=%.1f EC=%u\n",
-                  nitrogen, phosphorus, potassium, soilPH, soilTemperature, soilHumidity, soilConductivity);
-  }
-  else {
-
-    sensorOK    = false;
+    if (!sensorQuiet) Serial.printf(
+      "[SENSOR] OK N=%u P=%u K=%u pH=%.1f T=%.1f M=%.1f EC=%u (CRC OK)\n",
+      nitrogen, phosphorus, potassium,
+      soilPH, soilTemperature, soilMoisture, soilConductivity
+    );
+  } else {
+    sensorOK = false;
     sensorState = "fail";
 
-    Serial.println("[SENSOR] NO VALID FRAME - check the probe, power and RS485 wiring");
+    if (!sensorQuiet) Serial.print("[SENSOR] Invalid/no response. Bytes=");
+    if (!sensorQuiet) Serial.println(bytesRead);
+
+    if (bytesRead > 0) {
+      if (!sensorQuiet) Serial.print("[SENSOR] RX HEX:");
+      for (int i = 0; i < bytesRead; i++) {
+        if (!sensorQuiet) Serial.printf(" %02X", response[i]);
+      }
+      if (!sensorQuiet) Serial.println();
+    }
+
+    if (sawException) {
+      if (!sensorQuiet) Serial.println("[SENSOR] Probe returned Modbus exception (check function/register address).");
+    } else if (sawBadCRC) {
+      if (!sensorQuiet) Serial.println("[SENSOR] Response found but CRC failed (noise, baud, wiring, or power).");
+    } else if (bytesRead == 0) {
+      if (!sensorQuiet) Serial.println("[SENSOR] No bytes received (check power, A/B polarity, baud, slave ID, and DE/RE).");
+    } else {
+      if (!sensorQuiet) Serial.println("[SENSOR] Bytes received but no valid 01 03 0E frame; check protocol/register map.");
+    }
   }
 }
 
-
 // ============================================================
-// TOUCH  (the whole screen is the button)
+// OFFLINE MODE  (no Wi-Fi, no website: everything is worked out here on the ESP32-S3)
 // ============================================================
 
-void initTouch() {
+// true when the probe is really in soil: N, P, K and moisture are NOT all 0
+bool soilPresent() {
+  return sensorOK && (nitrogen > 0 || phosphorus > 0 || potassium > 0 || soilMoisture > 0.05f);
+}
 
-  pinMode(CTP_RST, OUTPUT);
-  digitalWrite(CTP_RST, LOW);
-  delay(20);
-  digitalWrite(CTP_RST, HIGH);
-  delay(200);
+// same ranges as the website (app.py READING_RANGES): optimal / watch / low / high
+const char* offLevel(float v, float okLo, float okHi, float wLo, float wHi) {
+  if (v >= okLo && v <= okHi) return "optimal";
+  if ((v >= wLo && v < okLo) || (v > okHi && v <= wHi)) return "watch";
+  if (v < wLo) return "low";
+  return "high";
+}
 
-  Wire.begin(CTP_SDA, CTP_SCL);
+void computeOfflineResult() {
+  res.v[0] = nitrogen; res.v[1] = phosphorus; res.v[2] = potassium;
+  res.v[3] = soilPH;   res.v[4] = soilTemperature; res.v[5] = soilMoisture;
 
-  Wire.beginTransmission(FT6336_ADDR);
+  snprintf(res.level[0], sizeof(res.level[0]), "%s", offLevel(res.v[0], 40, 120, 25, 130));     // N
+  snprintf(res.level[1], sizeof(res.level[1]), "%s", offLevel(res.v[1], 40, 120, 25, 130));     // P
+  snprintf(res.level[2], sizeof(res.level[2]), "%s", offLevel(res.v[2], 40, 120, 25, 150));     // K
+  snprintf(res.level[3], sizeof(res.level[3]), "%s", offLevel(res.v[3], 6.0, 7.0, 5.5, 7.5));   // pH
+  snprintf(res.level[4], sizeof(res.level[4]), "%s", offLevel(res.v[4], 20, 35, 15, 40));       // temp
+  snprintf(res.level[5], sizeof(res.level[5]), "%s", offLevel(res.v[5], 50, 90, 40, 95));       // moisture
 
-  Serial.println(Wire.endTransmission() == 0 ? "[TOUCH] FT6336 detected"
-                                              : "[TOUCH] WARNING: FT6336 not detected!");
+  // soil health score: same rule as the website (calculate_fertility)
+  int score = 0;
+  if (nitrogen >= 40 && nitrogen <= 120)               score++;
+  if (phosphorus >= 40 && phosphorus <= 120)           score++;
+  if (potassium >= 40 && potassium <= 120)             score++;
+  if (soilPH >= 5.5f && soilPH <= 7.5f)                score++;
+  if (soilTemperature >= 20 && soilTemperature <= 35)  score++;
+  if (soilMoisture >= 50 && soilMoisture <= 90)        score++;
+  res.health = (score / 6.0f) * 100.0f;
+  snprintf(res.grade, sizeof(res.grade), "%s", res.health >= 85 ? "A" : res.health >= 65 ? "B" : res.health >= 45 ? "C" : "D");
 
-#if USE_TOUCH_INT
-  pinMode(CTP_INT, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(CTP_INT), onTouchInt, FALLING);
+  res.have = true;
+  Serial.printf("[OFFLINE] Result: health %.0f %s\n", res.health, res.grade);
+}
+
+void offlineStart() {                                    // start (or restart) the 1-minute window
+  offState = OFF_WAIT;
+  offDeadline = millis() + OFFLINE_WINDOW_MS;
+  offNextPoll = 0;
+  offPolls = 0;
+  offDeclined = false;
+  resultsActive = false;
+  msgUntil = 0;
+  Serial.println("[OFFLINE] No Wi-Fi - push the probe into the soil within 1 minute");
+}
+
+void offlineButton() {                                   // BOOT button while Wi-Fi is down
+  if (offState == OFF_NONE)      offlineStart();
+  else if (offState == OFF_WAIT) offDeadline = millis() + OFFLINE_WINDOW_MS;   // give another full minute
+}
+
+void offlineTakeReading() {
+  sensorQuiet = false;
+  readSensor();
+  if (soilPresent()) {
+    computeOfflineResult();
+    offState = OFF_REMOVE;                 // next scan only after the probe is pulled out
+    startResults();
+  } else {
+    Serial.println("[OFFLINE] Soil lost while settling - waiting again");
+    offState = OFF_WAIT;
+    offDeadline = millis() + OFFLINE_WINDOW_MS;
+  }
+}
+
+void offlineTick() {
+#if OFFLINE_ENABLED
+  unsigned long now = millis();
+
+  if (WiFi.status() == WL_CONNECTED) {                   // offline mode only exists while there is no Wi-Fi
+    wifiDownSince = 0;
+    offDeclined = false;
+    if (offState != OFF_NONE) {
+      offState = OFF_NONE;
+      Serial.println("[OFFLINE] Wi-Fi connected - back to online mode");
+      showMsg("Wi-Fi connected", "Back online", "", "", 3000);
+    }
+    return;
+  }
+
+  if (wifiDownSince == 0) wifiDownSince = now;
+
+  if (offState == OFF_NONE) {                            // Wi-Fi has been missing long enough: go offline by itself
+    if (!offDeclined && !resultsActive && msgUntil == 0 && now - wifiDownSince >= OFFLINE_WIFI_WAIT_MS) offlineStart();
+    return;
+  }
+
+  if (offState == OFF_WAIT && (long)(now - offDeadline) >= 0) {      // 1 minute is over
+    offState = OFF_NONE;
+    offDeclined = true;
+    Serial.println("[OFFLINE] Timed out - press BOOT to try again");
+    showMsg("OFFLINE TIMEOUT", "No soil found", "Press BOOT to", "try again", 4000);
+    return;
+  }
+
+  if (resultsActive || msgUntil != 0) return;            // a result or message is on the LCD
+
+  if (offState == OFF_SETTLE) {
+    if (now - offSettleStart >= OFFLINE_SETTLE_MS) offlineTakeReading();
+    return;
+  }
+
+  if (now < offNextPoll) return;
+  sensorQuiet = true;
+  readSensor();
+  sensorQuiet = false;
+  offNextPoll = millis() + OFFLINE_POLL_MS;
+  offPolls++;
+  bool soil = soilPresent();
+
+  if (offState == OFF_REMOVE) {                          // wait until the probe is out of the soil
+    if (!soil) {
+      offState = OFF_WAIT;
+      offDeadline = millis() + OFFLINE_WINDOW_MS;        // a fresh minute for the next spot
+      Serial.println("[OFFLINE] Probe removed - ready for the next scan");
+    }
+    return;
+  }
+
+  if (soil) {                                            // WAIT: soil detected -> settle, then scan
+    Serial.printf("[OFFLINE] Soil detected (N=%u P=%u K=%u M=%.1f)\n", nitrogen, phosphorus, potassium, soilMoisture);
+    offState = OFF_SETTLE;
+    offSettleStart = millis();
+  }
 #endif
 }
-
-
-bool readTouch(int &x, int &y) {
-
-  Wire.beginTransmission(FT6336_ADDR);
-  Wire.write(0x02);
-
-  if (Wire.endTransmission(false) != 0) return false;
-  if (Wire.requestFrom(FT6336_ADDR, 5) != 5) return false;
-
-  byte touchCount = Wire.read();
-  byte xHigh = Wire.read();
-  byte xLow  = Wire.read();
-  byte yHigh = Wire.read();
-  byte yLow  = Wire.read();
-
-  if (touchCount == 0) return false;
-
-  int rawX = ((xHigh & 0x0F) << 8) | xLow;
-  int rawY = ((yHigh & 0x0F) << 8) | yLow;
-
-  x = constrain(rawY, 0, 319);
-  y = constrain(239 - rawX, 0, 239);
-
-  return true;
-}
-
 
 // ============================================================
 // WI-FI
 // ============================================================
 
 void wifiBegin() {
-
   WiFi.mode(WIFI_STA);
   WiFi.setAutoReconnect(true);
-  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);        // does not block
+  WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   WiFi.setTxPower(WIFI_TX_POWER);
 
   Serial.print("[WIFI] Connecting to ");
   Serial.println(WIFI_SSID);
 }
 
-
 void wifiWatch() {
-
-  bool up = (WiFi.status() == WL_CONNECTED);
+  bool up = WiFi.status() == WL_CONNECTED;
 
   if (up && !wifiWasUp) {
-
     Serial.print("[WIFI] Connected. IP ");
     Serial.print(WiFi.localIP());
-    Serial.print("  RSSI ");
+    Serial.print(" RSSI ");
     Serial.print(WiFi.RSSI());
     Serial.println(" dBm");
 
-    lastHeartbeat = 0;                          // announce ourselves right away
-    redrawUi();                                 // radio start-up can glitch the panel: repaint
+    lastHeartbeat = 0;
+    redrawUi();
   }
 
   if (!up && wifiWasUp) {
@@ -477,10 +747,11 @@ void wifiWatch() {
   wifiWasUp = up;
 
   if (!up && millis() - lastWifiRetry > 10000) {
-
     lastWifiRetry = millis();
 
-    Serial.println("[WIFI] Not connected - retrying (check name/password, 2.4 GHz)");
+    Serial.println(
+      "[WIFI] Retrying (check Wi-Fi name/password and 2.4 GHz)"
+    );
 
     WiFi.disconnect();
     WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
@@ -488,28 +759,40 @@ void wifiWatch() {
   }
 }
 
-
 // ============================================================
-// WEBSITE
+// DEVICE TOKEN
 // ============================================================
 
-// Device secret: 32 random hex characters made on first boot, kept in flash.
 void loadOrCreateToken() {
-
   Preferences prefs;
-
   prefs.begin("agrisense", false);
 
   deviceToken = prefs.getString("token", "");
 
   if (deviceToken.length() != 32) {
+    // Scanner was flashed with the old SoilSense sketch: keep its identity instead of registering as a new device.
+    Preferences old;
+    old.begin("soilsense", true);
+    String oldToken = old.getString("token", "");
+    old.end();
+    if (oldToken.length() == 32) {
+      deviceToken = oldToken;
+      prefs.putString("token", deviceToken);
+      Serial.println("[ID] Kept the device secret from the old SoilSense sketch");
+    }
+  }
 
+  if (deviceToken.length() != 32) {
     char buf[33];
 
-    for (int i = 0; i < 4; i++) snprintf(buf + i * 8, 9, "%08lx", (unsigned long)esp_random());
+    for (int i = 0; i < 4; i++) {
+      snprintf(
+        buf + i * 8, 9,
+        "%08lx", (unsigned long)esp_random()
+      );
+    }
 
     deviceToken = String(buf);
-
     prefs.putString("token", deviceToken);
 
     Serial.println("[ID] Created a new device secret");
@@ -518,24 +801,31 @@ void loadOrCreateToken() {
   prefs.end();
 }
 
+// ============================================================
+// HTTP POST
+// ============================================================
 
-// One tiny HTTP helper. Returns the HTTP status (negative = could not connect).
-int httpPost(const String &path, const char* body, String &reply, uint32_t timeoutMs) {
-
+int httpPost(
+  const String &path,
+  const char* body,
+  String &reply,
+  uint32_t timeoutMs
+) {
   String url = String(SERVER_BASE) + path;
 
   inNetwork = true;
 
   WiFiClientSecure secureClient;
-  WiFiClient       plainClient;
-  HTTPClient       http;
+  WiFiClient plainClient;
+  HTTPClient http;
 
   bool began;
 
   if (url.startsWith("https://")) {
-    secureClient.setInsecure();                 // no certificate check (fine for a school project)
+    secureClient.setInsecure();
     began = http.begin(secureClient, url);
-  } else {
+  }
+  else {
     began = http.begin(plainClient, url);
   }
 
@@ -550,23 +840,30 @@ int httpPost(const String &path, const char* body, String &reply, uint32_t timeo
   http.addHeader("Content-Type", "application/json");
   http.addHeader("X-Device-Token", deviceToken);
 
-  if (strlen(API_KEY) > 0) http.addHeader("X-API-Key", API_KEY);
+  if (strlen(API_KEY) > 0) {
+    http.addHeader("X-API-Key", API_KEY);
+  }
 
-  int code = http.POST((uint8_t*)body, strlen(body));
+  int code = http.POST(
+    (uint8_t*)body,
+    strlen(body)
+  );
 
-  reply = (code > 0) ? http.getString() : http.errorToString(code);
+  reply = code > 0
+    ? http.getString()
+    : http.errorToString(code);
 
   http.end();
 
   inNetwork = false;
-
   return code;
 }
 
+// ============================================================
+// SIMPLE JSON READER
+// ============================================================
 
-// Minimal JSON reader:  "key": value  ->  value as text
 String jsonGet(const String &json, const char* key) {
-
   String k = String("\"") + key + "\"";
 
   int i = json.indexOf(k);
@@ -576,54 +873,92 @@ String jsonGet(const String &json, const char* key) {
   if (i < 0) return "";
 
   i++;
-  while (i < (int)json.length() && (json[i] == ' ' || json[i] == '\n')) i++;
+
+  while (
+    i < (int)json.length() &&
+    (json[i] == ' ' || json[i] == '\n')
+  ) {
+    i++;
+  }
+
   if (i >= (int)json.length()) return "";
 
   if (json[i] == '"') {
     int e = json.indexOf('"', i + 1);
-    return (e < 0) ? String("") : json.substring(i + 1, e);
+
+    return e < 0
+      ? String("")
+      : json.substring(i + 1, e);
   }
 
   int e = i;
-  while (e < (int)json.length() && json[e] != ',' && json[e] != '}' && json[e] != ' ' && json[e] != '\n') e++;
+
+  while (
+    e < (int)json.length() &&
+    json[e] != ',' &&
+    json[e] != '}' &&
+    json[e] != ' ' &&
+    json[e] != '\n'
+  ) {
+    e++;
+  }
 
   return json.substring(i, e);
 }
 
+// ============================================================
+// WEBSITE HEARTBEAT
+// ============================================================
 
-// "I'm here" - makes the scanner appear under Find device, and tells us whether
-// somebody is connected. Returns true if the website answered.
 bool sendHeartbeat() {
-
   lastHeartbeat = millis();
 
-  if (WiFi.status() != WL_CONNECTED) return false;
+  if (WiFi.status() != WL_CONNECTED) {
+    return false;
+  }
 
   char body[160];
 
-  snprintf(body, sizeof(body),
-           "{\"rssi\":%d,\"sensor\":\"%s\",\"fw\":\"%s\",\"name\":\"%s\"}",
-           (int)WiFi.RSSI(), sensorState.c_str(), FW_VERSION, deviceTag);
+  snprintf(
+    body, sizeof(body),
+    "{\"rssi\":%d,\"sensor\":\"%s\",\"fw\":\"%s\",\"name\":\"%s\"}",
+    (int)WiFi.RSSI(),
+    sensorState.c_str(),
+    FW_VERSION,
+    deviceTag
+  );
 
   String reply;
 
-  int code = httpPost("/api/device/heartbeat", body, reply, 6000);
+  int code = httpPost(
+    "/api/device/heartbeat",
+    body,
+    reply,
+    6000
+  );
 
   if (code == 200) {
-
     int before = connState;
 
-    connState = (jsonGet(reply, "connected") == "true") ? 1 : 0;
-    serverOK  = true;
+    connState =
+      jsonGet(reply, "connected") == "true" ? 1 : 0;
 
-    if (connState == 1 && jsonGet(reply, "scan") == "true") {
+    serverOK = true;
+
+    if (
+      connState == 1 &&
+      jsonGet(reply, "scan") == "true"
+    ) {
       webScan = true;
-      Serial.println("[LINK] Scan now was pressed on the website");
+      Serial.println("[LINK] Website Scan now pressed");
     }
 
     if (before != connState) {
-      Serial.println(connState == 1 ? "[LINK] A user connected to this scanner"
-                                    : "[LINK] Nobody is connected to this scanner");
+      Serial.println(
+        connState == 1
+          ? "[LINK] A user connected"
+          : "[LINK] Nobody is connected"
+      );
     }
 
     return true;
@@ -637,320 +972,146 @@ bool sendHeartbeat() {
   return false;
 }
 
+// ============================================================
+// UPLOAD SENSOR READING
+// ============================================================
 
-// Send the current reading to the website. Returns the HTTP status.
-int sendReading() {
-
+int sendReading(String &reply) {
   char uid[17];
 
-  snprintf(uid, sizeof(uid), "%08lx%08lx", (unsigned long)esp_random(), (unsigned long)esp_random());
+  snprintf(
+    uid, sizeof(uid),
+    "%08lx%08lx",
+    (unsigned long)esp_random(),
+    (unsigned long)esp_random()
+  );
 
+  // NOTE: "humidity" is only the field name the website expects; the value is the soil MOISTURE %.
   char body[320];
 
-  snprintf(body, sizeof(body),
-           "{\"N\":%u,\"P\":%u,\"K\":%u,\"ph\":%.1f,\"temp\":%.1f,\"humidity\":%.1f,\"scan_uid\":\"%s\"}",
-           (unsigned)nitrogen, (unsigned)phosphorus, (unsigned)potassium,
-           soilPH, soilTemperature, soilHumidity, uid);
+  snprintf(
+    body, sizeof(body),
+    "{\"N\":%u,\"P\":%u,\"K\":%u,\"ph\":%.1f,\"temp\":%.1f,\"humidity\":%.1f,\"scan_uid\":\"%s\"}",
+    (unsigned)nitrogen,
+    (unsigned)phosphorus,
+    (unsigned)potassium,
+    soilPH,
+    soilTemperature,
+    soilMoisture,
+    uid
+  );
 
-  String reply;
+  int code = httpPost(
+    "/api/esp32",
+    body,
+    reply,
+    20000
+  );
 
-  int code = httpPost("/api/esp32", body, reply, 20000);
-
-  // One automatic retry on a network failure. The same scan_uid is sent again,
-  // so the website can never save the reading twice.
   if (code <= 0) {
-
     Serial.println("[UPLOAD] Network problem - retrying once");
-
     delay(800);
 
-    code = httpPost("/api/esp32", body, reply, 20000);
+    code = httpPost(
+      "/api/esp32",
+      body,
+      reply,
+      20000
+    );
   }
 
   Serial.print("[UPLOAD] HTTP ");
   Serial.println(code);
 
-  if (reply.length() > 200) reply = reply.substring(0, 200) + "...";
-  Serial.println(reply);
+  Serial.println(reply.length() > 200 ? reply.substring(0, 200) + "..." : reply);
 
   return code;
 }
 
 
 // ============================================================
-// SCAN NOW
+// SCAN
 // ============================================================
 
-void doScan() {
+void parseResult(const String &reply) {
+  res.have = false;
 
-  Serial.println("[SCAN] Tap received");
+  String hs = jsonGet(reply, "fertility_score");
+  if (hs.length() == 0) return;                  // e.g. a re-sent scan: the website answered without details
+  res.health = hs.toFloat();
+
+  snprintf(res.grade, sizeof(res.grade), "%s", jsonGet(reply, "grade").c_str());
+
+  // (the website still names the moisture field "humidity" internally, so these key names stay)
+  static const char* keys[6] = { "lvl_N", "lvl_P", "lvl_K", "lvl_ph", "lvl_temp", "lvl_humidity" };
+  for (int i = 0; i < 6; i++) snprintf(res.level[i], sizeof(res.level[i]), "%s", jsonGet(reply, keys[i]).c_str());
+
+  res.have = true;
+}
+
+void doScan() {
+  Serial.println("[SCAN] Scan requested");
 
   if (WiFi.status() != WL_CONNECTED) {
-    showFor(UI_NO_WIFI, 3000);
+    showMsg("NO WI-FI", "Check the network", "", "", 4000);
     return;
   }
 
-  // Not connected as far as we know? Ask the website right now: the user may have
-  // pressed Connect a second ago and our last check-in could be a few seconds old.
   if (connState != 1) {
-
-    drawButton(BG_BUSY, "CHECKING", "Asking the website...");
+    showMsg("Checking the", "website...");
 
     sendHeartbeat();
 
-    if (!serverOK) { showFor(UI_FAILED, 3000); return; }
+    if (!serverOK) {
+      showMsg("CAN'T REACH THE", "WEBSITE", "Try again", "", 4000);
+      return;
+    }
 
-    if (connState != 1) { showFor(UI_NOT_CONNECTED, 4000); return; }
+    if (connState != 1) {
+      showMsg("NOT CONNECTED", "Website: Find", "Device > Connect", "then Scan now", 5000);
+      return;
+    }
   }
 
-  showFor(UI_SCANNING, 0);
+  showMsg("SCANNING...", "Keep the probe", "in the soil");
 
   readSensor();
 
   if (!sensorOK) {
-    showFor(UI_NO_SENSOR, 3500);
+    showMsg("NO SENSOR", "Check the probe", "cable", "", 5000);
     return;
   }
 
-  showFor(UI_SENDING, 0);
+  showMsg("SENDING...", "Please wait");
 
-  int code = sendReading();
+  String reply;
+  int code = sendReading(reply);
 
   if (code == 200) {
     connState = 1;
-    serverOK  = true;
-    showFor(UI_SENT, 2500);
+    serverOK = true;
+
+    // what the probe measured (same numbers the website saved, shown with 1 decimal)
+    res.v[0] = nitrogen; res.v[1] = phosphorus; res.v[2] = potassium;
+    res.v[3] = soilPH;   res.v[4] = soilTemperature; res.v[5] = soilMoisture;
+
+    parseResult(reply);
+
+    if (res.have) startResults();
+    else          showMsg("SENT", "Look at the", "website", "", 5000);
   }
   else if (code == 403) {
-    // Disconnected (by the user, or by an admin) since our last check-in
     connState = 0;
-    serverOK  = true;
-    Serial.println("[LINK] Website says nobody is connected - reading NOT saved");
-    showFor(UI_NOT_CONNECTED, 4000);
+    serverOK = true;
+    Serial.println("[LINK] Nobody connected - reading NOT saved");
+    showMsg("NOT CONNECTED", "Website: Find", "Device > Connect", "then Scan now", 5000);
   }
   else if (code == 401) {
-    showFor(UI_BAD_KEY, 4000);
+    showMsg("BAD API KEY", "Check API_KEY", "in the sketch", "", 5000);
   }
   else {
-    serverOK = (code > 0);
-    showFor(UI_FAILED, 3500);
-  }
-}
-
-
-// ============================================================
-// LCD WATCHDOG
-// ------------------------------------------------------------
-// A blank / white LCD that still reacts to touch means the panel controller
-// reset itself (usually a supply dip when the Wi-Fi radio transmits) and forgot
-// its settings. Two layers of protection:
-//  1. If the panel can be read back (MISO wire connected) we check it every
-//     1.5 s and re-initialise it when it lost its settings.
-//  2. If it cannot be read back, we simply re-initialise + repaint it every
-//     LCD_BLIND_REFRESH_MS while idle, so a blank screen heals itself within a
-//     minute instead of staying blank. (Costs a brief flicker. 0 = off.)
-// The real fix for the root cause is power: a 470 uF capacitor across 3.3 V
-// next to the LCD, short wires, and a good USB supply / cable.
-// ============================================================
-
-#define LCD_REG_RDMODE   0x0A
-#define LCD_REG_RDMADCTL 0x0B
-
-bool          lcdWatchdogOn = false;
-uint8_t       lcdExpectPM = 0, lcdExpectMAD = 0, lcdBadChecks = 0;
-unsigned long lcdLastCheck = 0, lcdLastFix = 0;
-unsigned int  lcdFixCount = 0;
-bool          bootDiagShown = false;
-
-
-void lcdReinit() {
-
-  tft.begin(TFT_SPI_HZ);
-  tft.setRotation(1);
-  tft.fillScreen(BG_NOCONN);
-
-  redrawUi();
-}
-
-
-void lcdArmWatchdog() {
-
-  lcdWatchdogOn = false;
-
-  uint8_t pm  = tft.readcommand8(LCD_REG_RDMODE);
-  uint8_t mad = tft.readcommand8(LCD_REG_RDMADCTL);
-
-  bool stable = (pm == 0x9C);
-
-  for (int i = 0; i < 3; i++) {
-
-    delay(5);
-
-    if (tft.readcommand8(LCD_REG_RDMODE) != pm || tft.readcommand8(LCD_REG_RDMADCTL) != mad) stable = false;
-  }
-
-  Serial.printf("[LCD] power mode 0x%02X  madctl 0x%02X\n", pm, mad);
-
-  if (stable) {
-    lcdExpectPM   = pm;
-    lcdExpectMAD  = mad;
-    lcdWatchdogOn = true;
-    Serial.println("[LCD] watchdog ARMED");
-  }
-  else {
-    Serial.println("[LCD] watchdog OFF (cannot read the panel back - check the SDO/MISO wire). Using timed refresh instead.");
-  }
-}
-
-
-void lcdWatchdogTick() {
-
-  if (lcdWatchdogOn) {
-
-    if (millis() - lcdLastCheck < 1500) return;
-
-    lcdLastCheck = millis();
-
-    uint8_t pm  = tft.readcommand8(LCD_REG_RDMODE);
-    uint8_t mad = tft.readcommand8(LCD_REG_RDMADCTL);
-
-    if (pm == lcdExpectPM && mad == lcdExpectMAD) { lcdBadChecks = 0; return; }
-
-    if (++lcdBadChecks < 2) return;
-
-    lcdBadChecks = 0;
-
-    if (millis() - lcdLastFix < 4000) return;
-
-    lcdLastFix = millis();
-    lcdFixCount++;
-
-    Serial.printf("[LCD] Panel lost its settings (0x%02X / 0x%02X) - re-initialising. Count %u\n", pm, mad, lcdFixCount);
-
-    lcdReinit();
-    return;
-  }
-
-  // blind mode: periodic repair, only while idle and not mid-message
-  if (LCD_BLIND_REFRESH_MS > 0 && uiMode == UI_IDLE && millis() - lastBlindRefresh > LCD_BLIND_REFRESH_MS) {
-
-    lastBlindRefresh = millis();
-
-    lcdFixCount++;
-
-    lcdReinit();
-  }
-}
-
-
-void bootDiagTick() {
-
-  if (bootDiagShown || millis() < 5000) return;
-
-  bootDiagShown = true;
-
-  Serial.print("[BOOT] Last restart reason: ");
-
-  switch (esp_reset_reason()) {
-    case ESP_RST_POWERON:  Serial.println("power switched on (normal)"); break;
-    case ESP_RST_EXT:      Serial.println("reset button / EN pin"); break;
-    case ESP_RST_SW:       Serial.println("software restart"); break;
-    case ESP_RST_PANIC:    Serial.println("CRASH (exception)"); break;
-    case ESP_RST_INT_WDT:
-    case ESP_RST_TASK_WDT:
-    case ESP_RST_WDT:      Serial.println("watchdog (program hung)"); break;
-    case ESP_RST_BROWNOUT: Serial.println("BROWNOUT - the 3.3 V supply dipped. Fix the power."); break;
-    default:               Serial.println("other"); break;
-  }
-
-  Serial.printf("[BOOT] Free memory: %u bytes\n", (unsigned)ESP.getFreeHeap());
-  Serial.printf("[LCD] watchdog %s, repairs so far: %u\n", lcdWatchdogOn ? "armed" : "off (timed refresh)", lcdFixCount);
-}
-
-
-// ============================================================
-// SERIAL MONITOR COMMANDS
-// ------------------------------------------------------------
-// Open Tools > Serial Monitor, 115200 baud. Any line ending works ("No line ending"
-// too: a command is taken after a short pause).
-//   tap | t | scan | s | 1   same as touching the screen (one reading, sent to the website)
-//   status | ?               Wi-Fi, website link, sensor, free memory
-//   help | h                 this list
-// ============================================================
-
-String        serialBuf = "";
-unsigned long serialLastChar = 0;
-
-
-void printHelp() {
-
-  Serial.println();
-  Serial.println("---- AgriSense Serial Monitor commands ----");
-  Serial.println("  tap | t | scan | s | 1   take one reading and send it (same as touching the screen)");
-  Serial.println("  status | ?               show Wi-Fi / website / sensor state");
-  Serial.println("  help | h                 show this list");
-  Serial.println("--------------------------------------------");
-}
-
-
-void printStatus() {
-
-  Serial.println();
-  Serial.printf("[STATUS] Device ID : %s   firmware %s\n", deviceTag, FW_VERSION);
-  Serial.printf("[STATUS] Wi-Fi     : %s", WiFi.status() == WL_CONNECTED ? "connected" : "NOT connected");
-  if (WiFi.status() == WL_CONNECTED) Serial.printf("  (%s, %d dBm)", WiFi.localIP().toString().c_str(), (int)WiFi.RSSI());
-  Serial.println();
-  Serial.printf("[STATUS] Website   : %s\n", !serverOK ? "cannot reach it"
-                                            : connState == 1 ? "a user is CONNECTED - scans will be saved"
-                                            : connState == 0 ? "nobody connected (use Find Device > Connect on the website)"
-                                            : "not checked yet");
-  Serial.printf("[STATUS] Sensor    : %s\n", sensorState.c_str());
-  Serial.printf("[STATUS] Free heap : %u bytes\n", (unsigned)ESP.getFreeHeap());
-}
-
-
-void handleSerialCommand(String cmd) {
-
-  cmd.trim();
-  cmd.toLowerCase();
-
-  if (cmd.length() == 0) return;
-
-  if (cmd == "tap" || cmd == "t" || cmd == "scan" || cmd == "s" || cmd == "1") {
-    Serial.println("[SERIAL] tap received");
-    serialTap = true;
-  }
-  else if (cmd == "status" || cmd == "?") printStatus();
-  else if (cmd == "help" || cmd == "h")   printHelp();
-  else {
-    Serial.print("[SERIAL] Unknown command \"");
-    Serial.print(cmd);
-    Serial.println("\". Type  tap  to scan, or  help.");
-  }
-}
-
-
-void serialTick() {
-
-  while (Serial.available()) {
-
-    char c = (char)Serial.read();
-
-    serialLastChar = millis();
-
-    if (c == '\n' || c == '\r') {
-      handleSerialCommand(serialBuf);
-      serialBuf = "";
-    }
-    else if (serialBuf.length() < 24) {
-      serialBuf += c;
-    }
-  }
-
-  // "No line ending" selected in the Serial Monitor: take what we have after a short pause
-  if (serialBuf.length() > 0 && millis() - serialLastChar > 250) {
-    handleSerialCommand(serialBuf);
-    serialBuf = "";
+    serverOK = code > 0;
+    showMsg("SEND FAILED", "Press Scan now", "again", "", 5000);
   }
 }
 
@@ -960,108 +1121,75 @@ void serialTick() {
 // ============================================================
 
 void setup() {
-
   Serial.begin(115200);
-
   delay(500);
 
-  // short ID from the chip, shown in the corner and on the website
   snprintf(deviceTag, sizeof(deviceTag), "%04X", (unsigned)((uint16_t)(ESP.getEfuseMac() >> 32)));
 
-  pinMode(TFT_LED, OUTPUT);
-  digitalWrite(TFT_LED, HIGH);
+  Serial.println();
+  Serial.print("[BOOT] Restart reason: ");
+  switch (esp_reset_reason()) {
+    case ESP_RST_POWERON:  Serial.println("power on"); break;
+    case ESP_RST_EXT:      Serial.println("reset button"); break;
+    case ESP_RST_SW:       Serial.println("software restart"); break;
+    case ESP_RST_PANIC:    Serial.println("CRASH"); break;
+    case ESP_RST_BROWNOUT: Serial.println("BROWNOUT - check the power supply"); break;
+    default:               Serial.println("other"); break;
+  }
 
-  SPI.begin(TFT_SCK, TFT_MISO, TFT_MOSI, TFT_CS);
+  // LCD first, so there is something to read from the first second
+  lcdBegin();
+  showMsg("AgriSense", "Starting...", deviceTag, FW_VERSION);
 
-  tft.begin(TFT_SPI_HZ);
-  tft.setRotation(1);
+#if USE_BOOT_BUTTON
+  pinMode(BOOT_BUTTON_PIN, INPUT_PULLUP);
+#endif
 
-  drawButton(BG_NOCONN, "SCAN NOW", "Starting...");     // the button is on screen from the first second
-
+  // RS485 soil probe
   Serial2.begin(4800, SERIAL_8N1, RX2_PIN, TX2_PIN);
-
   pinMode(RE_DE_PIN, OUTPUT);
   digitalWrite(RE_DE_PIN, LOW);
 
-  initTouch();
-
   loadOrCreateToken();
-
   delay(800);
-
-  lcdArmWatchdog();         // learn what a healthy panel reports BEFORE Wi-Fi starts
-
   wifiBegin();
 
   Serial.println();
   Serial.println("================================");
-  Serial.println("AGRISENSE SCANNER - SCAN NOW");
-  Serial.printf("Device ID on the website: AgriSense Scanner %s\n", deviceTag);
-  Serial.println("Serial Monitor: type  tap  to scan, or  help");
+  Serial.println("AGRISENSE SCANNER - 20x4 LCD");
+  Serial.printf("Device ID: AgriSense Scanner %s\n", deviceTag);
+  Serial.println("Probe: 4800 baud, ID 1, function 03, 7 registers");
+  Serial.println("Website: Find device > Connect, then press Scan now");
+  Serial.println("No Wi-Fi? After 15 s offline mode starts by itself: push the probe into the soil within 1 minute");
   Serial.println("================================");
 
-  uiMode = UI_IDLE;
-  redrawUi();
+  msgUntil = 0;
 }
 
-
 void loop() {
-
   wifiWatch();
 
-  serialTick();
-
-  lcdWatchdogTick();
-
-  bootDiagTick();
-
-  // --- announce ourselves / learn whether somebody is connected -------------
   unsigned long beatEvery = (connState == 1) ? HEARTBEAT_CONNECTED_MS : HEARTBEAT_MS;
 
   if (WiFi.status() == WL_CONNECTED && (lastHeartbeat == 0 || millis() - lastHeartbeat >= beatEvery)) {
-
     sendHeartbeat();
   }
 
-  // --- touch: anywhere on the screen = scan ---------------------------------
-  bool tap = false;
-
-  bool touched = readTouch(touchX, touchY);
-
-  if (touched && !previousTouch) tap = true;
-
-  if (tapDuringNetwork) {          // tapped while we were busy with the website
-    tapDuringNetwork = false;
-    tap = true;
-    touched = readTouch(touchX, touchY);   // a finger still held must not count again
-  }
-
-  previousTouch = touched;
-
-  if (webScan) {                   // "Scan now" pressed on the website: same as a touch
+  if (webScan) {                       // Scan now was pressed on the website
     webScan = false;
     Serial.println("[SCAN] Website request received");
     doScan();
-    webScan = false;               // ignore a second request that arrived during this scan
-    previousTouch = readTouch(touchX, touchY);
-    tapDuringNetwork = false;
+    webScan = false;                   // ignore a second request that arrived during this scan
   }
 
-  if (serialTap) {                 // "tap" typed in the Serial Monitor counts exactly like a touch
-    serialTap = false;
-    tap = true;
-  }
-
-  if (tap && millis() - lastTapMs > 600) {
-
+#if USE_BOOT_BUTTON && OFFLINE_ENABLED
+  if (digitalRead(BOOT_BUTTON_PIN) == LOW && millis() - lastTapMs > 1500) {
     lastTapMs = millis();
-
-    doScan();
-
-    previousTouch = readTouch(touchX, touchY);
-    tapDuringNetwork = false;
+    if (WiFi.status() != WL_CONNECTED) offlineButton();
   }
+#endif
 
+  offlineTick();
   uiTick();
 
   delay(20);

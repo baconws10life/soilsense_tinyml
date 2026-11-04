@@ -311,8 +311,8 @@ body {
       </div>
       <p class="hero-desc">
         A TinyML soil-intelligence platform for classrooms and small fields. AgriSense pairs a low-cost
-        RS485 soil probe (built around an ESP32-S3) with a lightweight k-nearest-neighbors model trained on a
-        2,200-row reference dataset of 22 Philippine crops (rice, corn, banana, coconut, cassava, calamansi, abaca and more).
+        RS485 soil probe (built around an ESP32-S3) with a website that shows your soil's N, P, K, pH,
+        temperature and moisture, scores them against optimal ranges and explains what to do about each one.
       </p>
     </div>
   </div>
@@ -322,12 +322,12 @@ body {
     <div class="highlight-card glass">
       <div class="highlight-icon">{{ icon('radio-tower',22) }}</div>
       <div class="highlight-title">Seven Raw Readings</div>
-      <div class="highlight-desc">Nitrogen, phosphorus, potassium, pH, temperature, and humidity — captured by a field probe or entered by hand.</div>
+      <div class="highlight-desc">Nitrogen, phosphorus, potassium, pH, temperature, and moisture — captured by a field probe or entered by hand.</div>
     </div>
     <div class="highlight-card glass">
       <div class="highlight-icon">{{ icon('cpu',22) }}</div>
-      <div class="highlight-title">Lightweight ML</div>
-      <div class="highlight-desc">A 5-neighbor KNN classifier turns those readings into a soil health score and a ranked list of suitable crops.</div>
+      <div class="highlight-title">Simple scoring</div>
+      <div class="highlight-desc">Each reading is checked against its optimal range and turned into a soil health score and a plain-language fix.</div>
     </div>
     <div class="highlight-card glass">
       <div class="highlight-icon">{{ icon('graduation',22) }}</div>
@@ -341,12 +341,10 @@ body {
     <div class="panel glass">
       <div class="panel-header">
         <span></span>
-        <div class="panel-title">How a Reading Becomes a Recommendation</div>
+        <div class="panel-title">How a Reading Becomes a Score</div>
       </div>
       <div class="panel-body">
         <div class="list-item"><div class="list-dot"></div><div><strong>Health score</strong>Every reading is scored against agronomic optimal ranges to produce a 0–100 health score and a letter grade.</div></div>
-        <div class="list-item"><div class="list-dot"></div><div><strong>Crop comfort bands</strong>Each of the 22 crops has a learned band for every feature (the 10th–90th percentile of readings that produced that label).</div></div>
-        <div class="list-item"><div class="list-dot"></div><div><strong>Match percentage</strong>A reading's match against a crop is the share of features that fall inside its band. The single best match also comes from a 5-neighbor KNN classifier.</div></div>
       </div>
     </div>
     <div class="panel glass">
@@ -357,7 +355,7 @@ body {
       <div class="panel-body">
         <div class="list-item"><div class="list-dot"></div><div><strong>ESP32-S3 + RS485 probe</strong>A low-cost soil probe that can run unattended in the field.</div></div>
         <div class="list-item"><div class="list-dot"></div><div><strong>Straight to the dashboard</strong>Field devices POST JSON to <code>/api/esp32</code>, so probe readings appear next to manual entries.</div></div>
-        <div class="list-item"><div class="list-dot"></div><div><strong>One shared history</strong>Device and manual readings share the same history, charts, and crop picks.</div></div>
+        <div class="list-item"><div class="list-dot"></div><div><strong>One shared history</strong>Device and manual readings share the same history and charts.</div></div>
       </div>
     </div>
   </div>
@@ -385,7 +383,6 @@ body {
     <div class="panel-body">
       <div class="why-grid">
         <div class="why-card"><div class="why-icon">{{ icon('award',20) }}</div><div><div class="why-title">Soil Health Score</div><div class="why-desc">A 0–100 score and letter grade for every reading.</div></div></div>
-        <div class="why-card"><div class="why-icon">{{ icon('sprout',20) }}</div><div><div class="why-title">Ranked Crop Picks</div><div class="why-desc">The crops that best match your soil and climate, with match percentages.</div></div></div>
         <div class="why-card"><div class="why-icon">{{ icon('message',20) }}</div><div><div class="why-title">Plain-Language Answers</div><div class="why-desc">Explanations a student can actually use, on every page.</div></div></div>
         <div class="why-card"><div class="why-icon">{{ icon('trending-up',20) }}</div><div><div class="why-title">Full History</div><div class="why-desc">Every reading logged and charted, whether manual or from the probe.</div></div></div>
       </div>

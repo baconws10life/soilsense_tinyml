@@ -1,0 +1,451 @@
+survey,sample,barangay,pH,N_level,P_level,K_level,OM_pct,P_ppm,K_ppm
+STK,S1,Parada,6.0,M,L,L,,,
+STK,S2,Parada,6.0,M,M,M,,,
+STK,S3,Parada,5.8,M,L,M,,,
+STK,S4,Parada,5.6,M,L,H,,,
+STK,S5,Parada,5.6,L,M,H,,,
+STK,S6,Parada,5.6,L,H,H,,,
+STK,S7,Parada,5.6,L,H,L,,,
+STK,S8,Parada,5.8,L,L,H,,,
+STK,S9,Bulac,5.6,L,L,H,,,
+STK,S10,Guyong,5.8,L,L,H,,,
+STK,S11,Bulac,5.4,L,M,H,,,
+STK,S12,Caypombo,5.6,L,M,H,,,
+STK,S13,Caypombo,5.8,L,M,H,,,
+STK,S14,Bulac,7.2,M,H,H,,,
+STK,S15,Bulac,6.6,L,H,H,,,
+STK,S16,Parada,6.4,M,M,H,,,
+STK,S17,San Jose Patag,5.6,L,L,H,,,
+STK,S18,San Jose Patag,5.8,L,L,H,,,
+STK,S19,San Jose Patag,5.6,L,H,H,,,
+STK,S20,San Jose Patag,5.6,L,L,H,,,
+STK,S21,San Jose Patag,6.6,M,H,H,,,
+STK,S22,San Jose Patag,5.6,M,L,H,,,
+STK,S23,San Jose Patag,5.8,M,L,H,,,
+STK,S24,San Jose Patag,5.6,M,L,H,,,
+STK,S25,San Jose Patag,7.0,M,L,H,,,
+STK,S26,San Jose Patag,7.2,M,L,H,,,
+STK,S27,Parada,6.0,M,L,H,,,
+STK,S28,Parada,5.6,M,L,H,,,
+STK,S29,San Vicente,7.6,M,H,H,,,
+STK,S30,San Vicente,5.4,L,L,H,,,
+STK,S31,San Vicente,6.8,L,M,H,,,
+STK,S32,San Vicente,6.0,L,L,H,,,
+STK,S33,San Vicente,5.8,L,L,H,,,
+STK,S34,San Vicente,5.6,L,L,H,,,
+STK,S35,San Vicente,5.6,L,H,H,,,
+STK,S36,San Vicente,7.4,L,L,H,,,
+STK,S37,San Vicente,6.8,M,L,H,,,
+STK,S38,San Vicente,5.8,L,L,H,,,
+STK,S39,San Vicente,6.2,L,L,H,,,
+STK,S40,San Vicente,5.8,L,H,H,,,
+STK,S41,San Vicente,5.8,L,M,H,,,
+STK,S42,San Vicente,5.8,L,L,H,,,
+STK,S43,San Vicente,5.6,M,L,H,,,
+STK,S44,San Vicente,5.6,L,L,H,,,
+STK,S45,San Vicente,5.6,L,L,H,,,
+STK,S46,San Vicente,6.2,L,L,M,,,
+STK,S47,San Vicente,6.2,L,L,M,,,
+STK,S48,San Vicente,5.8,L,M,H,,,
+STK,S49,San Vicente,5.8,L,L,H,,,
+STK,S50,San Vicente,5.8,L,L,H,,,
+STK,S51,San Vicente,6.4,L,L,H,,,
+STK,S52,San Vicente,5.8,L,M,H,,,
+STK,S53,San Vicente,5.8,L,H,H,,,
+STK,S54,San Vicente,5.6,L,M,H,,,
+STK,S55,Parada,5.6,M,L,H,,,
+STK,S56,Parada,5.6,L,L,H,,,
+STK,S57,Parada,5.6,L,L,H,,,
+STK,S58,Parada,5.6,L,L,H,,,
+STK,S59,Parada,5.8,L,M,H,,,
+STK,S60,Parada,5.8,L,L,H,,,
+STK,S61,Parada,5.8,L,M,M,,,
+STK,S62,Parada,5.8,L,M,H,,,
+STK,S63,Parada,5.6,L,H,H,,,
+STK,S64,Parada,5.8,L,M,M,,,
+STK,S65,Pulong Buhangin,5.4,L,L,M,,,
+STK,S66,Parada,6.6,L,L,M,,,
+STK,S67,Pulong Buhangin,6.4,L,L,H,,,
+STK,S68,Pulong Buhangin,6.0,L,L,H,,,
+STK,S69,Parada,6.8,L,L,H,,,
+STK,S70,Parada,6.8,M,H,H,,,
+STK,S71,Parada,5.8,L,H,H,,,
+STK,S72,Bulac,7.4,L,H,H,,,
+STK,S73,Parada,6.0,M,L,L,,,
+STK,S74,Parada,6.0,M,L,H,,,
+STK,S75,Parada,7.4,M,L,H,,,
+STK,S76,Parada,6.4,L,L,M,,,
+STK,S77,Parada,5.6,M,M,H,,,
+STK,S78,Parada,5.6,L,L,H,,,
+STK,S79,Parada,5.6,M,M,H,,,
+STK,S80,Parada,6.8,M,L,H,,,
+STK,S81,Parada,7.0,L,L,H,,,
+STK,S82,Parada,6.4,L,M,H,,,
+STK,S83,Parada,6.4,L,M,H,,,
+STK,S84,Parada,5.8,L,L,H,,,
+STK,S85,Mag-Asawang Sapa,7.4,L,L,H,,,
+STK,S86,Mag-Asawang Sapa,6.4,M,L,H,,,
+STK,S87,Mag-Asawang Sapa,5.8,L,L,H,,,
+STK,S88,Mag-Asawang Sapa,5.8,L,L,H,,,
+STK,S89,Mag-Asawang Sapa,6.0,L,L,H,,,
+STK,S90,Mag-Asawang Sapa,6.0,L,L,H,,,
+STK,S91,Silangan,5.4,L,L,L,,,
+STK,S92,Mag-Asawang Sapa,5.4,L,L,H,,,
+STK,S93,Mag-Asawang Sapa,5.4,L,M,M,,,
+STK,S94,Mag-Asawang Sapa,5.6,L,L,H,,,
+STK,S95,Mag-Asawang Sapa,5.2,L,L,H,,,
+STK,S96,Mag-Asawang Sapa,5.6,L,L,H,,,
+STK,S97,Silangan,5.4,L,M,H,,,
+STK,S98,Mag-Asawang Sapa,6.8,L,M,H,,,
+STK,S99,Mag-Asawang Sapa,5.4,L,L,H,,,
+STK,S100,Mag-Asawang Sapa,5.4,L,L,H,,,
+STK,S101,Mag-Asawang Sapa,5.4,L,L,M,,,
+STK,S102,Mag-Asawang Sapa,5.6,L,L,H,,,
+STK,S103,Mag-Asawang Sapa,5.6,L,M,H,,,
+STK,S104,Mag-Asawang Sapa,5.2,L,M,H,,,
+STK,S105,Mag-Asawang Sapa,5.6,L,M,H,,,
+STK,S106,Mag-Asawang Sapa,5.8,L,H,H,,,
+STK,S107,Mag-Asawang Sapa,5.4,L,M,H,,,
+STK,S108,Silangan,7.4,L,L,H,,,
+STK,S109,Sta.Cruz,6.2,L,L,H,,,
+STK,S110,Sta.Cruz,6.4,L,L,H,,,
+STK,S111,Sta.Cruz,7.6,L,M,H,,,
+STK,S112,Manggahan,7.6,L,L,H,,,
+STK,S113,Manggahan,7.2,L,L,H,,,
+STK,S114,Manggahan,6.6,L,L,M,,,
+STK,S115,Manggahan,6.8,L,H,M,,,
+STK,S116,Manggahan,6.4,L,L,M,,,
+STK,S117,Sta.Cruz,6.4,L,L,H,,,
+STK,S118,Sta.Cruz,5.6,L,M,H,,,
+STK,S119,Sta.Cruz,7.6,L,L,M,,,
+STK,S120,Balasing,5.6,L,H,M,,,
+STK,S121,Pulong Buhangin,5.6,L,M,H,,,
+STK,S122,Pulong Buhangin,5.8,L,H,H,,,
+STK,S123,Pulong Buhangin,5.6,L,M,H,,,
+STK,S124,Pulong Buhangin,5.6,L,L,H,,,
+STK,S125,Pulong Buhangin,5.2,L,L,H,,,
+STK,S126,Pulong Buhangin,6.8,L,H,H,,,
+STK,S127,Pulong Buhangin,5.8,L,M,H,,,
+STK,S128,Pulong Buhangin,6.0,L,M,H,,,
+STK,S129,Pulong Buhangin,6.0,L,H,H,,,
+STK,S130,Pulong Buhangin,6.0,L,H,H,,,
+STK,S131,Pulong Buhangin,5.8,L,L,H,,,
+STK,S132,Pulong Buhangin,6.0,L,M,H,,,
+STK,S133,Pulong Buhangin,6.0,L,M,M,,,
+STK,S134,Pulong Buhangin,5.8,L,L,M,,,
+STK,S135,Pulong Buhangin,5.8,L,H,M,,,
+STK,S136,Pulong Buhangin,5.4,L,L,H,,,
+STK,S137,Buenavista,6.0,L,L,H,,,
+STK,S138,Pulong Buhangin,6.0,L,L,H,,,
+STK,S139,Sta.Clara,5.8,L,L,H,,,
+STK,S140,Sta.Clara,5.8,L,L,H,,,
+STK,S141,Buenavista,6.4,L,L,H,,,
+STK,S142,Buenavista,7.4,L,L,H,,,
+STK,S143,Buenavista,7.4,L,L,H,,,
+STK,S144,Buenavista,7.4,L,L,H,,,
+STK,S145,Buenavista,6.6,L,L,H,,,
+STK,S146,Pulong Buhangin,5.8,L,L,H,,,
+STK,S147,Pulong Buhangin,6.8,L,L,H,,,
+STK,S148,Buenavista,5.8,L,L,H,,,
+STK,S149,Balasing,5.6,L,L,H,,,
+STK,S150,Pulong Buhangin,7.4,L,L,H,,,
+STK,S151,San Jose Patag,6.6,L,H,H,,,
+STK,S152,Camangyanan,7.2,L,L,H,,,
+STK,S153,Camangyanan,5.6,L,L,H,,,
+STK,S154,Camangyanan,5.8,L,L,M,,,
+STK,S155,Camangyanan,5.6,L,L,H,,,
+STK,S156,Camangyanan,5.6,L,L,H,,,
+STK,S157,Caypombo,6.6,L,L,H,,,
+STK,S158,Guyong,5.6,L,L,M,,,
+STK,S159,Camangyanan,5.4,L,L,M,,,
+STK,S160,Guyong,5.6,L,L,M,,,
+STK,S161,Guyong,6.4,L,L,M,,,
+STK,S162,Buenavista,5.4,L,L,H,,,
+STK,S163,Camangyanan,6.8,L,M,M,,,
+STK,S164,Guyong,5.8,L,L,M,,,
+STK,S165,Guyong,5.6,L,L,H,,,
+STK,S166,Buenavista,7.0,L,H,H,,,
+STK,S167,Buenavista,5.4,L,H,H,,,
+STK,S168,Guyong,7.2,L,L,H,,,
+STK,S169,Guyong,6.0,L,L,H,,,
+STK,S170,Camangyanan,6.0,L,L,M,,,
+STK,S171,Silangan,6.8,L,L,M,,,
+STK,S172,Guyong,5.4,L,L,H,,,
+STK,S173,Buenavista,5.6,L,H,H,,,
+STK,S174,Guyong,7.6,L,M,M,,,
+STK,S175,Guyong,5.8,L,M,H,,,
+STK,S176,Guyong,7.6,L,M,L,,,
+STK,S177,Guyong,6.0,L,L,M,,,
+STK,S178,Guyong,6.0,L,L,H,,,
+STK,S179,Guyong,5.6,L,L,H,,,
+STK,S180,Buenavista,6.6,L,H,H,,,
+STK,S181,Pulong Buhangin,5.4,L,L,H,,,
+STK,S182,Caypombo,6.0,L,L,H,,,
+STK,S183,Guyong,5.6,L,M,H,,,
+STK,S184,Guyong,5.4,L,M,H,,,
+STK,S185,Buenavista,5.4,L,L,M,,,
+STK,S186,Buenavista,5.4,L,L,M,,,
+STK,S187,Guyong,6.8,L,M,H,,,
+STK,S188,Buenavista,5.6,L,L,M,,,
+STK,S189,Caypombo,7.4,L,M,M,,,
+STK,S190,Camangyanan,6.0,L,L,M,,,
+STK,S191,Pulong Buhangin,6.0,L,L,M,,,
+STK,S192,Caysio,7.4,L,M,H,,,
+STK,S193,Caysio,7.4,L,M,H,,,
+STK,S194,Pulong Buhangin,5.8,L,L,H,,,
+STK,S195,Caysio,7.4,L,M,M,,,
+STK,S196,Pulong Buhangin,5.8,L,L,L,,,
+STK,S197,Caysio,7.4,L,L,H,,,
+STK,S198,Pulong Buhangin,7.4,L,H,H,,,
+STK,S199,Pulong Buhangin,5.8,L,H,M,,,
+STK,S200,Buenavista,7.6,L,H,H,,,
+STK,S201,Camangyanan,6.6,L,M,H,,,
+STK,S202,Guyong,6.2,L,L,H,,,
+STK,S203,Caysio,6.0,L,L,H,,,
+STK,S204,Tumana,5.4,L,L,H,,,
+STK,S205,Pulong Buhangin,6.4,L,L,H,,,
+STK,S206,Pulong Buhangin,7.6,L,L,M,,,
+STK,S207,Pulong Buhangin,6.4,L,L,H,,,
+STK,S208,Pulong Buhangin,7.4,L,L,M,,,
+STK,S209,Pulong Buhangin,6.8,L,L,H,,,
+STK,S210,Pulong Buhangin,5.8,L,L,L,,,
+STK,S211,Pulong Buhangin,7.6,L,L,H,,,
+STK,S212,Pulong Buhangin,7.3,L,M,H,,,
+STK,S213,Pulong Buhangin,7.4,L,L,H,,,
+STK,S214,Pulong Buhangin,6.6,L,L,H,,,
+STK,S215,Caysio,6.0,L,L,H,,,
+STK,S216,Pulong Buhangin,6.4,L,L,H,,,
+STK,S217,Pulong Buhangin,6.2,L,L,H,,,
+STK,S218,Pulong Buhangin,6.0,L,L,H,,,
+STK,S219,Pulong Buhangin,6.2,L,M,H,,,
+STK,S220,Pulong Buhangin,6.8,L,L,H,,,
+STK,S221,Pulong Buhangin,5.6,L,L,H,,,
+STK,S222,Pulong Buhangin,5.4,L,L,H,,,
+STK,S223,Pulong Buhangin,5.6,L,L,H,,,
+STK,S224,Pulong Buhangin,5.6,L,L,H,,,
+STK,S225,Pulong Buhangin,6.4,L,L,H,,,
+STK,S226,Pulong Buhangin,5.8,L,L,M,,,
+STK,S227,Pulong Buhangin,6.6,L,L,M,,,
+STK,S228,Pulong Buhangin,5.8,L,L,H,,,
+STK,S229,Balasing,7.2,L,L,H,,,
+STK,S230,Pulong Buhangin,6.4,L,L,H,,,
+STK,S231,Pulong Buhangin,6.4,L,L,H,,,
+STK,S232,Pulong Buhangin,5.2,L,L,H,,,
+STK,S233,Pulong Buhangin,5.2,L,L,H,,,
+STK,S234,Pulong Buhangin,5.0,L,L,H,,,
+STK,S235,Balasing,5.0,L,L,H,,,
+STK,S236,Pulong Buhangin,5.2,L,L,H,,,
+STK,S237,Pulong Buhangin,5.2,L,L,H,,,
+STK,S238,Pulong Buhangin,5.8,L,L,H,,,
+STK,S239,Bulac,7.4,L,L,M,,,
+STK,S240,Balasing,5.8,L,L,M,,,
+STK,S241,Pulong Buhangin,6.0,L,L,M,,,
+STK,S242,Balasing,7.2,L,L,M,,,
+STK,S243,Balasing,6.0,L,L,H,,,
+STK,S244,Balasing,6.0,L,L,M,,,
+STK,S245,Balasing,6.0,L,L,M,,,
+STK,S246,Tumana,7.4,L,H,L,,,
+STK,S247,Balasing,5.4,L,L,H,,,
+STK,S248,Buenavista,5.4,L,L,H,,,
+STK,S249,Balasing,5.2,L,L,H,,,
+STK,S250,Balasing,6.4,L,M,H,,,
+STK,S251,Tumana,5.8,L,H,H,,,
+STK,S252,Pulong Buhangin,6.6,L,H,M,,,
+STK,S253,Balasing,7.4,L,M,H,,,
+STK,S254,Balasing,7.4,L,L,H,,,
+STK,S255,Balasing,5.8,L,L,M,,,
+STK,S256,Balasing,5.6,L,L,M,,,
+STK,S257,Caypombo,5.6,L,L,H,,,
+STK,S258,Caysio,5.6,L,L,H,,,
+STK,S259,Caysio,5.6,L,L,H,,,
+STK,S260,Caysio,6.0,L,L,H,,,
+STK,S261,Buenavista,5.8,L,M,H,,,
+STK,S262,Tumana,6.6,L,L,H,,,
+STK,S263,Tumana,7.2,L,L,H,,,
+STK,S264,Tumana,7.6,L,M,H,,,
+STK,S265,Tumana,7.4,L,M,H,,,
+STK,S266,Tumana,7.4,L,L,H,,,
+STK,S267,Tumana,7.4,L,H,H,,,
+STK,S268,Tumana,5.8,L,H,H,,,
+STK,S269,Caysio,6.0,L,L,H,,,
+STK,S270,Silangan,5.2,L,L,H,,,
+STK,S271,Tumana,7.2,L,L,H,,,
+STK,S272,Silangan,6.4,L,L,H,,,
+STK,S273,Tumana,7.4,L,H,H,,,
+STK,S274,Silangan,6.4,L,L,H,,,
+STK,S275,Silangan,6.0,L,L,H,,,
+STK,S276,Tumana,6.0,L,H,H,,,
+STK,S277,Silangan,6.0,L,H,H,,,
+STK,S278,Tumana,7.4,L,L,H,,,
+STK,S279,Tumana,7.0,L,L,H,,,
+STK,S280,Tumana,7.4,L,L,H,,,
+STK,S281,Tumana,7.4,L,M,H,,,
+STK,S282,Caysio,6.0,L,M,H,,,
+STK,S283,Silangan,6.0,L,L,H,,,
+STK,S284,Tumana,7.4,L,L,H,,,
+STK,S285,Tumana,6.0,L,H,H,,,
+STK,S286,Tumana,7.6,L,H,H,,,
+STK,S287,Tumana,6.6,L,M,H,,,
+STK,S288,Tumana,6.6,L,M,H,,,
+STK,S289,Tumana,7.4,L,H,H,,,
+STK,S290,Tumana,6.6,L,M,H,,,
+STK,S291,Silangan,6.6,L,H,H,,,
+STK,S292,Silangan,5.8,L,L,H,,,
+STK,S293,Silangan,5.8,L,L,H,,,
+STK,S294,Tumana,6.4,L,L,H,,,
+STK,S295,Balasing,6.0,L,H,H,,,
+STK,S296,Tumana,5.8,L,M,H,,,
+STK,S297,Silangan,7.6,L,L,H,,,
+STK,S298,Balasing,6.0,L,H,H,,,
+STK,S299,Balasing,6.0,L,H,H,,,
+STK,S300,Balasing,5.6,L,M,H,,,
+STK,S301,Tumana,6.6,L,L,H,,,
+STK,S302,Tumana,5.8,L,M,H,,,
+STK,S303,Tumana,6.8,L,M,H,,,
+STK,S304,Tumana,7.0,L,H,H,,,
+STK,S305,Silangan,6.0,L,M,H,,,
+STK,S306,Balasing,6.0,L,L,H,,,
+STK,S307,Balasing,7.2,L,M,H,,,
+STK,S308,Tumana,6.8,L,H,H,,,
+STK,S309,Tumana,6.8,L,H,H,,,
+STK,S310,Tumana,6.8,L,H,H,,,
+STK,S311,Tumana,7.4,L,M,H,,,
+STK,S312,Tumana,6.8,L,M,H,,,
+STK,S313,Tumana,6.0,L,H,H,,,
+STK,S314,Tumana,6.4,L,H,H,,,
+STK,S315,Tumana,6.8,L,M,H,,,
+STK,S316,Balasing,5.8,L,H,H,,,
+STK,S317,Tumana,7.6,L,M,H,,,
+STK,S318,Caysio,6.0,L,H,H,,,
+STK,S319,Tumana,6.4,L,M,H,,,
+STK,S320,Tumana,7.4,L,H,H,,,
+STK,S321,Tumana,6.6,L,H,H,,,
+STK,S322,Silangan,6.2,L,H,H,,,
+STK,S323,Tumana,6.4,L,M,H,,,
+STK,S324,Tumana,7.4,L,L,H,,,
+STK,S325,Catmon,6.4,L,H,H,,,
+STK,S326,Pulong Buhangin,6.0,L,M,H,,,
+STK,S327,Guyong,6.0,L,L,H,,,
+STK,S328,(not recorded),5.4,L,L,L,,,
+FM,FM1,San Vicente,6.37,,,,0.79,31.0,110.0
+FM,FM2,San Vicente,4.73,,,,2.0,49.0,560.0
+FM,FM3,San Vicente,6.29,,,,1.86,37.7,440.0
+FM,FM4,San Vicente,5.85,,,,1.34,26.0,390.0
+FM,FM5,San Jose,6.02,,,,1.76,46.0,340.0
+FM,FM6,San Vicente,4.85,,,,1.46,29.2,340.0
+FM,FM7,San Vicente,5.94,,,,1.56,38.5,390.0
+FM,FM8,San Vicente,6.96,,,,0.93,38.5,150.0
+FM,FM9,Buenavista,5.28,,,,1.33,28.9,240.0
+FM,FM10,Buenavista,5.29,,,,1.58,30.1,370.0
+FM,FM11,Buenavista,5.04,,,,1.36,30.1,250.0
+FM,FM12,Buenavista,5.32,,,,1.83,25.0,470.0
+FM,FM13,Buenavista,5.66,,,,1.43,23.8,80.0
+FM,FM14,Buenavista,5.78,,,,1.56,45.4,280.0
+FM,FM15,P. Buhangin,5.64,,,,1.16,33.3,100.0
+FM,FM16,P. Buhangin,5.85,,,,1.15,23.8,180.0
+FM,FM17,P. Buhangin,6.9,,,,1.28,22.3,120.0
+FM,FM18,P. Buhangin,5.51,,,,1.69,22.7,480.0
+FM,FM19,P. Buhangin,4.76,,,,1.54,36.2,80.0
+FM,FM20,P. Buhangin,5.31,,,,1.91,36.8,520.0
+FM,FM21,P. Buhangin,5.46,,,,1.83,22.9,150.0
+FM,FM22,P. Buhangin,5.4,,,,1.22,24.2,270.0
+FM,FM23,P. Buhangin,5.95,,,,1.73,47.2,510.0
+FM,FM24,P. Buhangin,5.32,,,,1.39,23.2,150.0
+FM,FM25,P. Buhangin,5.8,,,,1.38,38.9,320.0
+FM,FM26,P. Buhangin,6.08,,,,0.99,30.0,200.0
+FM,FM27,P. Buhangin,6.18,,,,1.45,120.8,460.0
+FM,FM28,P. Buhangin,6.89,,,,1.58,37.3,90.0
+FM,FM29,P. Buhangin,5.94,,,,1.6,26.2,250.0
+FM,FM30,P. Buhangin,6.07,,,,1.46,122.8,460.0
+FM,FM31,P. Buhangin,6.12,,,,1.47,71.5,420.0
+FM,FM32,P. Buhangin,6.49,,,,1.66,60.1,500.0
+FM,FM33,Camangyanan,5.57,,,,1.55,35.8,170.0
+FM,FM34,Camangyanan,5.63,,,,1.28,34.2,200.0
+FM,FM35,Balasing,5.92,,,,1.48,33.8,530.0
+FM,FM36,Balasing,4.73,,,,1.5,166.4,240.0
+FM,FM37,Balasing,6.17,,,,1.93,24.6,190.0
+FM,FM38,Balasing,8.18,,,,1.36,30.4,380.0
+FM,FM39,Caysio,5.4,,,,1.3,21.0,190.0
+FM,FM40,Patag,5.98,,,,1.2,30.0,580.0
+FM,FM41,Kaybanto,6.48,,,,1.28,31.1,350.0
+FM,FM42,Patag,5.71,,,,1.72,57.2,260.0
+FM,FM43,Caysio,6.5,,,,1.46,87.6,180.0
+FM,FM44,Patag,5.39,,,,1.23,25.7,210.0
+FM,FM45,Caysio,5.59,,,,1.69,40.3,360.0
+FM,FM46,P. Buhangin,6.26,,,,1.61,25.7,350.0
+FM,FM47,P. Buhangin,4.88,,,,1.45,36.0,350.0
+FM,FM48,P. Buhangin,5.92,,,,1.25,46.8,240.0
+FM,FM49,P. Buhangin,5.69,,,,1.5,49.0,230.0
+FM,FM50,Gulod,5.8,,,,1.47,24.4,80.0
+FM,FM51,San Gabriel,5.1,,,,1.479,126.8,510.0
+FM,FM52,M. Parang,5.4,,,,1.43,56.5,90.0
+FM,FM53,M. Parang,6.04,,,,1.37,65.5,150.0
+FM,FM54,M. Sapa,7.07,,,,1.32,98.3,430.0
+FM,FM55,Patag,6.43,,,,1.61,42.9,330.0
+FM,FM56,Poblacion,5.5,,,,1.54,81.5,130.0
+FM,FM57,Ramos Street,5.85,,,,1.14,22.8,370.0
+FM,FM58,Peso Farm,5.83,,,,0.85,89.3,100.0
+FM,FM59,San Vicente,6.56,,,,1.45,7.0,170.0
+FM,FM60,San Vicente,6.25,,,,0.86,3.9,340.0
+FM,FM61,San Vicente,6.07,,,,0.71,0.6,80.0
+FM,FM62,Buenavista,5.58,,,,0.91,7.0,190.0
+FM,FM63,Buenavista,5.19,,,,0.86,8.0,150.0
+FM,FM64,M. Sapa,4.98,,,,1.61,6.0,150.0
+FM,FM65,P. Buhangin,4.9,,,,1.77,7.3,90.0
+FM,FM66,P. Buhangin,5.26,,,,1.22,9.7,90.0
+FM,FM67,M. Sapa,5.23,,,,1.53,4.9,90.0
+FM,FM68,M. Sapa,5.61,,,,1.33,6.7,110.0
+FM,FM69,Camangyanan,5.68,,,,1.48,4.2,290.0
+FM,FM70,Camangyanan,4.76,,,,1.61,3.0,230.0
+FM,FM71,Camangyanan,6.05,,,,1.1,8.7,100.0
+FM,FM72,Balasing,6.29,,,,0.94,9.6,220.0
+FM,FM73,Balasing,5.95,,,,1.07,6.6,110.0
+FM,FM74,Caysio,6.23,,,,1.36,9.3,300.0
+FM,FM75,Caysio,5.12,,,,1.35,9.8,100.0
+FM,FM76,P. Buhangin,6.15,,,,1.25,8.2,210.0
+FM,FM77,Bukid,4.84,,,,1.63,6.1,120.0
+FM,FM78,Bulac,5.19,,,,0.26,2.0,120.0
+FM,FM79,M. Parang,4.76,,,,1.24,9.1,240.0
+FM,FM80,M. Parang,7.69,,,,1.45,7.8,210.0
+FM,FM81,Peso Farm,4.64,,,,1.62,5.1,200.0
+FM,FM82,Parada,5.44,,,,1.51,3.6,140.0
+FM,FM83,San Vicente,6.77,,,,2.15,8.2,110.0
+FM,FM84,San Vicente,5.42,,,,1.23,5.4,60.0
+FM,FM85,M. Sapa,5.98,,,,1.74,6.7,70.0
+FM,FM86,P. Buhangin,4.78,,,,1.44,8.8,70.0
+FM,FM87,P. Buhangin,6.26,,,,1.97,0.7,70.0
+FM,FM88,P. Buhangin,4.54,,,,1.01,5.7,60.0
+FM,FM89,M. Sapa,5.25,,,,1.74,4.3,70.0
+FM,FM90,M. Sapa,4.99,,,,1.21,4.0,60.0
+FM,FM91,Patag,5.19,,,,1.09,8.0,40.0
+FM,FM92,M. Parang,4.53,,,,0.9,6.4,70.0
+FM,FM93,Sitio Maligaya,8.11,,,,1.65,9.0,40.0
+FM,FM94,Bukid,7.02,,,,0.75,0.2,40.0
+FM,FM95,San Vicente,5.72,,,,1.36,12.8,320.0
+FM,FM96,M. Sapa,4.95,,,,1.45,13.0,320.0
+FM,FM97,Buenavista,5.38,,,,1.08,12.5,900.0
+FM,FM98,Buenavista,5.77,,,,1.43,11.5,100.0
+FM,FM99,P. Buhangin,6.87,,,,1.73,17.6,100.0
+FM,FM100,P. Buhangin,4.72,,,,1.87,12.5,200.0
+FM,FM101,P. Buhangin,5.7,,,,1.04,15.0,120.0
+FM,FM102,P. Buhangin,6.33,,,,1.31,15.5,140.0
+FM,FM103,Sta. Clara,5.73,,,,1.16,17.8,320.0
+FM,FM104,Balasing,5.2,,,,1.44,17.4,300.0
+FM,FM105,Balasing,5.89,,,,1.25,10.6,220.0
+FM,FM106,Caysio,5.09,,,,1.52,12.9,210.0
+FM,FM107,Patag,5.43,,,,1.17,18.6,110.0
+FM,FM108,Gulod,5.57,,,,1.72,19.1,170.0
+FM,FM109,Bulac,4.56,,,,1.38,17.4,310.0
+FM,FM110,Parada,6.59,,,,1.75,13.3,240.0
+FM,FM111,Peso Farm,4.69,,,,1.62,11.1,170.0
+FM,FM112,P. Buhangin,6.05,,,,2.12,11.5,280.0
+FM,FM113,Sta. Clara,5.5,,,,1.27,26.0,60.0
+FM,FM114,M. Sapa,5.22,,,,1.38,12.6,40.0
+FM,FM115,M. Sapa,5.83,,,,1.63,11.3,50.0
+FM,FM116,Camangyanan,5.34,,,,1.96,10.8,50.0
+FM,FM117,Bukid,4.76,,,,1.06,16.0,63.9
+FM,FM118,Tumana,5.68,,,,2.17,32.6,70.0
+FM,FM119,Bulac,4.93,,,,2.05,31.0,60.0
+FM,FM120,San Vicente,6.23,,,,2.14,32.8,100.0
+FM,FM121,P. Buhangin,4.23,,,,2.31,160.5,630.0
+FM,FM122,Balasing,6.33,,,,2.2,49.6,240.0

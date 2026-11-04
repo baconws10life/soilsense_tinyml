@@ -11,7 +11,7 @@
       <div class="chat-avatar">{{ icon('leaf',20) }}</div>
       <div>
         <div class="chat-title">Soil AI Assistant</div>
-        <div class="chat-subtitle">Rule-based tutor &middot; explains the on-device TinyML crop model</div>
+        <div class="chat-subtitle">Rule-based tutor &middot; explains your soil readings</div>
       </div>
     </div>
     <div class="chat-active"><span class="status-dot"></span> Active</div>
@@ -36,7 +36,6 @@
             <b>Your latest readings are loaded:</b><br>
             pH {{ record.ph }} &middot; Moisture {{ record.humidity }}% &middot; Temp {{ record.temp }}&deg;C<br>
             N: {{ record.N }} mg/kg &middot; P: {{ record.P }} mg/kg &middot; K: {{ record.K }} mg/kg
-            {% if record.crop %}<br>Crop: <b>{{ record.crop|capitalize }}</b>{% if record.tinyml_conf is not none %} ({{ record.tinyml_conf|round(0)|int }}% confidence, picked by TinyML on the scanner){% endif %}{% endif %}
           </div>
           {% else %}
           <div class="readings-list">You don't have a soil reading logged yet — I can still answer general questions!</div>

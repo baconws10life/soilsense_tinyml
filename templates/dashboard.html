@@ -1,4 +1,4 @@
-{% from '_icons.html' import icon, crop_icon %}
+{% from '_icons.html' import icon %}
 <!DOCTYPE html>
 <html lang="en" data-theme="dark">
 <head>
@@ -9,7 +9,6 @@
 <link rel="icon" href="{{ url_for('static', filename='images/ffhnas.jpg') }}">
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Fraunces:ital,wght@0,300;0,600;0,700;1,300&family=DM+Sans:wght@400;500;600&display=swap" rel="stylesheet"/>
 <script>try{var t=localStorage.getItem('theme');if(t)document.documentElement.setAttribute('data-theme',t);}catch(e){}</script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <style>
 :root {
   --bg:         #0e1410;
@@ -197,7 +196,7 @@ body {
 /* ── MAIN GRID ── */
 .main-grid {
   display: grid;
-  grid-template-columns: 280px 1fr 280px;
+  grid-template-columns: minmax(280px, 340px) 1fr;
   gap: 18px;
   margin-bottom: 18px;
 }
@@ -557,12 +556,12 @@ body {
 
   <div class="page-header">
     <div class="page-title">Soil Analysis</div>
-    <div class="page-sub">AI-Powered Crop Recommendation</div>
+    <div class="page-sub">Enter your soil readings and get a fertility score</div>
   </div>
 
   {% if error %}<div class="form-alert">{{ icon('alert',15) }} {{ error }}</div>{% endif %}
 
-  <div class="main-grid{% if result %} has-result{% endif %}">
+  <div class="main-grid{% if fertility is not none %} has-result{% endif %}">
 
     <!-- LEFT: FORM -->
     <div class="panel p-form">
@@ -599,7 +598,7 @@ body {
   <span class="input-error" id="err-temp"></span>
 </div>
 <div class="form-group">
-  <label class="form-label">Humidity (%)</label>
+  <label class="form-label">Moisture (%)</label>
   <input class="form-input" name="humidity" inputmode="decimal" autocomplete="off" enterkeyhint="next" placeholder="e.g. 80" oninput="validateNumber(this)" required/>
   <span class="input-error" id="err-humidity"></span>
 </div>
@@ -618,20 +617,8 @@ body {
       </div>
     </div>
 
-    <!-- MIDDLE: CHART + FERTILITY -->
+    <!-- RIGHT: FERTILITY -->
     <div class="mid-col" style="display:flex;flex-direction:column;gap:18px;">
-
-      <div class="panel p-chart">
-        <div class="panel-header">
-          <span></span>
-          <div class="panel-title">Crop Distribution</div>
-        </div>
-        <div class="panel-body">
-          <div class="chart-wrap">
-            <canvas id="chart"></canvas>
-          </div>
-        </div>
-      </div>
 
       <div class="panel p-fert">
         <div class="panel-header">
@@ -667,34 +654,7 @@ body {
 
     </div>
 
-    <!-- RIGHT: RESULT -->
-    <div class="panel p-result">
-      <div class="panel-header">
-        <span></span>
-        <div class="panel-title">Recommended Crop</div>
-      </div>
-      <div class="panel-body">
-        {% set crop_photos = {'rice':'rice.jpg','corn':'maize.jpg','mungbean':'mungbean.jpg'} %}
-        {% if result %}
-          {% set photo = crop_photos.get(result.name|lower) %}
-          <div class="crop-img-wrap">
-            {% if photo %}
-              <img src="{{ url_for('static', filename='images/' + photo) }}" alt="{{ result.label }}"/>
-            {% else %}
-              <span class="img-placeholder-icon">{{ crop_icon(result.category, 40) }}</span>
-            {% endif %}
-          </div>
-          <div class="result-name">{{ result.label }}</div>
-          <p class="result-desc">{{ result.desc }}</p>
-          <div class="confidence-pill">{{ result.category }} · Harvest {{ result.harvest }}</div>
-        {% else %}
-          <div class="crop-img-wrap">
-            <span class="img-placeholder-icon">{{ icon('sprout',40) }}</span>
-          </div>
-          <p class="result-no-data">No prediction yet.<br>Fill in the form and click Analyze.</p>
-        {% endif %}
-      </div>
-    </div>
+  </div>
 
   </div>
 
@@ -705,8 +665,7 @@ body {
       <div class="history-title"> Analysis History</div>
       <span class="history-count">{{ records | length }} record(s)</span>
     </div>
-    {% set rt_crops = records|map(attribute='crop')|select|map('lower')|unique|sort|list %}
-    {% with rt_tbody='history-tbody', rt_crops=rt_crops, rt_admin=is_admin %}{% include '_records_tools.html' %}{% endwith %}
+    {% with rt_tbody='history-tbody', rt_admin=is_admin %}{% include '_records_tools.html' %}{% endwith %}
     <div class="history-wrap">
     <table class="history-table">
       <thead>
@@ -716,14 +675,14 @@ body {
           {% if is_admin %}<th>User</th>{% endif %}
           <th>N</th><th>P</th><th>K</th>
           <th>pH</th><th>Temp</th>
-          <th>Humidity</th>
-          <th>Crop</th><th>Health</th><th>Source</th>
+          <th>Moisture</th>
+          <th>Health</th><th>Source</th>
           {% if is_admin %}<th></th>{% endif %}
         </tr>
       </thead>
       <tbody id="history-tbody">
         {% for r in records %}
-        <tr data-id="{{ r['id'] }}" data-source="{{ r['source'] or 'manual' }}" data-crop="{{ (r['crop'] or '')|lower }}" data-date="{{ (r['created_at'] or '')[:10] }}">
+        <tr data-id="{{ r['id'] }}" data-source="{{ r['source'] or 'manual' }}" data-date="{{ (r['created_at'] or '')[:10] }}">
           <td class="rt-col" data-label="Select"><input type="checkbox" class="rt-check" aria-label="Select record {{ r['id'] }}"></td>
           <td class="muted" data-label="Date">{{ r['created_at'] or '—' }}</td>
           {% if is_admin %}<td data-label="User">{{ r['username'] }}</td>{% endif %}
@@ -732,8 +691,7 @@ body {
           <td data-label="K">{{ r['K'] }}</td>
           <td data-label="pH">{{ r['ph'] }}</td>
           <td data-label="Temp">{{ r['temp'] }}</td>
-          <td data-label="Humidity">{{ r['humidity'] }}</td>
-          <td class="crop-cell" data-label="Crop">{{ r['crop']|capitalize if r['crop'] else '—' }}</td>
+          <td data-label="Moisture">{{ r['humidity'] }}</td>
           <td data-label="Health">{{ r['fertility']|round(0,'floor')|int if r['fertility'] else '—' }}</td>
           <td class="muted" data-label="Source">{{ r['source'] or 'manual' }}</td>
           {% if is_admin %}
@@ -762,69 +720,11 @@ body {
     const next = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
     document.documentElement.setAttribute('data-theme', next);
     localStorage.setItem('theme', next);
-    updateChart();
   }
 
   const saved = localStorage.getItem('theme');
   if (saved) document.documentElement.setAttribute('data-theme', saved);
 
-  /* Chart */
-  const isDark = () => document.documentElement.getAttribute('data-theme') === 'dark';
-
-  const chartInstance = new Chart(document.getElementById('chart'), {
-    type: 'bar',
-    data: {
-      labels: {{ labels | tojson }},
-      datasets: [{
-        label: 'Analyses',
-        data: {{ values | tojson }},
-        backgroundColor: 'rgba(76,175,111,0.7)',
-        borderColor: '#4caf6f',
-        borderWidth: 1,
-        borderRadius: 5,
-      }]
-    },
-    options: {
-      responsive: true,
-      maintainAspectRatio: false,
-      plugins: {
-        legend: { display: false },
-        tooltip: {
-          backgroundColor: '#141c16',
-          borderColor: '#253028',
-          borderWidth: 1,
-          titleColor: '#f0f7f2',
-          bodyColor: '#6b8a72',
-          titleFont: { family: 'Fraunces', size: 13 },
-          bodyFont:  { family: 'DM Mono',   size: 11 },
-        }
-      },
-      scales: {
-        x: {
-          ticks: { color: '#6b8a72', font: { family: 'DM Mono', size: 9 } },
-          grid:  { color: 'rgba(37,48,40,0.6)' },
-          border: { color: '#253028' }
-        },
-        y: {
-          ticks: { color: '#6b8a72', font: { family: 'DM Mono', size: 9 } },
-          grid:  { color: 'rgba(37,48,40,0.6)' },
-          border: { color: '#253028' }
-        }
-      }
-    }
-  });
-
-  function updateChart() {
-    const gridColor = isDark() ? 'rgba(37,48,40,0.6)' : 'rgba(200,224,207,0.6)';
-    const tickColor = isDark() ? '#6b8a72' : '#5a7a62';
-    const tooltipBg = isDark() ? '#141c16' : '#ffffff';
-    chartInstance.options.scales.x.ticks.color = tickColor;
-    chartInstance.options.scales.x.grid.color  = gridColor;
-    chartInstance.options.scales.y.ticks.color = tickColor;
-    chartInstance.options.scales.y.grid.color  = gridColor;
-    chartInstance.options.plugins.tooltip.backgroundColor = tooltipBg;
-    chartInstance.update();
-  }
   function validateNumber(input) {
   const val = input.value.trim();
   const errEl = document.getElementById('err-' + input.name);

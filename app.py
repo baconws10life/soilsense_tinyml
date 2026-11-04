@@ -22,7 +22,7 @@ DEVICE PAIRING (added): /api/device/pair, /api/device/unlink, /pair, /pair/unlin
   a `devices` table, and /api/esp32 now identifies the user from the linked device.
 
 WHAT DID NOT CHANGE:
-  All domain logic, ML model, crop knowledge base, AI assistant,
+  All domain logic, AI assistant,
   soil scoring, all routes, all template calls — untouched.
 """
 
@@ -39,21 +39,11 @@ import traceback
 from datetime import datetime
 from collections import Counter, OrderedDict
 
-from sklearn.neighbors import KNeighborsClassifier
-import pandas as pd
-
-try:
-    import tinyml_web            # the TinyML networks, run with numpy (see tinyml_web.py)
-except Exception as _e:          # never take the whole site down because of the extra model
-    tinyml_web = None
-    print(f"[AgriSense] TinyML on the website is disabled: {_e}")
-
 app = Flask(__name__)
-app.secret_key = os.environ.get("SOILSENSE_SECRET_KEY", "dev-secret-change-me")
+app.secret_key = os.environ.get("AGRISENSE_SECRET_KEY") or os.environ.get("SOILSENSE_SECRET_KEY", "dev-secret-change-me")
 app.jinja_env.globals["zip"] = zip
 
 BASE_DIR     = os.path.dirname(__file__)
-CSV_PATH     = os.path.join(BASE_DIR, "Crop_recommendation.csv")
 # Vercel's deployment folder (/var/task) is read-only. Only /tmp is writable,
 # and it is temporary (wiped between invocations), so uploads here are not permanent.
 UPLOAD_FOLDER = os.path.join("/tmp", "uploads")
@@ -214,9 +204,9 @@ def init_db():
     _add_column_if_missing(conn, "records", "fertility",  "REAL")
     _add_column_if_missing(conn, "records", "created_at", "TEXT")
     _add_column_if_missing(conn, "users",   "display_name", "TEXT")
-    # TinyML + offline sync (added): who picked the crop, how sure it was, was the
-    # scan stored on the ESP32 while offline, and a unique id so a re-sent scan
-    # is never saved twice.
+    # offline sync: was the scan stored on the ESP32 while offline, and a unique id so a
+    # re-sent scan is never saved twice. (crop / crop_source / tinyml_conf / tiny_json are
+    # old columns from the removed crop recommendation: kept so old rows stay readable.)
     _add_column_if_missing(conn, "records", "crop_source", "TEXT")
     _add_column_if_missing(conn, "records", "tinyml_conf", "REAL")
     _add_column_if_missing(conn, "records", "offline",     "INTEGER DEFAULT 0")
@@ -265,131 +255,6 @@ def health():
         })
     except Exception as ex:
         return jsonify({"status": "error", "error": str(ex)}), 500
-
-
-# ---------------------------------------------------------------------------
-# ML MODEL + CROP KNOWLEDGE BASE   (crops = Philippine crops, see data/make_ph_dataset.py)
-# ---------------------------------------------------------------------------
-FEATURES = ["N", "P", "K", "temperature", "humidity", "ph"]     # no rainfall: the prototype does not use it
-
-df     = pd.read_csv(CSV_PATH)
-X      = df[FEATURES]
-y      = df["label"]
-model  = KNeighborsClassifier(n_neighbors=5)
-model.fit(X, y)
-
-_crop_bands = {}
-for label, group in df.groupby("label"):
-    _crop_bands[label] = {
-        feat: (
-            float(group[feat].quantile(0.10)),
-            float(group[feat].quantile(0.90)),
-            float(group[feat].mean()),
-        )
-        for feat in FEATURES
-    }
-
-CROP_INFO = {
-    "rice":        dict(category="Grains", emoji="\U0001F33E", harvest="105-130 days",
-                        desc="Rice (palay) is the Philippines' staple: it thrives in warm, wet lowland paddies or irrigated fields with plenty of water and slightly acidic, clay-rich soil."),
-    "corn":        dict(category="Grains", emoji="\U0001F33D", harvest="90-115 days",
-                        desc="Corn (mais) is the country's second staple grain: it wants fertile, well-drained soil, steady warmth and steady moisture, and responds strongly to nitrogen."),
-    "cassava":     dict(category="Root Crops", emoji="\U0001F360", harvest="8-12 months",
-                        desc="Cassava (kamoteng kahoy) tolerates poor, sandy or sloping soil and dry spells, needs little nitrogen but plenty of potassium, and is a food, feed and starch crop."),
-    "sweetpotato": dict(category="Root Crops", emoji="\U0001F360", harvest="90-120 days",
-                        desc="Sweet potato (kamote) grows fast in loose, well-drained soil with moderate moisture; too much nitrogen gives lots of leaves but small roots."),
-    "mungbean":    dict(category="Legumes", emoji="\U0001F331", harvest="60-70 days",
-                        desc="Mung bean (mongo) is a fast, drought-tolerant legume that fits after rice; it fixes its own nitrogen, so it needs very little added."),
-    "peanut":      dict(category="Legumes", emoji="\U0001F95C", harvest="100-120 days",
-                        desc="Peanut (mani) wants light, loose, well-drained sandy loam with moderate moisture and enough potassium and calcium for the pods to fill."),
-    "sitaw":       dict(category="Legumes", emoji="\U0001FADB", harvest="55-70 days",
-                        desc="Sitaw (yardlong or string bean) climbs on trellises in warm, humid weather and well-drained loam, and is a quick-cycle vegetable legume."),
-    "tomato":      dict(category="Vegetables", emoji="\U0001F345", harvest="65-90 days",
-                        desc="Tomato likes well-drained, fertile loam, plenty of phosphorus and potassium, and relatively cool, drier weather; waterlogging brings disease."),
-    "eggplant":    dict(category="Vegetables", emoji="\U0001F346", harvest="75-110 days",
-                        desc="Eggplant (talong) is a hardy, warm-season vegetable that fruits for months in fertile, well-drained soil with steady moisture."),
-    "ampalaya":    dict(category="Vegetables", emoji="\U0001F952", harvest="60-90 days",
-                        desc="Ampalaya (bitter gourd) is a warm, humid-weather vine that needs a trellis, moderate fertility and soil that never waterlogs."),
-    "cabbage":     dict(category="Vegetables", emoji="\U0001F96C", harvest="70-90 days",
-                        desc="Cabbage is a highland crop (Benguet, Bukidnon): it needs cool weather, lots of nitrogen and fertile, moisture-holding loam."),
-    "onion":       dict(category="Vegetables", emoji="\U0001F9C5", harvest="100-120 days",
-                        desc="Onion (sibuyas) is a dry-season crop (Nueva Ecija, Ilocos) that needs fertile, well-drained loam, high potassium and a dry spell at bulbing."),
-    "banana":      dict(category="Fruits", emoji="\U0001F34C", harvest="9-12 months",
-                        desc="Banana (saging) needs rich, moisture-retentive soil, high humidity and steady warmth all year round."),
-    "mango":       dict(category="Fruits", emoji="\U0001F96D", harvest="Perennial (100-150 days post-flower)",
-                        desc="Mango (mangga) trees want a distinct dry season to flower, warm temperatures and deep, well-drained soil."),
-    "pineapple":   dict(category="Fruits", emoji="\U0001F34D", harvest="14-18 months",
-                        desc="Pineapple (pinya) is one of the few crops that likes acidic soil (pH 4.5-5.5); it needs good drainage and plenty of potassium."),
-    "papaya":      dict(category="Fruits", emoji="\U0001F348", harvest="9-11 months",
-                        desc="Papaya grows fast in hot, humid weather with rich, well-drained soil and protection from strong wind and standing water."),
-    "calamansi":   dict(category="Fruits", emoji="\U0001F34B", harvest="Perennial (fruits 2-3 years after planting)",
-                        desc="Calamansi is the Philippines' own citrus: it likes warm, humid weather, slightly acidic, well-drained loam and light but regular feeding."),
-    "coconut":     dict(category="Cash Crops", emoji="\U0001F965", harvest="Perennial (6-10 years to first nuts)",
-                        desc="Coconut (niyog) palms love hot, humid coastal climates with sandy or loamy soil and abundant, well-spread water."),
-    "sugarcane":   dict(category="Cash Crops", emoji="\U0001F38D", harvest="10-14 months",
-                        desc="Sugarcane (tubo) is a heavy feeder: it needs deep fertile soil, lots of nitrogen and potassium, warm weather and good drainage."),
-    "coffee":      dict(category="Cash Crops", emoji="\U00002615", harvest="Perennial (~8-10 months flower-to-cherry)",
-                        desc="Coffee (kape) grows best in the cool uplands with partial shade, high humidity and slightly acidic, well-drained, fertile soil."),
-    "cacao":       dict(category="Cash Crops", emoji="\U0001F36B", harvest="Perennial (~5-6 months pod-to-harvest)",
-                        desc="Cacao grows under shade in warm, humid, sheltered sites (often under coconut), in deep, moist, well-drained, slightly acidic soil."),
-    "abaca":       dict(category="Cash Crops", emoji="\U0001F33F", harvest="Perennial (stalks cut every 3-4 months)",
-                        desc="Abaca (Manila hemp) is a banana relative grown for fibre: it needs rich, moist, well-drained volcanic or alluvial soil, high humidity and lots of potassium."),
-}
-CROP_CATEGORIES = ["Grains", "Root Crops", "Legumes", "Vegetables", "Fruits", "Cash Crops"]
-
-
-def recommend_crop(N, P, K, temp, humidity, ph):
-    sample     = pd.DataFrame([[N, P, K, temp, humidity, ph]], columns=FEATURES)
-    prediction = model.predict(sample)[0]
-    info       = CROP_INFO.get(prediction.lower(), {})
-    base_desc  = info.get("desc", "This crop is well suited to the analyzed soil and climate conditions.")
-    description = f"{base_desc} (Based on your input: pH {ph}, {temp}\u00b0C, {humidity}% humidity)"
-    return {
-        "name":     prediction,
-        "label":    prediction.capitalize(),
-        "desc":     description,
-        "emoji":    info.get("emoji",    "\U0001F331"),
-        "category": info.get("category", "Other"),
-        "harvest":  info.get("harvest",  "Varies"),
-    }
-
-
-def _band_score(value, low, high):
-    span   = max(high - low, 1e-6)
-    margin = span * 0.25
-    if low <= value <= high: return 1.0
-    if value < low:          return max(0.0, 1 - (low  - value) / margin)
-    return                          max(0.0, 1 - (value - high)  / margin)
-
-
-def crop_matches(N, P, K, temp, humidity, ph, category=None, suitable_only=False):
-    reading = {"N": N, "P": P, "K": K, "temperature": temp,
-               "humidity": humidity, "ph": ph}
-    results = []
-    for label, bands in _crop_bands.items():
-        scores = {feat: _band_score(reading[feat], bands[feat][0], bands[feat][1]) for feat in FEATURES}
-        pct    = round(sum(scores.values()) / len(FEATURES) * 100)
-        tier   = "Excellent" if pct >= 85 else "Good" if pct >= 60 else "Fair"
-        info   = CROP_INFO.get(label, {})
-        checks = {
-            "Soil pH":     scores["ph"]          >= 0.999,
-            "Moisture":    scores["humidity"]     >= 0.999,
-            "Temperature": scores["temperature"]  >= 0.999,
-            "Nitrogen":    scores["N"]            >= 0.999,
-        }
-        results.append({
-            "name": label, "label": label.capitalize(),
-            "emoji":    info.get("emoji",    "\U0001F331"),
-            "category": info.get("category", "Other"),
-            "desc":     info.get("desc",     ""),
-            "harvest":  info.get("harvest",  "Varies"),
-            "match": pct, "tier": tier, "checks": checks,
-        })
-    if category and category != "All Crops":
-        results = [r for r in results if r["category"] == category]
-    if suitable_only:
-        results = [r for r in results if r["match"] >= 60]
-    return sorted(results, key=lambda r: (-r["match"], r["label"]))
 
 
 # ---------------------------------------------------------------------------
@@ -536,72 +401,6 @@ def group_readings(readings):
     return groups
 
 
-# On-device advisor flags, in the same bit order as TINYML_ADVICE[] in the Arduino header
-TINY_ADVICE = ["Low nitrogen", "Low phosphorus", "Low potassium", "Acidic soil",
-               "Alkaline soil", "Soil too dry", "Soil waterlogged", "Soil too hot"]
-
-
-def tiny_extra_from_payload(data, main_crop, main_conf):
-    """Validate the optional TinyML fields sent by the ESP32 and pack them as JSON text."""
-    import json
-    top = []
-    for ck, pk in (("crop", "crop_conf"), ("crop2", "crop2_conf"), ("crop3", "crop3_conf")):
-        name = str(data.get(ck) or "").strip().lower()
-        if name in CROP_INFO:
-            try:    conf = max(0.0, min(100.0, float(data.get(pk))))
-            except (TypeError, ValueError): conf = None
-            top.append([name, conf])
-    has_probe = "odd" in data
-    try:    mask = int(data.get("advice")) & 0xFF
-    except (TypeError, ValueError): mask = None
-    if not top and not has_probe and mask is None:
-        return None
-    try:    err = float(data.get("odd_err"))
-    except (TypeError, ValueError): err = None
-    return json.dumps({
-        "top3": top,
-        "odd": bool(int(data.get("odd") or 0)) if has_probe else None,
-        "odd_err": err,
-        "advice": [TINY_ADVICE[i] for i in range(8) if mask is not None and mask & (1 << i)] if mask is not None else None,
-    })
-
-
-def parse_tiny(rec):
-    import json
-    raw = rec.get("tiny_json")
-    if not raw:
-        return None
-    try:
-        d = json.loads(raw)
-    except ValueError:
-        return None
-    d["top3"] = [{"name": n, "label": n.capitalize(), "conf": (round(c) if c is not None else None),
-                  "emoji": CROP_INFO.get(n, {}).get("emoji", "")} for n, c in d.get("top3", [])]
-    return d
-
-
-def web_tiny_json(N, P, K, temp, humidity, ph):
-    """Run the TinyML networks on the website and pack the result like the ESP32 used to (JSON text)."""
-    if tinyml_web is None:
-        return None
-    try:
-        return json.dumps(tinyml_web.analyze(N, P, K, temp, humidity, ph))
-    except Exception as e:
-        print(f"[AgriSense] TinyML (web) failed: {e}")
-        return None
-
-
-def tiny_for_record(rec):
-    """TinyML analysis for a record -> (analysis dict or None, where it was computed).
-    where: 'device' (ESP32 sent it), 'web' (the website computed it when the scan arrived) or
-    'web-live' (older / manual record: computed now, not stored)."""
-    t = parse_tiny(rec)
-    if t:
-        return t, ("web" if rec.get("crop_source") == "tinyml-web" else "device")
-    js = web_tiny_json(rec["N"], rec["P"], rec["K"], rec["temp"], rec["humidity"], rec["ph"])
-    return (parse_tiny({"tiny_json": js}), "web-live") if js else (None, "")
-
-
 def sensors_summary(rec, readings):
     """Headline numbers for the top of the Sensors page."""
     counts = {"optimal": 0, "watch": 0, "attention": 0}
@@ -612,20 +411,11 @@ def sensors_summary(rec, readings):
     todo = sorted((r for r in readings if r["status"] != "optimal"),
                   key=lambda r: (-READING_SEVERITY[r["status"]], r["label"]))
     src  = rec.get("source") or "manual"
-    conf = rec.get("tinyml_conf")
-    tiny, tiny_where = tiny_for_record(rec)
     return {
         "counts": counts, "total": len(readings), "todo": todo[:3],
         "when": (rec.get("created_at") or "")[:16],
         "source_label": "ESP32-S3 scanner" if src == "esp32" else "Manual entry",
         "was_offline": bool(rec.get("offline")),
-        "crop": (rec.get("crop") or "").capitalize(),
-        "crop_by": ("TinyML on the ESP32-S3" if rec.get("crop_source") == "tinyml"
-                    else "TinyML on the website" if rec.get("crop_source") == "tinyml-web"
-                    else "Website model (KNN)"),
-        "crop_conf": round(conf) if conf is not None else None,
-        "tiny": tiny,
-        "tiny_where": tiny_where,
     }
 
 
@@ -676,7 +466,7 @@ def get_latest_record(username):
 
 
 # ---------------------------------------------------------------------------
-# RULE-BASED AI ASSISTANT   (unchanged)
+# RULE-BASED AI ASSISTANT
 # ---------------------------------------------------------------------------
 AI_TOPICS = [
     {"id":"ph",      "chip":"What is soil pH?",             "keywords":["ph","acid","alkalin"],
@@ -689,106 +479,20 @@ AI_TOPICS = [
      "answer": lambda r: ("Organic matter is the decomposed plant and animal material in soil — it holds water, feeds soil microbes, and slowly releases nutrients. A healthy field usually sits around 3-6%.{context}").format(context=(f" Your estimate right now is about {estimate_organic_matter(r['N'],r['K'])}%." if r else ""))},
     {"id":"score",   "chip":"How is my health score calculated?", "keywords":["health score","grade","fertility","score"],
      "answer": lambda r: ("Your soil health score checks all six readings — N, P, K, pH, temperature and moisture — against their optimal ranges. Each reading in range adds roughly 17 points, for a score out of 100. 85+ is Grade A, 65-84 is B, 45-64 is C, and below 45 is D.{context}").format(context=(f" You're currently at {r['fertility']}/100 (Grade {grade_for_score(r['fertility'])[0]})." if r else ""))},
-    {"id":"crops",   "chip":"How does crop matching work?", "keywords":["crop","recommend","match","grow","plant"],
-     "answer": lambda r: "The Crop Picks page compares your readings against the typical range for each of 22 crops in the training dataset, feature by feature. A crop scores higher the more of your readings fall inside its comfort zone — 85%+ is 'Excellent match', 60-84% is 'Good match', below that is 'Fair'."},
 ]
-AI_FALLBACK = "I can walk you through pH, NPK nutrients, moisture, temperature, organic matter, your health score, how crop matching works, what TinyML is, why your scanner picked a crop, and how offline scanning works. Try one of those, or tap a suggestion above."
+AI_FALLBACK = "I can walk you through pH, NPK nutrients, moisture, temperature, organic matter, your health score and what to do when the scanner has no Wi-Fi. Try one of the suggestions, or ask in your own words."
 
 
-# ---- TinyML-aware topics (added) ------------------------------------------------
-TINYML_LABELS = {"N": "Nitrogen", "P": "Phosphorus", "K": "Potassium",
-                 "temperature": "Temperature", "humidity": "Moisture", "ph": "pH"}
-
-
-def explain_crop(rec):
-    """Which of the six probe readings fall inside the chosen crop's typical range."""
-    crop  = (rec.get("crop") or "").lower() if rec else ""
-    bands = _crop_bands.get(crop)
-    if not bands:
-        return None
-    vals = {"N": rec["N"], "P": rec["P"], "K": rec["K"], "temperature": rec["temp"],
-            "humidity": rec["humidity"], "ph": rec["ph"]}
-    fits, off = [], []
-    for feat, v in vals.items():
-        lo, hi, _ = bands[feat]
-        dec  = 1 if feat == "ph" else 0
-        item = f"{TINYML_LABELS[feat]} {round(v, 1):g} (typical {lo:.{dec}f}-{hi:.{dec}f})"
-        (fits if lo <= v <= hi else off).append(item)
-    return crop.capitalize(), fits, off
-
-
-def _tiny_of(r):
-    return parse_tiny(r) if r else None
-
-
-def _tinyml_context(r):
-    if not r or not r.get("crop"):
-        return ""
-    by   = ("classified on the ESP32-S3" if r.get("crop_source") == "tinyml"
-            else "classified by TinyML on the website" if r.get("crop_source") == "tinyml-web"
-            else "suggested by the website model")
-    conf = f" with {round(r['tinyml_conf'])}% confidence" if r.get("tinyml_conf") is not None else ""
-    return f" Your latest scan was {by}: {r['crop'].capitalize()}{conf}."
-
-
-def _why_crop(r):
-    if not r or not r.get("crop"):
-        return "Take a scan first (press Scan now on the device) and I can explain why the crop was picked."
-    ex = explain_crop(r)
-    if not ex:
-        return "I can't find the usual range for that crop, so I can't break it down."
-    name, fits, off = ex
-    msg = f"The model picked {name}."
-    if fits: msg += " These readings sit inside its typical range: " + "; ".join(fits) + "."
-    if off:  msg += " These are outside it: " + "; ".join(off) + "."
-    if not off: msg += " All six probe readings fit, so this is a strong match."
-    msg += (" A neural network weighs all six readings together, so one reading outside the range does not rule a crop out, "
-            "but several outside it lowers the confidence.")
-    if r.get("tinyml_conf") is not None:
-        msg += f" Confidence for this scan: {round(r['tinyml_conf'])}%."
-    return msg
-
-
-AI_TOPICS_TINYML = [
-    {"id":"tinyknn", "chip":"TinyML vs the website model?", "keywords":["knn","website model","difference","compare","vs","versus"],
-     "answer": lambda r: ("Two models work together. The TinyML network on the device picks a crop from the six probe readings, offline. "
-        "The website's KNN model uses the same six inputs and also handles readings you type in manually. "
-        "The Crop Picks page then ranks all 22 crops by how many of your readings sit in each crop's comfort zone.")},
-    {"id":"whycrop", "chip":"Why did my scan pick this crop?", "keywords":["why this crop","why did","why was","why is","explain my crop","explain the crop","my crop"],
-     "answer": lambda r: _why_crop(r)},
-    {"id":"reliable","chip":"How reliable is the crop result?", "keywords":["reliable","confidence","accurate","accuracy","trust"],
-     "answer": lambda r: ("The confidence number is how strongly the model favours its top crop. 85%+ is Excellent, 60-84% Good, below that Fair. "
-        "One honest limit: the training data is a reference table of Philippine crops built from agronomic ranges, not measurements from your own plot, "
-        "so treat the result as a guide to discuss with your adviser, not a guarantee." + _tinyml_context(r))},
+AI_TOPICS_EXTRA = [
     {"id":"offline", "chip":"What if there is no Wi-Fi?", "keywords":["offline","no wifi","no wi-fi","no internet","without wifi","without wi-fi","saved scan","sync","upload"],
-     "answer": lambda r: ("If the scanner cannot find Wi-Fi it asks 'Continue offline?'. Say yes and Scan now still works: the reading and the TinyML crop are stored in the ESP32-S3's memory "
+     "answer": lambda r: ("If the scanner cannot find Wi-Fi it asks 'Continue offline?'. Say yes and Scan now still works: the reading is stored in the ESP32-S3's memory "
         "(up to 80 scans, kept even if you switch it off). As soon as Wi-Fi is back they upload by themselves, oldest first, and show up on this website. "
         "A scan is only deleted from the device after the website confirms it.")},
-    {"id":"probecheck","chip":"What is the probe check?", "keywords":["probe check","odd value","unusual","anomaly","sensor fault","autoencoder","looks wrong","check probe"],
-     "answer": lambda r: ("The probe check is a tiny autoencoder: it was trained only on real soil readings and learns what a normal combination of N, P, K, pH, temperature and moisture looks like. "
-        "If a new scan cannot be rebuilt well, the scanner shows 'Odd value' because the probe may be in air, loosely inserted, or faulty. "
-        "In testing it caught 100% of probe-in-air readings and about 98% of random garbage, with about 1% false alarms on normal rows. "
-        "It is weaker at subtle faults (only about a quarter of readings stuck at pH 7 and 100% moisture), so re-scan if something looks off."
-        + ((" Your latest scan was flagged as an odd value: re-insert the probe fully and scan again." if (_tiny_of(r) or {}).get("odd") else
-            " Your latest scan passed the check.") if _tiny_of(r) and _tiny_of(r).get("odd") is not None else ""))},
-    {"id":"advisor", "chip":"What does the TinyML advisor do?", "keywords":["advisor","what to fix","fertilizer","fertiliser","recommendation to fix"],
-     "answer": lambda r: ("The advisor is a tiny network that reads the six probe values and names what to fix: low nitrogen, phosphorus or potassium, acidic or alkaline soil, soil too dry, waterlogged, or too hot. "
-        "It was trained on the AgriSense threshold rules, so it agrees with them about 99% of the time. Its benefit is that it works offline on the scanner, not that it is smarter than the rules."
-        + ((" For your latest scan it says: " + (", ".join(_tiny_of(r)["advice"]) if _tiny_of(r).get("advice") else "nothing to fix") + ".")
-           if _tiny_of(r) and _tiny_of(r).get("advice") is not None else ""))},
-    {"id":"tinyml",  "chip":"What is TinyML?", "keywords":["tinyml","tiny ml","on-device","microcontroller","edge ai","neural"],
-     "answer": lambda r: ("TinyML means running small machine-learning models directly on a tiny chip instead of in the cloud. "
-        "The ESP32-S3 in AgriSense holds three tiny neural networks (about 4 KB of weights in total): a crop recommender that ranks the top 3 crops, "
-        "a probe check that flags readings that do not look like real soil, and a nutrient advisor that names what to fix. "
-        "All three read the same six probe values (N, P, K, pH, soil temperature, soil moisture) and finish in milliseconds with no Wi-Fi and no server. "
-        "On held-out data the crop model was right about 96% of the time for its first pick and 100% within its top 3. "
-        "The same three networks also run inside the website itself (open the TinyML page in the menu), so every scan gets analysed even when the scanner's screen is not available."
-        + _tinyml_context(r))},
     {"id":"temp",    "chip":None, "keywords":["temperature","temp","warm","hot","cold"],
      "answer": lambda r: ("Soil temperature drives germination, root growth and microbe activity. Most crops are happiest at 20-35 C." +
         (f" Your latest reading is {r['temp']} C, which is {reading_status('temp', r['temp'])[1].lower()}" if r else ""))},
 ]
-AI_TOPICS = AI_TOPICS_TINYML + AI_TOPICS
+AI_TOPICS = AI_TOPICS + AI_TOPICS_EXTRA
 
 
 def _kw_hit(text, kw):
@@ -1027,48 +731,11 @@ def sensors():
 
 
 @app.route("/crops")
-@login_required
-def crops():
-    rec          = get_latest_record(session["user"])
-    category     = request.args.get("category","All Crops")
-    sort_by      = request.args.get("sort","match")
-    suitable_only = request.args.get("suitable","0") == "1"
-    matches      = crop_matches(rec["N"],rec["P"],rec["K"],rec["temp"],rec["humidity"],rec["ph"],
-                                category=category,suitable_only=suitable_only) if rec else []
-    if sort_by == "name":
-        matches = sorted(matches, key=lambda r: r["label"])
-    elif sort_by == "harvest":
-        def harvest_key(r):
-            digits = re.findall(r"\d+", r["harvest"])
-            return int(digits[0]) if digits else 9999
-        matches = sorted(matches, key=harvest_key)
-    excellent  = sum(1 for m in matches if m["tier"] == "Excellent")
-    good       = sum(1 for m in matches if m["tier"] == "Good")
-    top_emojis = [m["emoji"] for m in matches[:3]]
-    grade, _   = grade_for_score(rec["fertility"]) if rec else ("-","")
-    return render_template("crops.html",
-        user=session["user"], record=rec, matches=matches,
-        categories=["All Crops"]+CROP_CATEGORIES, active_category=category,
-        sort_by=sort_by, suitable_only=suitable_only,
-        excellent=excellent, good=good, top_emojis=top_emojis,
-        grade=grade, device_name=DEVICE_NAME, device_subtitle=DEVICE_SUBTITLE)
-
-
 @app.route("/tinyml")
 @login_required
-def tinyml_page():
-    rec    = get_latest_record(session["user"])
-    grade, _ = grade_for_score(rec["fertility"]) if rec else ("-", "")
-    sample = ({"N": rec["N"], "P": rec["P"], "K": rec["K"], "temperature": rec["temp"],
-               "humidity": rec["humidity"], "ph": rec["ph"]} if rec else None)
-    emojis = {k: v["emoji"] for k, v in CROP_INFO.items()}
-    return render_template("tinyml.html",
-        user=session["user"], record=rec, sample=sample, emojis=emojis, grade=grade,
-        enabled=tinyml_web is not None,
-        metrics=(tinyml_web.METRICS if tinyml_web else {}),
-        n_params=(tinyml_web.N_PARAMS if tinyml_web else 0),
-        kb=(tinyml_web.KB if tinyml_web else 0),
-        device_name=DEVICE_NAME, device_subtitle=DEVICE_SUBTITLE)
+def crops_removed():
+    """Crop recommendation and the TinyML crop page were removed: old links and bookmarks land on Sensors."""
+    return redirect(url_for("sensors"))
 
 
 @app.route("/ai-assistant")
@@ -1136,10 +803,9 @@ def dashboard():
             records = _records_for(session["user"], session["role"])
             return render_template("dashboard.html", result=None, fertility=None,
                 error="Please enter valid numbers for every field.",
-                records=records, user=session["user"], **_chart_context(records))
+                records=records, user=session["user"])
 
         fertility = calculate_fertility(N, P, K, ph, temp, humidity)
-        result    = recommend_crop(N, P, K, temp, humidity, ph)
 
         filename   = None
         image_file = request.files.get("soil_image")
@@ -1152,7 +818,7 @@ def dashboard():
             INSERT INTO records
               (username,"N","P","K",ph,temp,humidity,crop,image,source,fertility,created_at)
             VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,'manual',%s,NOW()::TEXT)
-        """, (session["user"], N, P, K, ph, temp, humidity, result["name"], filename, fertility))
+        """, (session["user"], N, P, K, ph, temp, humidity, "", filename, fertility))
         conn.commit()
         cur.close()
         conn.close()
@@ -1160,7 +826,7 @@ def dashboard():
     records = _records_for(session["user"], session["role"])
     return render_template("dashboard.html",
         result=result, fertility=fertility, error=None,
-        records=records, user=session["user"], **_chart_context(records))
+        records=records, user=session["user"])
 
 
 def _records_for(username, role):
@@ -1221,11 +887,6 @@ def api_records_delete():
     finally:
         cur.close(); conn.close()
     return jsonify({"deleted": deleted})
-
-
-def _chart_context(records):
-    crop_counts = Counter([r["crop"] for r in records if r["crop"]])
-    return {"labels": list(crop_counts.keys()), "values": list(crop_counts.values())}
 
 
 # ---------------------------------------------------------------------------
@@ -1542,24 +1203,7 @@ def api_esp32():
     except (TypeError, ValueError):
         return jsonify({"error":"all sensor fields must be numeric"}), 400
 
-    # --- optional fields (TinyML result + offline-sync info) -------------------
-    # Older firmware does not send them: everything below then behaves as before.
-    tiny_crop = str(data.get("crop") or "").strip().lower()
-    if tiny_crop not in CROP_INFO:
-        tiny_crop = ""                       # unknown / empty -> use the website model instead
-    try:
-        tiny_conf = max(0.0, min(100.0, float(data.get("crop_conf"))))
-    except (TypeError, ValueError):
-        tiny_conf = None
-    tiny_json = tiny_extra_from_payload(data, tiny_crop, tiny_conf)
-    crop_source = "tinyml" if tiny_crop else "knn"
-    if not tiny_crop and not tiny_json:
-        # The scanner did not run TinyML (its screen / on-device models are not in use):
-        # the website runs the very same networks on the six probe readings instead.
-        wj = web_tiny_json(N, P, K, temp, humidity, ph)
-        if wj:
-            top = json.loads(wj)["top3"][0]
-            tiny_crop, tiny_conf, tiny_json, crop_source = top[0], top[1], wj, "tinyml-web"
+    # --- optional offline-sync info (older firmware does not send it) ------------
     offline  = bool(data.get("offline"))
     try:
         age_s = max(0.0, min(30 * 86400.0, float(data.get("age_s"))))
@@ -1587,19 +1231,17 @@ def api_esp32():
             return jsonify({"status":"ok","duplicate":True}), 200
 
     fertility = calculate_fertility(N, P, K, ph, temp, humidity)
-    knn       = recommend_crop(N, P, K, temp, humidity, ph)
-    crop_name   = tiny_crop or knn["name"]
 
     # Scans taken offline keep the time they were scanned (not the time they were uploaded)
     cur.execute("""
         INSERT INTO records
           (username,"N","P","K",ph,temp,humidity,crop,image,source,fertility,created_at,
-           crop_source,tinyml_conf,offline,scan_uid,tiny_json)
-        VALUES (%s,%s,%s,%s,%s,%s,%s,%s,NULL,'esp32',%s,
+           offline,scan_uid)
+        VALUES (%s,%s,%s,%s,%s,%s,%s,'',NULL,'esp32',%s,
                 (NOW() - make_interval(secs => %s))::TEXT,
-                %s,%s,%s,%s,%s)
-    """, (username, N, P, K, ph, temp, humidity, crop_name, fertility, age_s,
-          crop_source, tiny_conf, 1 if offline else 0, scan_uid, tiny_json))
+                %s,%s)
+    """, (username, N, P, K, ph, temp, humidity, fertility, age_s,
+          1 if offline else 0, scan_uid))
     cur.execute("UPDATE devices SET last_seen=NOW()::TEXT, last_seen_at=NOW() WHERE token_hash=%s", (th,))
     conn.commit()
     cur.close()
@@ -1607,8 +1249,7 @@ def api_esp32():
 
     out = {
         "status":"ok","user":username,
-        "crop":crop_name,"crop_source":crop_source,"crop_conf":tiny_conf,
-        "description":CROP_INFO.get(crop_name, {}).get("desc", knn["desc"]),
+        "crop":"-",     # crop recommendation was removed; kept so scanners still on the OLD sketch keep showing their result
         "fertility_score":fertility,"grade":grade_for_score(fertility)[0],"grade_text":grade_for_score(fertility)[1],
         "inputs":{"N":N,"P":P,"K":K,"ph":ph,"temp":temp,"humidity":humidity},
     }
@@ -1666,9 +1307,6 @@ def api_latest_scan():
                 "scan": {
                     "id":         row["id"],
                     "created_at": str(rec.get("created_at") or ""),
-                    "crop":       rec.get("crop") or "",
-                    "crop_source": rec.get("crop_source") or "",
-                    "crop_conf":  rec.get("tinyml_conf"),
                     "offline":    bool(rec.get("offline")),
                     "fertility":  round(float(rec["fertility"]), 1),
                     "grade":      grade,
@@ -1717,7 +1355,6 @@ def admin_dashboard():
     cur.close()
     conn.close()
 
-    crop_counts  = Counter([r["crop"] for r in records if r["crop"]])
     user_counts  = Counter([r["username"] for r in records])
     scores       = [record_to_dict(r)["fertility"] for r in records]
     avg_health   = round(sum(scores)/len(scores),1) if scores else 0
@@ -1727,7 +1364,6 @@ def admin_dashboard():
         users=users, records=records, devices=devices, bug_reports=bug_reports,
         open_bugs=sum(1 for b in bug_reports if b['status'] == 'open'),
         devices_in_use=sum(1 for d in devices if d["in_use"]),
-        chart_labels=list(crop_counts.keys()), chart_values=list(crop_counts.values()),
         user_counts=user_counts,
         total_users=len(users), total_records=len(records),
         admin_count=admin_count, student_count=len(users) - admin_count,
@@ -1876,11 +1512,11 @@ def export_records():
     cur.execute("SELECT * FROM records ORDER BY id DESC")
     rows = cur.fetchall(); cur.close(); conn.close()
     buf = io.StringIO(); w = csv.writer(buf)
-    w.writerow(["id","username","created_at","N","P","K","ph","temp","humidity","crop","health","source"])
+    w.writerow(["id","username","created_at","N","P","K","ph","temp","moisture","health","source"])
     for r in rows:
         d = record_to_dict(r)
         w.writerow([d["id"], d["username"], d.get("created_at"), d["N"], d["P"], d["K"], d["ph"],
-                    d["temp"], d["humidity"], d.get("crop"), d.get("fertility"), d.get("source")])
+                    d["temp"], d["humidity"], d.get("fertility"), d.get("source")])
     from flask import Response
     return Response(buf.getvalue(), mimetype="text/csv",
                     headers={"Content-Disposition": "attachment; filename=agrisense_records.csv"})
@@ -1945,77 +1581,6 @@ def admin_bug(bug_id, action):
                     ("resolved" if action == "resolve" else "open", bug_id))
     conn.commit(); cur.close(); conn.close()
     return _back("bugs")
-
-
-# ---------------------------------------------------------------------------
-# ONE-TIME UPDATE OF SAVED RECORDS  (new crop dataset, no rainfall)
-#
-# Records saved before the Philippine crop dataset still carry old crop names (apple, grapes,
-# chickpea, ...) and a health score that counted rainfall. On the first start with this
-# version every saved record is re-analysed with the CURRENT models: new crop, TinyML result
-# and 6-reading health score. The N, P, K, pH, temperature, humidity, date, owner and photo of
-# a record are never touched. A marker row in `app_meta` makes it run only once; to run it again
-# after changing the dataset, bump RECORDS_MIGRATION_VERSION.
-# ---------------------------------------------------------------------------
-RECORDS_MIGRATION_VERSION = "ph-crops-v1-no-rainfall"
-
-
-def relabel_record(row):
-    """New analysis for one saved record (pure function, no database).
-    -> (crop, crop_source, tinyml_conf, tiny_json, fertility)   or None if a reading is missing."""
-    try:
-        N, P, K, ph = float(row["N"]), float(row["P"]), float(row["K"]), float(row["ph"])
-        temp, hum   = float(row["temp"]), float(row["humidity"])
-    except (TypeError, ValueError, KeyError):
-        return None
-    fertility = calculate_fertility(N, P, K, ph, temp, hum)
-    if (row.get("source") or "manual") == "esp32":
-        wj = web_tiny_json(N, P, K, temp, hum, ph)          # same as a fresh scan arriving from the scanner
-        if wj:
-            name, conf = json.loads(wj)["top3"][0]
-            return name, "tinyml-web", conf, wj, fertility
-        return recommend_crop(N, P, K, temp, hum, ph)["name"], "knn", None, None, fertility
-    # manual entries: the website model, as when they were typed in
-    return recommend_crop(N, P, K, temp, hum, ph)["name"], None, None, None, fertility
-
-
-def migrate_records_to_current_dataset():
-    conn = get_db(); cur = conn.cursor()
-    try:
-        cur.execute("CREATE TABLE IF NOT EXISTS app_meta (key TEXT PRIMARY KEY, value TEXT)")
-        cur.execute("SELECT pg_advisory_xact_lock(7140)")            # two cold starts never run it twice at once
-        cur.execute("SELECT value FROM app_meta WHERE key='records_dataset'")
-        done = cur.fetchone()
-        if done and done["value"] == RECORDS_MIGRATION_VERSION:
-            conn.commit()
-            return 0
-        cur.execute('SELECT id, "N", "P", "K", ph, temp, humidity, source FROM records ORDER BY id')
-        batch = []
-        for r in cur.fetchall():
-            new = relabel_record(r)
-            if new:
-                batch.append((r["id"],) + new)
-        for i in range(0, len(batch), 500):                          # one statement per 500 rows (fast on a remote database)
-            psycopg2.extras.execute_values(cur,
-                "UPDATE records AS r SET crop=v.crop, crop_source=v.src, tinyml_conf=v.conf, tiny_json=v.tj, fertility=v.f "
-                "FROM (VALUES %s) AS v(id, crop, src, conf, tj, f) WHERE r.id = v.id",
-                batch[i:i + 500], template="(%s::int, %s, %s, %s::real, %s, %s::real)")
-        cur.execute("INSERT INTO app_meta (key, value) VALUES ('records_dataset', %s) "
-                    "ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value", (RECORDS_MIGRATION_VERSION,))
-        conn.commit()
-        print(f"[AgriSense] Re-analysed {len(batch)} saved records with the Philippine crop dataset.")
-        return len(batch)
-    except Exception:
-        conn.rollback()
-        raise
-    finally:
-        cur.close(); conn.close()
-
-
-try:
-    migrate_records_to_current_dataset()
-except Exception as _e:
-    print(f"[AgriSense] Record update skipped (will retry on next start): {_e}")
 
 
 if __name__ == "__main__":
